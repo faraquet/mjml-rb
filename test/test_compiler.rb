@@ -95,6 +95,74 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, "Section body")
   end
 
+  def test_body_component_renders_attributes_and_context
+    body = <<~MJML
+      <mjml lang="ar" dir="rtl">
+        <mj-head>
+          <mj-title>Body Title</mj-title>
+        </mj-head>
+        <mj-body width="700px" background-color="#f5f5f5" css-class="body-class">
+          <mj-section>
+            <mj-column>
+              <mj-text>Body Test</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MJML::Compiler.new.compile(body)
+    assert_empty(result.errors)
+    assert_includes(result.html, '<html lang="ar" dir="rtl">')
+    assert_includes(result.html, '<body style="margin:0;padding:0;background:#f5f5f5">')
+    assert_includes(result.html, 'aria-label="Body Title"')
+    assert_includes(result.html, 'aria-roledescription="email"')
+    assert_includes(result.html, 'class="body-class"')
+    assert_includes(result.html, 'role="article"')
+    assert_includes(result.html, 'width="700px"')
+    assert_includes(result.html, 'max-width:700px')
+  end
+
+  def test_body_component_uses_default_width
+    body = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Default body width</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MJML::Compiler.new.compile(body)
+    assert_empty(result.errors)
+
+    expected_html = <<~HTML
+      <!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>MJML Document</title>
+          <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700" rel="stylesheet" type="text/css">
+      <link href="https://fonts.googleapis.com/css?family=Droid+Sans:300,400,500,700" rel="stylesheet" type="text/css">
+      <link href="https://fonts.googleapis.com/css?family=Lato:300,400,500,700" rel="stylesheet" type="text/css">
+      <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
+      <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
+          <style type="text/css"></style>
+        </head>
+        <body style="margin:0;padding:0;background:#ffffff">
+          
+          <div aria-roledescription="email" role="article" lang="en"><table role="presentation" align="center" width="600px" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;margin:0 auto"><tbody><tr><td style="padding:20px 0"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td valign="top"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr><td style="font-family:Arial, sans-serif;font-size:13px;line-height:1.5;color:#000000;padding:10px 25px">Default body width</td></tr></tbody></table></td></tr></tbody></table></td></tr></tbody></table></div>
+        </body>
+      </html>
+    HTML
+
+    assert_equal(expected_html, result.html)
+  end
+
   def test_cli_compiles_file_to_output
     Dir.mktmpdir do |dir|
       input = File.join(dir, "email.mjml")

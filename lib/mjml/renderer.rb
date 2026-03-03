@@ -1,5 +1,6 @@
 require "cgi"
 require_relative "components/accordion"
+require_relative "components/body"
 
 module MJML
   class Renderer
@@ -16,8 +17,10 @@ module MJML
       raise ArgumentError, "Missing <mj-body>" unless body
 
       context = build_context(head, options)
+      context[:lang] = options[:lang] || document.attributes["lang"] || "en"
+      context[:dir] = options[:dir] || document.attributes["dir"]
       append_component_head_styles(document, context)
-      content = render_children(body, context, parent: "mj-body")
+      content = render_node(body, context, parent: "mjml")
       build_html_document(content, context)
     end
 
@@ -82,10 +85,16 @@ module MJML
       head_styles = context[:head_styles].join("\n")
       font_links = context[:fonts].values.uniq.map { |href| %(<link href="#{escape_attr(href)}" rel="stylesheet" type="text/css">) }.join("\n")
       preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
+      html_attributes = { "lang" => context[:lang], "dir" => context[:dir] }
+      body_style = style_join(
+        "margin" => "0",
+        "padding" => "0",
+        "background" => context[:background_color] || "#ffffff"
+      )
 
       <<~HTML
         <!doctype html>
-        <html lang="en">
+        <html#{html_attrs(html_attributes)}>
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -93,13 +102,9 @@ module MJML
             #{font_links}
             <style type="text/css">#{head_styles}</style>
           </head>
-          <body style="margin:0;padding:0;background:#ffffff;">
+          <body style="#{body_style}">
             #{preview_block}
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-              <tbody>
-                #{content}
-              </tbody>
-            </table>
+            #{content}
           </body>
         </html>
       HTML
@@ -307,6 +312,7 @@ module MJML
       @component_registry ||= begin
         registry = {}
         # Register component classes here as they are implemented.
+        register_component(registry, Components::Body.new(self))
         register_component(registry, Components::Accordion.new(self))
         registry
       end
@@ -389,6 +395,16 @@ module MJML
 
     def escape_attr(value)
       CGI.escapeHTML(value.to_s)
+    end
+
+    def html_attrs(hash)
+      attrs = hash.each_with_object([]) do |(key, value), memo|
+        next if value.nil? || value.to_s.empty?
+        memo << %(#{key}="#{escape_attr(value)}")
+      end
+      return "" if attrs.empty?
+
+      " #{attrs.join(' ')}"
     end
   end
 end

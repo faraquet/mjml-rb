@@ -36,6 +36,10 @@ module MJML
       def escape_attr(value)
         renderer.send(:escape_attr, value)
       end
+
+      def html_attrs(hash)
+        renderer.send(:html_attrs, hash)
+      end
     end
   end
 end
