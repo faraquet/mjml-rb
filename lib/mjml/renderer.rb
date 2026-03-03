@@ -1,4 +1,5 @@
 require "cgi"
+require_relative "components/accordion"
 
 module MJML
   class Renderer
@@ -9,13 +10,13 @@ module MJML
       "Roboto" => "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700",
       "Ubuntu" => "https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700"
     }.freeze
-
     def render(document, options = {})
       head = find_child(document, "mj-head")
       body = find_child(document, "mj-body")
       raise ArgumentError, "Missing <mj-body>" unless body
 
       context = build_context(head, options)
+      append_component_head_styles(document, context)
       content = render_children(body, context, parent: "mj-body")
       build_html_document(content, context)
     end
@@ -113,6 +114,10 @@ module MJML
       return "" if node.comment?
 
       attrs = resolved_attributes(node, context)
+      if (component = component_for(node.tag_name))
+        return component.render(tag_name: node.tag_name, node: node, context: context, attrs: attrs, parent: parent)
+      end
+
       case node.tag_name
       when "mj-wrapper"
         %(<tr><td style="#{style_join("padding" => attrs["padding"] || "0")}">#{render_children(node, context, parent: "mj-wrapper")}</td></tr>)
@@ -276,6 +281,41 @@ module MJML
       content
     end
 
+    def append_component_head_styles(document, context)
+      component_registry.each_value.uniq.each do |component|
+        next unless component.respond_to?(:head_style)
+
+        style = component.head_style
+        next if style.nil? || style.empty?
+
+        tags = if component.respond_to?(:head_style_tags)
+                 component.head_style_tags
+               else
+                 component.tags
+               end
+        next unless Array(tags).any? { |tag| contains_tag?(document, tag) }
+
+        context[:head_styles] << style
+      end
+    end
+
+    def component_for(tag_name)
+      component_registry[tag_name]
+    end
+
+    def component_registry
+      @component_registry ||= begin
+        registry = {}
+        # Register component classes here as they are implemented.
+        register_component(registry, Components::Accordion.new(self))
+        registry
+      end
+    end
+
+    def register_component(registry, component)
+      component.tags.each { |tag| registry[tag] = component }
+    end
+
     def resolved_attributes(node, context)
       attrs = {}
       attrs.merge!(context[:global_defaults] || {})
@@ -334,6 +374,13 @@ module MJML
 
     def find_child(node, tag_name)
       node.element_children.find { |child| child.tag_name == tag_name }
+    end
+
+    def contains_tag?(node, tag_name)
+      return false unless node.respond_to?(:tag_name)
+      return true if node.tag_name == tag_name
+
+      node.children.any? { |child| child.respond_to?(:children) && contains_tag?(child, tag_name) }
     end
 
     def escape_html(value)
