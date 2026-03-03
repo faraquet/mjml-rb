@@ -9,7 +9,7 @@ require_relative "mjml/validator"
 require_relative "mjml/migrator"
 require_relative "mjml/cli"
 
-module MJML
+module MjmlRb
   class << self
     def mjml2html(mjml, options = {})
       Compiler.new(options).compile(mjml).to_h

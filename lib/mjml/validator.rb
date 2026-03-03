@@ -1,7 +1,7 @@
 require_relative "dependencies"
 require_relative "parser"
 
-module MJML
+module MjmlRb
   class Validator
     REQUIRED_BY_TAG = {
       "mj-image" => %w[src],

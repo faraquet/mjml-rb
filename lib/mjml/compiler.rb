@@ -3,7 +3,7 @@ require_relative "validator"
 require_relative "parser"
 require_relative "renderer"
 
-module MJML
+module MjmlRb
   class Compiler
     DEFAULT_OPTIONS = {
       beautify: false,

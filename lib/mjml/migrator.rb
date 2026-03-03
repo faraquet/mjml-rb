@@ -1,4 +1,4 @@
-module MJML
+module MjmlRb
   class Migrator
     TAG_RENAMES = {
       "mj-container" => "mj-body"

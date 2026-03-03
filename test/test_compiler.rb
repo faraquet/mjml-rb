@@ -18,13 +18,13 @@ class MJMLCompilerTest < Minitest::Test
   MJML
 
   def test_mjml2html_returns_html
-    result = MJML.mjml2html(SAMPLE)
+    result = MjmlRb.mjml2html(SAMPLE)
     assert_empty(result[:errors])
     assert_includes(result[:html], "Hello Ruby")
   end
 
   def test_strict_validation_rejects_invalid_document
-    compiler = MJML::Compiler.new(validation_level: "strict")
+    compiler = MjmlRb::Compiler.new(validation_level: "strict")
     result = compiler.compile("<html><body>invalid</body></html>")
     refute_empty(result.errors)
   end
@@ -38,7 +38,7 @@ class MJMLCompilerTest < Minitest::Test
       </mjml>
     MJML
 
-    compiler = MJML::Compiler.new(validation_level: "soft")
+    compiler = MjmlRb::Compiler.new(validation_level: "soft")
     result = compiler.compile(invalid)
     refute_empty(result.errors)
     assert_match(/not allowed inside <mj-body>/, result.errors.first[:message])
@@ -61,7 +61,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MJML::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
       assert_includes(result.html, "From include")
@@ -86,7 +86,7 @@ class MJMLCompilerTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MJML::Compiler.new.compile(accordion)
+    result = MjmlRb::Compiler.new.compile(accordion)
     assert_empty(result.errors)
     assert_includes(result.html, "mj-accordion-title")
     assert_includes(result.html, "mj-accordion-content")
@@ -111,7 +111,7 @@ class MJMLCompilerTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MJML::Compiler.new.compile(body)
+    result = MjmlRb::Compiler.new.compile(body)
     assert_empty(result.errors)
     assert_includes(result.html, '<html lang="ar" dir="rtl">')
     assert_includes(result.html, '<body style="margin:0;padding:0;background:#f5f5f5">')
@@ -136,7 +136,7 @@ class MJMLCompilerTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MJML::Compiler.new.compile(body)
+    result = MjmlRb::Compiler.new.compile(body)
     assert_empty(result.errors)
 
     expected_html = <<~HTML
@@ -171,7 +171,7 @@ class MJMLCompilerTest < Minitest::Test
 
       stdout = StringIO.new
       stderr = StringIO.new
-      cli = MJML::CLI.new(stdout: stdout, stderr: stderr)
+      cli = MjmlRb::CLI.new(stdout: stdout, stderr: stderr)
       code = cli.run([input, "-o", output])
 
       assert_equal(0, code)
@@ -188,7 +188,7 @@ class MJMLCompilerTest < Minitest::Test
 
       stdout = StringIO.new
       stderr = StringIO.new
-      cli = MJML::CLI.new(stdout: stdout, stderr: stderr)
+      cli = MjmlRb::CLI.new(stdout: stdout, stderr: stderr)
       code = cli.run(["--validate", input])
 
       assert_equal(1, code)

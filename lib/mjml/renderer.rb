@@ -2,7 +2,7 @@ require "cgi"
 require_relative "components/accordion"
 require_relative "components/body"
 
-module MJML
+module MjmlRb
   class Renderer
     DEFAULT_FONTS = {
       "Open Sans" => "https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700",

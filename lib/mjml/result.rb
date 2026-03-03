@@ -1,4 +1,4 @@
-module MJML
+module MjmlRb
   class Result
     attr_reader :html, :errors, :warnings
 

@@ -3,7 +3,7 @@ require "rexml/xpath"
 
 require_relative "ast_node"
 
-module MJML
+module MjmlRb
   class Parser
     include REXML
 

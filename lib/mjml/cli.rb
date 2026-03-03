@@ -7,7 +7,7 @@ require_relative "compiler"
 require_relative "migrator"
 require_relative "version"
 
-module MJML
+module MjmlRb
   class CLI
     class CLIError < StandardError; end
 
@@ -91,7 +91,7 @@ module MJML
           options[:no_stdout_file_comment] = true
         end
         opts.on("-V", "--version", "Show version") do
-          @stdout.puts("mjml-ruby #{MJML::VERSION}")
+          @stdout.puts("mjml-ruby #{MjmlRb::VERSION}")
           raise SystemExit, 0
         end
         opts.on("-h", "--help", "Show help") do

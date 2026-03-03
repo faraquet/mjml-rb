@@ -1,4 +1,4 @@
-module MJML
+module MjmlRb
   class AstNode
     attr_reader :tag_name, :attributes, :children, :content, :line
 

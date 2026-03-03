@@ -36,7 +36,7 @@ Created a **standalone Ruby implementation** with a **pure Ruby pipeline** (no e
 - Lockfile updated accordingly.
 
 ## Current Behavior
-- `MJML.mjml2html(source, options)` works and returns hash with `:html`, `:errors`, `:warnings`.
+- `MjmlRb.mjml2html(source, options)` works and returns hash with `:html`, `:errors`, `:warnings`.
 - CLI supports key flows:
   - compile (`input -> html`)
   - validate (`--validate`)

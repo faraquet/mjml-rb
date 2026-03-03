@@ -1,4 +1,4 @@
-module MJML
+module MjmlRb
   module Dependencies
     RULES = {
       "mjml" => ["mj-body", "mj-head", "mj-raw"],

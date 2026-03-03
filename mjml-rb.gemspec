@@ -2,7 +2,7 @@ require_relative "lib/mjml/version"
 
 Gem::Specification.new do |spec|
   spec.name = "mjml-rb"
-  spec.version = MJML::VERSION
+  spec.version = MjmlRb::VERSION
   spec.authors = ["Andrei Andriichuk"]
   spec.email = ["andreiandriichuk@gmail.com"]
 

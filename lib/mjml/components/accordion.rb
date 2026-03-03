@@ -1,6 +1,6 @@
 require_relative "base"
 
-module MJML
+module MjmlRb
   module Components
     class Accordion < Base
       TAGS = %w[

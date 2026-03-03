@@ -3,4 +3,4 @@
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 require "mjml"
 
-exit(MJML::CLI.new.run(ARGV))
+exit(MjmlRb::CLI.new.run(ARGV))

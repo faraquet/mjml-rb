@@ -1,4 +1,4 @@
-module MJML
+module MjmlRb
   module Components
     class Base
       def initialize(renderer)
