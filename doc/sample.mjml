@@ -1,0 +1,22 @@
+<mjml lang="en">
+  <mj-head>
+    <mj-title>Body + Accordion CLI Sample</mj-title>
+  </mj-head>
+  <mj-body width="700px" background-color="#f5f5f5" css-class="email-body">
+    <mj-section>
+      <mj-column>
+        <mj-text font-size="18px" padding="20px 25px">FAQ</mj-text>
+        <mj-accordion>
+          <mj-accordion-element>
+            <mj-accordion-title>What is MJML?</mj-accordion-title>
+            <mj-accordion-text>MJML is a markup language for responsive email.</mj-accordion-text>
+          </mj-accordion-element>
+          <mj-accordion-element>
+            <mj-accordion-title>Does this renderer support accordion?</mj-accordion-title>
+            <mj-accordion-text>Yes, this sample exercises the modular accordion component.</mj-accordion-text>
+          </mj-accordion-element>
+        </mj-accordion>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

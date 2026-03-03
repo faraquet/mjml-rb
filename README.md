@@ -20,4 +20,5 @@ bundle exec ruby -Ilib -e 'require "mjml"; puts MJML.mjml2html("<mjml><mj-body><
 bundle exec bin/mjml example.mjml -o output.html
 bundle exec bin/mjml --validate example.mjml
 bundle exec bin/mjml --migrate old.mjml -s
+bundle exec bin/mjml doc/sample.mjml -o sample.html
 ```
