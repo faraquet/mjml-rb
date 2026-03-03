@@ -1,0 +1,24 @@
+PATH
+  remote: .
+  specs:
+    mjml-rb (0.1.0)
+      rexml
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    rexml (3.4.4)
+
+PLATFORMS
+  arm64-darwin-25
+  ruby
+
+DEPENDENCIES
+  mjml-rb!
+
+CHECKSUMS
+  mjml-rb (0.1.0)
+  rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
+
+BUNDLED WITH
+  4.0.6

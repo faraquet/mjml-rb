@@ -1,0 +1,103 @@
+require "minitest/autorun"
+require "tmpdir"
+require "stringio"
+
+require_relative "../lib/mjml"
+
+class MJMLCompilerTest < Minitest::Test
+  SAMPLE = <<~MJML
+    <mjml>
+      <mj-body>
+        <mj-section>
+          <mj-column>
+            <mj-text>Hello Ruby</mj-text>
+          </mj-column>
+        </mj-section>
+      </mj-body>
+    </mjml>
+  MJML
+
+  def test_mjml2html_returns_html
+    result = MJML.mjml2html(SAMPLE)
+    assert_empty(result[:errors])
+    assert_includes(result[:html], "Hello Ruby")
+  end
+
+  def test_strict_validation_rejects_invalid_document
+    compiler = MJML::Compiler.new(validation_level: "strict")
+    result = compiler.compile("<html><body>invalid</body></html>")
+    refute_empty(result.errors)
+  end
+
+  def test_dependency_validation_rejects_invalid_child
+    invalid = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-text>invalid position</mj-text>
+        </mj-body>
+      </mjml>
+    MJML
+
+    compiler = MJML::Compiler.new(validation_level: "soft")
+    result = compiler.compile(invalid)
+    refute_empty(result.errors)
+    assert_match(/not allowed inside <mj-body>/, result.errors.first[:message])
+  end
+
+  def test_include_expansion
+    Dir.mktmpdir do |dir|
+      partial = File.join(dir, "partial.mjml")
+      main = File.join(dir, "main.mjml")
+      File.write(partial, "<mj-text>From include</mj-text>")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./partial.mjml" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MJML::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, "From include")
+    end
+  end
+
+  def test_cli_compiles_file_to_output
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "email.mjml")
+      output = File.join(dir, "email.html")
+      File.write(input, SAMPLE)
+
+      stdout = StringIO.new
+      stderr = StringIO.new
+      cli = MJML::CLI.new(stdout: stdout, stderr: stderr)
+      code = cli.run([input, "-o", output])
+
+      assert_equal(0, code)
+      assert(File.exist?(output))
+      assert_includes(File.read(output), "Hello Ruby")
+      assert_equal("", stderr.string)
+    end
+  end
+
+  def test_cli_validate_reports_error
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "invalid.mjml")
+      File.write(input, "<html />")
+
+      stdout = StringIO.new
+      stderr = StringIO.new
+      cli = MJML::CLI.new(stdout: stdout, stderr: stderr)
+      code = cli.run(["--validate", input])
+
+      assert_equal(1, code)
+      assert_match(/Validation failed/, stderr.string)
+    end
+  end
+end
