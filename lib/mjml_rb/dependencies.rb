@@ -60,7 +60,7 @@ module MjmlRb
       "mj-social-element" => [],
       "mj-spacer" => [],
       "mj-table" => [],
-      "mj-text" => [],
+      "mj-text" => [/^(?!mj-).+/],
       "mj-wrapper" => ["mj-hero", "mj-raw", "mj-section"]
     }.freeze
   end

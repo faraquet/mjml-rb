@@ -68,6 +68,80 @@ class MJMLCompilerTest < Minitest::Test
     end
   end
 
+  def test_include_expansion_tolerates_html_void_tags_in_mjml_include
+    Dir.mktmpdir do |dir|
+      partial = File.join(dir, "partial.mjml")
+      main = File.join(dir, "main.mjml")
+      File.write(partial, "<mj-text>Line 1<br><strong>Line 2</strong></mj-text>")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./partial.mjml" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, "Line 1")
+      assert_includes(result.html, "<strong>Line 2</strong>")
+    end
+  end
+
+  def test_include_expansion_tolerates_html_type_with_void_tags
+    Dir.mktmpdir do |dir|
+      partial = File.join(dir, "partial.html")
+      main = File.join(dir, "main.mjml")
+      File.write(partial, "<p>Line 1<br><strong>Line 2</strong></p>")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./partial.html" type="html" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, "<p>Line 1<br><strong>Line 2</strong></p>")
+    end
+  end
+
+  def test_include_expansion_tolerates_html_void_tags_in_strict_mode
+    Dir.mktmpdir do |dir|
+      partial = File.join(dir, "partial.mjml")
+      main = File.join(dir, "main.mjml")
+      File.write(partial, "<mj-text>Line 1<br><strong>Line 2</strong></mj-text>")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./partial.mjml" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir, validation_level: "strict")
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, "<br />")
+      assert_includes(result.html, "<strong>Line 2</strong>")
+    end
+  end
+
   def test_accordion_component_renders
     accordion = <<~MJML
       <mjml>

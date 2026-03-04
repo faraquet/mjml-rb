@@ -6,6 +6,7 @@ require_relative "ast_node"
 module MjmlRb
   class Parser
     include REXML
+    HTML_VOID_TAGS = %w[area base br col embed hr img input link meta param source track wbr].freeze
 
     class ParseError < StandardError
       attr_reader :line
@@ -59,9 +60,9 @@ module MjmlRb
         include_content = File.read(resolved_path)
 
         replacement = if include_type == "html"
-                        %(<mj-raw>#{include_content}</mj-raw>)
+                        %(<mj-raw><![CDATA[#{escape_cdata(include_content)}]]></mj-raw>)
                       else
-                        strip_xml_declaration(include_content)
+                        normalize_html_void_tags(strip_xml_declaration(include_content))
                       end
 
         fragment = Document.new("<include-root>#{replacement}</include-root>")
@@ -84,6 +85,17 @@ module MjmlRb
 
     def strip_xml_declaration(content)
       content.sub(/\A<\?xml[^>]*\?>\s*/m, "")
+    end
+
+    def normalize_html_void_tags(content)
+      pattern = /<(#{HTML_VOID_TAGS.join("|")})(\s[^<>]*?)?>/i
+      content.gsub(pattern) do |tag|
+        tag.end_with?("/>") ? tag : tag.sub(/>$/, " />")
+      end
+    end
+
+    def escape_cdata(content)
+      content.to_s.gsub("]]>", "]]]]><![CDATA[>")
     end
 
     def resolve_include_path(include_path, actual_path, file_path)

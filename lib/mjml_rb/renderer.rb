@@ -189,7 +189,15 @@ module MjmlRb
         "padding" => attrs["padding"] || "10px 25px"
       )
 
-      content = node.children.map { |child| child.text? ? escape_html(child.content.to_s) : raw_inner(child) }.join
+      content = node.children.map do |child|
+        if child.text?
+          escape_html(child.content.to_s)
+        elsif child.comment?
+          "<!--#{child.content}-->"
+        else
+          serialize_node(child)
+        end
+      end.join
       %(<tr><td style="#{style}">#{content}</td></tr>)
     end
 
