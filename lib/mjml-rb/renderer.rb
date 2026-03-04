@@ -342,23 +342,29 @@ module MjmlRb
     end
 
     def render_divider(attrs)
+      css_class = attrs["css-class"]
       border_width = attrs["border-width"] || "1px"
       border_style = attrs["border-style"] || "solid"
       border_color = attrs["border-color"] || "#000000"
-      td_style = style_join("padding" => attrs["padding"] || "10px 25px")
+      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
+      td_attrs = {"class" => css_class, "style" => td_style}
       hr_style = style_join("border" => "0", "border-top" => "#{border_width} #{border_style} #{border_color}")
-      %(<tr><td style="#{td_style}"><hr style="#{hr_style}"></td></tr>)
+      %(<tr><td#{html_attrs(td_attrs)}><hr style="#{hr_style}"></td></tr>)
     end
 
     def render_spacer(attrs)
+      css_class = attrs["css-class"]
       height = attrs["height"] || "20px"
-      %(<tr><td style="line-height:#{escape_attr(height)};font-size:0;">&nbsp;</td></tr>)
+      td_attrs = {"class" => css_class, "style" => "line-height:#{escape_attr(height)};font-size:0;"}
+      %(<tr><td#{html_attrs(td_attrs)}>&nbsp;</td></tr>)
     end
 
     def render_table(node, attrs)
-      td_style = style_join("padding" => attrs["padding"] || "10px 25px")
+      css_class = attrs["css-class"]
+      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
+      td_attrs = {"align" => attrs["align"] || "left", "class" => css_class, "style" => td_style}
       raw = raw_inner(node)
-      %(<tr><td style="#{td_style}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">#{raw}</table></td></tr>)
+      %(<tr><td#{html_attrs(td_attrs)}><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">#{raw}</table></td></tr>)
     end
 
     def render_hero(node, context, attrs)
