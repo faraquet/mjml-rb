@@ -2,7 +2,7 @@ require "minitest/autorun"
 require "tmpdir"
 require "stringio"
 
-require_relative "../lib/mjml"
+require_relative "../lib/mjml_rb"
 
 class MJMLCompilerTest < Minitest::Test
   SAMPLE = <<~MJML

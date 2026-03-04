@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
-require "mjml"
+require "mjml_rb"
 
 exit(MjmlRb::CLI.new.run(ARGV))
