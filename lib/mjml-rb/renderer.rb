@@ -170,7 +170,6 @@ module MjmlRb
       padding = attrs["padding"] || "20px 0"
 
       div_style = style_join(
-        "background-color" => bg_color,
         "margin" => "0px auto",
         "max-width" => container_width
       )
@@ -178,12 +177,19 @@ module MjmlRb
         "direction" => "ltr",
         "font-size" => "0px",
         "padding" => padding,
-        "text-align" => "center"
+        "padding-top" => attrs["padding-top"],
+        "padding-bottom" => attrs["padding-bottom"],
+        "padding-left" => attrs["padding-left"],
+        "padding-right" => attrs["padding-right"],
+        "text-align" => "center",
+        "background-color" => bg_color
       )
+      td_attrs = {"style" => td_style, "align" => "center"}
+      td_attrs["bgcolor"] = bg_color if bg_color
       div_attrs = {"class" => css_class, "style" => div_style}
       inner = render_section_columns(node, context)
 
-      %(<div#{html_attrs(div_attrs)}><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;" width="100%"><tbody><tr><td style="#{td_style}">#{inner}</td></tr></tbody></table></div>)
+      %(<div#{html_attrs(div_attrs)}><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;" width="100%"><tbody><tr><td#{html_attrs(td_attrs)}>#{inner}</td></tr></tbody></table></div>)
     end
 
     def render_wrapper_element(node, context, attrs)
