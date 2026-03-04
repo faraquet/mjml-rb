@@ -285,7 +285,7 @@ module MjmlRb
         "padding" => attrs["padding"] || "10px 25px",
         "word-break" => "break-word"
       )
-      td_attrs = {"align" => attrs["align"] || "left", "style" => td_style}
+      td_attrs = {"align" => attrs["align"] || "left", "class" => css_class, "style" => td_style}
 
       div_style = style_join(
         "font-family" => attrs["font-family"] || "Arial, sans-serif",
@@ -294,7 +294,6 @@ module MjmlRb
         "text-align" => attrs["align"],
         "color" => attrs["color"] || "#000000"
       )
-      div_attrs = {"style" => div_style, "class" => css_class}
 
       content = node.children.map do |child|
         if child.text?
@@ -305,7 +304,7 @@ module MjmlRb
           serialize_node(child)
         end
       end.join
-      %(<tr><td#{html_attrs(td_attrs)}><div#{html_attrs(div_attrs)}>#{content}</div></td></tr>)
+      %(<tr><td#{html_attrs(td_attrs)}><div style="#{div_style}">#{content}</div></td></tr>)
     end
 
     def render_image(attrs)
