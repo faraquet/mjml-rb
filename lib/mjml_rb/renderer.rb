@@ -125,13 +125,13 @@ module MjmlRb
 
       case node.tag_name
       when "mj-wrapper"
-        %(<tr><td style="#{style_join("padding" => attrs["padding"] || "0")}">#{render_children(node, context, parent: "mj-wrapper")}</td></tr>)
+        render_wrapper_element(node, context, attrs)
       when "mj-section"
-        %(<tr><td style="#{style_join(section_style(attrs))}">#{render_section(node, context)}</td></tr>)
+        render_section_element(node, context, attrs)
       when "mj-group"
         render_group(node, context)
       when "mj-column"
-        render_column(node, context)
+        render_column(node, context, attrs)
       when "mj-text"
         render_text(node, attrs)
       when "mj-image"
@@ -161,22 +161,77 @@ module MjmlRb
       end
     end
 
-    def render_section(node, context)
+    def render_section_element(node, context, attrs)
+      container_width = context[:container_width] || "600px"
+      css_class = attrs["css-class"]
+      bg_color = attrs["background-color"]
+      padding = attrs["padding"] || "20px 0"
+
+      div_style = style_join(
+        "margin" => "0px auto",
+        "max-width" => container_width
+      )
+      td_style = style_join(
+        "direction" => "ltr",
+        "font-size" => "0px",
+        "text-align" => "center",
+        "padding" => padding,
+        "background-color" => bg_color
+      )
+      div_attrs = {"class" => css_class, "style" => div_style}
+      inner = render_section_columns(node, context)
+
+      %(<div#{html_attrs(div_attrs)}><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;" width="100%"><tbody><tr><td style="#{td_style}">#{inner}</td></tr></tbody></table></div>)
+    end
+
+    def render_wrapper_element(node, context, attrs)
+      container_width = context[:container_width] || "600px"
+      css_class = attrs["css-class"]
+      bg_color = attrs["background-color"]
+      padding = attrs["padding"] || "20px 0"
+
+      div_style = style_join(
+        "margin" => "0px auto",
+        "max-width" => container_width
+      )
+      td_style = style_join(
+        "padding" => padding,
+        "background-color" => bg_color
+      )
+      div_attrs = {"class" => css_class, "style" => div_style}
+      children = render_children(node, context, parent: "mj-wrapper")
+
+      %(<div#{html_attrs(div_attrs)}><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;" width="100%"><tbody><tr><td style="#{td_style}">#{children}</td></tr></tbody></table></div>)
+    end
+
+    def render_section_columns(node, context)
       columns = node.element_children.select { |e| %w[mj-column mj-group].include?(e.tag_name) }
       return render_children(node, context, parent: "mj-section") if columns.empty?
 
-      cols = columns.map { |col| %(<td valign="top">#{render_node(col, context, parent: "mj-section")}</td>) }.join
-      %(<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>#{cols}</tr></tbody></table>)
+      columns.map { |col| render_node(col, context, parent: "mj-section") }.join("\n")
     end
 
     def render_group(node, context)
       items = node.element_children.select { |e| e.tag_name == "mj-column" }
-      cols = items.map { |item| %(<td valign="top">#{render_node(item, context, parent: "mj-group")}</td>) }.join
-      %(<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody><tr>#{cols}</tr></tbody></table>)
+      items.map { |item| render_node(item, context, parent: "mj-group") }.join("\n")
     end
 
-    def render_column(node, context)
-      %(<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody>#{render_children(node, context, parent: "mj-column")}</tbody></table>)
+    def render_column(node, context, attrs)
+      css_class = attrs["css-class"]
+      col_class = "mj-column-per-100 mj-outlook-group-fix"
+      col_class = "#{col_class} #{css_class}" if css_class && !css_class.empty?
+
+      col_style = style_join(
+        "font-size" => "0px",
+        "text-align" => "left",
+        "direction" => "ltr",
+        "display" => "inline-block",
+        "vertical-align" => "top",
+        "width" => "100%"
+      )
+      children = render_children(node, context, parent: "mj-column")
+
+      %(<div class="#{escape_attr(col_class)}" style="#{col_style}"><table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;"><tbody>#{children}</tbody></table></div>)
     end
 
     def render_text(node, attrs)
@@ -342,13 +397,6 @@ module MjmlRb
 
       attrs.merge!(node.attributes)
       attrs
-    end
-
-    def section_style(attrs)
-      {
-        "padding" => attrs["padding"] || "20px 0",
-        "background-color" => attrs["background-color"]
-      }
     end
 
     def raw_inner(node)

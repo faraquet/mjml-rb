@@ -32,14 +32,9 @@ module MjmlRb
           "dir" => context[:dir],
           "style" => style_join("background-color" => background_color)
         }
-        table_style = style_join(
-          "width" => "100%",
-          "max-width" => container_width,
-          "margin" => "0 auto"
-        )
         children = render_children(node, context, parent: "mj-body")
 
-        %(<div#{html_attrs(div_attributes)}><table role="presentation" align="center" width="#{escape_attr(container_width)}" cellspacing="0" cellpadding="0" border="0" style="#{table_style}"><tbody>#{children}</tbody></table></div>)
+        %(<div#{html_attrs(div_attributes)}>#{children}</div>)
       end
     end
   end

@@ -148,7 +148,7 @@ module MjmlRb
 
       AstNode.new(
         tag_name: element.name,
-        attributes: element.attributes.to_h,
+        attributes: element.attributes.each_with_object({}) { |(name, val), h| h[name] = val },
         children: children,
         line: nil
       )
