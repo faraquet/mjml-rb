@@ -340,6 +340,50 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, "©")
   end
 
+  def test_closing_void_tags_stripped
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Line 1</br>Line 2</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "Line 1")
+    assert_includes(result.html, "Line 2")
+  end
+
+  def test_closing_void_tags_in_included_partial
+    Dir.mktmpdir do |dir|
+      partial = File.join(dir, "partial.mjml")
+      main = File.join(dir, "main.mjml")
+      File.write(partial, "<mj-text><table><tr><td>Terms</br>Conditions</td></tr></table></mj-text>")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./partial.mjml" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, "Terms")
+      assert_includes(result.html, "Conditions")
+    end
+  end
+
   def test_cli_compiles_file_to_output
     Dir.mktmpdir do |dir|
       input = File.join(dir, "email.mjml")

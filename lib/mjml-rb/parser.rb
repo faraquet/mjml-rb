@@ -90,6 +90,11 @@ module MjmlRb
     end
 
     def normalize_html_void_tags(content)
+      # Remove closing tags for void elements (e.g. </br>, </hr>).
+      # These are invalid in both HTML and XML but appear in legacy content.
+      content = content.gsub(/<\/(#{HTML_VOID_TAGS.join("|")})\s*>/i, "")
+
+      # Self-close opening void tags that aren't already self-closed.
       pattern = /<(#{HTML_VOID_TAGS.join("|")})(\s[^<>]*?)?>/i
       content.gsub(pattern) do |tag|
         tag.end_with?("/>") ? tag : tag.sub(/>$/, " />")
