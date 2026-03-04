@@ -53,13 +53,13 @@ module MjmlRb
       ],
       "mj-image" => [],
       "mj-navbar" => ["mj-navbar-link", "mj-raw"],
-      "mj-raw" => [],
+      "mj-raw" => [/^(?!mj-).+/],
       "mj-section" => ["mj-column", "mj-group", "mj-raw"],
       "mj-selector" => ["mj-html-attribute"],
       "mj-social" => ["mj-social-element", "mj-raw"],
       "mj-social-element" => [],
       "mj-spacer" => [],
-      "mj-table" => [],
+      "mj-table" => [/^(?!mj-).+/],
       "mj-text" => [/^(?!mj-).+/],
       "mj-wrapper" => ["mj-hero", "mj-raw", "mj-section"]
     }.freeze

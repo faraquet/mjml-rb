@@ -161,6 +161,47 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, "<strong>World</strong>")
   end
 
+  def test_mj_raw_allows_html_children_in_strict_mode
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-raw><meta name="x-test" content="1" /><style>.x{color:red;}</style></mj-raw>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, '<meta name="x-test" content="1" />')
+    assert_includes(result.html, "<style>.x{color:red;}</style>")
+  end
+
+  def test_mj_table_allows_tr_children_in_strict_mode
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table>
+                <tr><td>A</td></tr>
+                <tr><td>B</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "<tr><td>A</td></tr>")
+    assert_includes(result.html, "<tr><td>B</td></tr>")
+  end
+
   def test_accordion_component_renders
     accordion = <<~MJML
       <mjml>
