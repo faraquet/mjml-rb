@@ -170,15 +170,15 @@ module MjmlRb
       padding = attrs["padding"] || "20px 0"
 
       div_style = style_join(
+        "background-color" => bg_color,
         "margin" => "0px auto",
         "max-width" => container_width
       )
       td_style = style_join(
         "direction" => "ltr",
         "font-size" => "0px",
-        "text-align" => "center",
         "padding" => padding,
-        "background-color" => bg_color
+        "text-align" => "center"
       )
       div_attrs = {"class" => css_class, "style" => div_style}
       inner = render_section_columns(node, context)
@@ -193,12 +193,15 @@ module MjmlRb
       padding = attrs["padding"] || "20px 0"
 
       div_style = style_join(
+        "background-color" => bg_color,
         "margin" => "0px auto",
         "max-width" => container_width
       )
       td_style = style_join(
+        "direction" => "ltr",
+        "font-size" => "0px",
         "padding" => padding,
-        "background-color" => bg_color
+        "text-align" => "center"
       )
       div_attrs = {"class" => css_class, "style" => div_style}
       children = render_children(node, context, parent: "mj-wrapper")
