@@ -279,14 +279,22 @@ module MjmlRb
     end
 
     def render_text(node, attrs)
-      style = style_join(
+      css_class = attrs["css-class"]
+      td_style = style_join(
+        "font-size" => "0px",
+        "padding" => attrs["padding"] || "10px 25px",
+        "word-break" => "break-word"
+      )
+      td_attrs = {"align" => attrs["align"] || "left", "style" => td_style}
+
+      div_style = style_join(
         "font-family" => attrs["font-family"] || "Arial, sans-serif",
         "font-size" => attrs["font-size"] || "13px",
         "line-height" => attrs["line-height"] || "1.5",
-        "color" => attrs["color"] || "#000000",
         "text-align" => attrs["align"],
-        "padding" => attrs["padding"] || "10px 25px"
+        "color" => attrs["color"] || "#000000"
       )
+      div_attrs = {"style" => div_style, "class" => css_class}
 
       content = node.children.map do |child|
         if child.text?
@@ -297,26 +305,30 @@ module MjmlRb
           serialize_node(child)
         end
       end.join
-      %(<tr><td style="#{style}">#{content}</td></tr>)
+      %(<tr><td#{html_attrs(td_attrs)}><div#{html_attrs(div_attrs)}>#{content}</div></td></tr>)
     end
 
     def render_image(attrs)
+      css_class = attrs["css-class"]
       style = style_join(
         "max-width" => "100%",
         "display" => "block",
         "border" => "0"
       )
-      td_style = style_join("padding" => attrs["padding"] || "10px 25px", "text-align" => attrs["align"])
+      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
+      td_attrs = {"align" => attrs["align"] || "center", "class" => css_class, "style" => td_style}
       src = escape_attr(attrs["src"])
       alt = escape_attr(attrs["alt"])
       width = attrs["width"] ? %( width="#{escape_attr(attrs["width"])}") : ""
 
-      %(<tr><td style="#{td_style}"><img src="#{src}" alt="#{alt}" style="#{style}"#{width}></td></tr>)
+      %(<tr><td#{html_attrs(td_attrs)}><img src="#{src}" alt="#{alt}" style="#{style}"#{width}></td></tr>)
     end
 
     def render_button(node, attrs)
+      css_class = attrs["css-class"]
       href = escape_attr(attrs["href"] || "#")
-      td_style = style_join("padding" => attrs["padding"] || "10px 25px", "text-align" => attrs["align"])
+      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
+      td_attrs = {"align" => attrs["align"] || "center", "class" => css_class, "style" => td_style, "vertical-align" => attrs["vertical-align"] || "middle"}
       link_style = style_join(
         "display" => "inline-block",
         "padding" => attrs["inner-padding"] || "12px 24px",
@@ -327,7 +339,7 @@ module MjmlRb
         "font-family" => attrs["font-family"] || "Arial, sans-serif"
       )
       label = escape_html(node.text_content.strip)
-      %(<tr><td style="#{td_style}"><a href="#{href}" style="#{link_style}">#{label}</a></td></tr>)
+      %(<tr><td#{html_attrs(td_attrs)}><a href="#{href}" style="#{link_style}">#{label}</a></td></tr>)
     end
 
     def render_divider(attrs)
