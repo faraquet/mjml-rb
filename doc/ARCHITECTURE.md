@@ -10,17 +10,17 @@ Created a **standalone Ruby implementation** with a **pure Ruby pipeline** (no e
   - `README.md`
   - `bin/mjml`
 - Ruby MJML library entrypoint:
-  - `lib/mjml_rb.rb`
+  - `lib/mjml-rb.rb`
 - Core pipeline (pure Ruby):
-  - `lib/mjml_rb/parser.rb` (XML parse + preprocessors + `mj-include` expansion)
-  - `lib/mjml_rb/ast_node.rb` (AST node model)
-  - `lib/mjml_rb/renderer.rb` (HTML renderer for core MJML components)
-  - `lib/mjml_rb/compiler.rb` (compile flow + validation levels + post-processing)
-  - `lib/mjml_rb/validator.rb` (AST validation)
-  - `lib/mjml_rb/dependencies.rb` (MJML dependency rules adapted from JS preset)
-  - `lib/mjml_rb/migrator.rb` (basic MJML3 -> MJML4 tag migration)
-  - `lib/mjml_rb/result.rb`
-  - `lib/mjml_rb/version.rb`
+  - `lib/mjml-rb/parser.rb` (XML parse + preprocessors + `mj-include` expansion)
+  - `lib/mjml-rb/ast_node.rb` (AST node model)
+  - `lib/mjml-rb/renderer.rb` (HTML renderer for core MJML components)
+  - `lib/mjml-rb/compiler.rb` (compile flow + validation levels + post-processing)
+  - `lib/mjml-rb/validator.rb` (AST validation)
+  - `lib/mjml-rb/dependencies.rb` (MJML dependency rules adapted from JS preset)
+  - `lib/mjml-rb/migrator.rb` (basic MJML3 -> MJML4 tag migration)
+  - `lib/mjml-rb/result.rb`
+  - `lib/mjml-rb/version.rb`
 - Tests:
   - `test/test_compiler.rb`
 
@@ -28,7 +28,7 @@ Created a **standalone Ruby implementation** with a **pure Ruby pipeline** (no e
 - External renderer dependency and runtime usage.
 - Engine abstraction tied to the old renderer wrapper:
   - removed legacy renderer engine implementation
-  - removed `lib/mjml_rb/engines/simple_engine.rb`
+  - removed `lib/mjml-rb/engines/simple_engine.rb`
 
 ## Naming Updates
 - Gem name is `mjml-rb`.

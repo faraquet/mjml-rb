@@ -11,7 +11,7 @@ This directory contains a Ruby-first implementation of the main MJML user-facing
 
 ```bash
 bundle install
-bundle exec ruby -Ilib -e 'require "mjml_rb"; puts MjmlRb.mjml2html("<mjml><mj-body><mj-section><mj-column><mj-text>Hello</mj-text></mj-column></mj-section></mj-body></mjml>")[:html]'
+bundle exec ruby -Ilib -e 'require "mjml-rb"; puts MjmlRb.mjml2html("<mjml><mj-body><mj-section><mj-column><mj-text>Hello</mj-text></mj-column></mj-section></mj-body></mjml>")[:html]'
 ```
 
 ## CLI usage

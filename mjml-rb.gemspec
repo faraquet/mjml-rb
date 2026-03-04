@@ -1,4 +1,4 @@
-require_relative "lib/mjml_rb/version"
+require_relative "lib/mjml-rb/version"
 
 Gem::Specification.new do |spec|
   spec.name = "mjml-rb"
