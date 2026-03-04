@@ -23,7 +23,7 @@ module MjmlRb
       xml = normalize_html_void_tags(xml)
       xml = expand_includes(xml, opts) unless opts[:ignore_includes]
 
-      doc = Document.new(xml)
+      doc = Document.new(sanitize_bare_ampersands(xml))
       element_to_ast(doc.root, keep_comments: opts[:keep_comments])
     rescue ParseException => e
       raise ParseError.new("XML parse error: #{e.message}")
@@ -49,7 +49,7 @@ module MjmlRb
 
     def expand_includes(xml, options)
       xml = normalize_html_void_tags(xml)
-      doc = Document.new(xml)
+      doc = Document.new(sanitize_bare_ampersands(xml))
       includes = XPath.match(doc, "//mj-include")
       return xml if includes.empty?
 
@@ -67,7 +67,7 @@ module MjmlRb
                         normalize_html_void_tags(strip_xml_declaration(include_content))
                       end
 
-        fragment = Document.new("<include-root>#{replacement}</include-root>")
+        fragment = Document.new(sanitize_bare_ampersands("<include-root>#{replacement}</include-root>"))
         parent = include_node.parent
         insert_before = include_node
         fragment.root.children.each do |child|
@@ -98,6 +98,13 @@ module MjmlRb
 
     def escape_cdata(content)
       content.to_s.gsub("]]>", "]]]]><![CDATA[>")
+    end
+
+    # Escape bare "&" that are not part of a valid XML entity reference
+    # (e.g. &amp; &#123; &#x1F;).  This lets REXML parse HTML-ish content
+    # such as "Terms & Conditions" which is common in email templates.
+    def sanitize_bare_ampersands(content)
+      content.gsub(/&(?!(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);)/, "&amp;")
     end
 
     def resolve_include_path(include_path, actual_path, file_path)

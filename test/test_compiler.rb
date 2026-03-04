@@ -277,6 +277,69 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'Default body width')
   end
 
+  def test_bare_ampersand_in_text_content
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Booking Terms & Conditions can be printed from below link:</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "Terms &amp; Conditions")
+  end
+
+  def test_bare_ampersand_in_included_partial
+    Dir.mktmpdir do |dir|
+      partial = File.join(dir, "partial.mjml")
+      main = File.join(dir, "main.mjml")
+      File.write(partial, "<mj-text>Terms & Conditions apply</mj-text>")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./partial.mjml" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, "Terms &amp; Conditions")
+    end
+  end
+
+  def test_existing_entities_not_double_escaped
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Already escaped &amp; correct &#169; symbol</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "&amp;")
+    refute_includes(result.html, "&amp;amp;")
+    # &#169; is decoded by XML parser to © — that's correct
+    assert_includes(result.html, "©")
+  end
+
   def test_cli_compiles_file_to_output
     Dir.mktmpdir do |dir|
       input = File.join(dir, "email.mjml")
