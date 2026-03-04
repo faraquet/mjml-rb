@@ -142,6 +142,25 @@ class MJMLCompilerTest < Minitest::Test
     end
   end
 
+  def test_direct_inline_html_void_tags_in_mj_text_strict_mode
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Hello<br><strong>World</strong></mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "<br />")
+    assert_includes(result.html, "<strong>World</strong>")
+  end
+
   def test_accordion_component_renders
     accordion = <<~MJML
       <mjml>

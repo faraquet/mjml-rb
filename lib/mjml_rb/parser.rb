@@ -20,6 +20,7 @@ module MjmlRb
     def parse(mjml, options = {})
       opts = normalize_options(options)
       xml = apply_preprocessors(mjml.to_s, opts[:preprocessors])
+      xml = normalize_html_void_tags(xml)
       xml = expand_includes(xml, opts) unless opts[:ignore_includes]
 
       doc = Document.new(xml)
@@ -47,6 +48,7 @@ module MjmlRb
     end
 
     def expand_includes(xml, options)
+      xml = normalize_html_void_tags(xml)
       doc = Document.new(xml)
       includes = XPath.match(doc, "//mj-include")
       return xml if includes.empty?
