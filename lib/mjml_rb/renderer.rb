@@ -19,8 +19,10 @@ module MjmlRb
       context = build_context(head, options)
       context[:lang] = options[:lang] || document.attributes["lang"] || "en"
       context[:dir] = options[:dir] || document.attributes["dir"]
+      context[:column_widths] = []
       append_component_head_styles(document, context)
       content = render_node(body, context, parent: "mjml")
+      append_column_width_styles(context)
       build_html_document(content, context)
     end
 
@@ -131,7 +133,7 @@ module MjmlRb
       when "mj-group"
         render_group(node, context)
       when "mj-column"
-        render_column(node, context, attrs)
+        render_column(node, context, attrs, 100)
       when "mj-text"
         render_text(node, attrs)
       when "mj-image"
@@ -208,17 +210,31 @@ module MjmlRb
       columns = node.element_children.select { |e| %w[mj-column mj-group].include?(e.tag_name) }
       return render_children(node, context, parent: "mj-section") if columns.empty?
 
-      columns.map { |col| render_node(col, context, parent: "mj-section") }.join("\n")
+      widths = compute_column_widths(columns, context)
+      columns.each_with_index.map do |col, i|
+        attrs = resolved_attributes(col, context)
+        if col.tag_name == "mj-group"
+          render_group(col, context, widths[i])
+        else
+          render_column(col, context, attrs, widths[i])
+        end
+      end.join("\n")
     end
 
-    def render_group(node, context)
+    def render_group(node, context, width_pct = 100)
       items = node.element_children.select { |e| e.tag_name == "mj-column" }
-      items.map { |item| render_node(item, context, parent: "mj-group") }.join("\n")
+      widths = compute_column_widths(items, context)
+      items.each_with_index.map do |item, i|
+        attrs = resolved_attributes(item, context)
+        render_column(item, context, attrs, widths[i])
+      end.join("\n")
     end
 
-    def render_column(node, context, attrs)
+    def render_column(node, context, attrs, width_pct = 100)
       css_class = attrs["css-class"]
-      col_class = "mj-column-per-100 mj-outlook-group-fix"
+      pct_rounded = width_pct.to_f.round(4).to_s.sub(/\.?0+$/, "")
+      context[:column_widths] << pct_rounded if context[:column_widths]
+      col_class = "mj-column-per-#{pct_rounded} mj-outlook-group-fix"
       col_class = "#{col_class} #{css_class}" if css_class && !css_class.empty?
 
       col_style = style_join(
@@ -226,12 +242,40 @@ module MjmlRb
         "text-align" => "left",
         "direction" => "ltr",
         "display" => "inline-block",
-        "vertical-align" => "top",
+        "vertical-align" => attrs["vertical-align"] || "top",
         "width" => "100%"
       )
       children = render_children(node, context, parent: "mj-column")
 
       %(<div class="#{escape_attr(col_class)}" style="#{col_style}"><table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;"><tbody>#{children}</tbody></table></div>)
+    end
+
+    def compute_column_widths(columns, context)
+      total = columns.size
+      return [100] if total == 0
+
+      widths = columns.map do |col|
+        w = col.attributes["width"]
+        if w && w.to_s =~ /(\d+(?:\.\d+)?)\s*%/
+          $1.to_f
+        elsif w && w.to_s =~ /(\d+(?:\.\d+)?)\s*px/
+          container = (context[:container_width] || "600px").to_f
+          container > 0 ? ($1.to_f / container * 100) : nil
+        else
+          nil
+        end
+      end
+
+      specified = widths.compact.sum
+      unset_count = widths.count(&:nil?)
+
+      if unset_count > 0
+        remaining = [100 - specified, 0].max
+        each_unset = remaining / unset_count
+        widths.map { |w| w || each_unset }
+      else
+        widths
+      end
     end
 
     def render_text(node, attrs)
@@ -347,6 +391,16 @@ module MjmlRb
       return %(<td>#{content}</td>) if parent == "mj-navbar"
 
       content
+    end
+
+    def append_column_width_styles(context)
+      widths = (context[:column_widths] || []).uniq.sort
+      return if widths.empty?
+
+      css = widths.map do |w|
+        ".mj-column-per-#{w} { width:#{w}% !important; max-width: #{w}%; }"
+      end.join("\n")
+      context[:head_styles] << css
     end
 
     def append_component_head_styles(document, context)
