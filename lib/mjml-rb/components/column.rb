@@ -61,9 +61,9 @@ module MjmlRb
 
         column_markup =
           if gutter?(a)
-            render_gutter(node, context, a, vertical_align)
+            render_gutter(node, context, a, vertical_align, width_pct)
           else
-            render_column(node, context, a, vertical_align, inside_gutter: false)
+            render_column(node, context, a, vertical_align, width_pct, inside_gutter: false)
           end
 
         %(<div class="#{escape_attr(col_class)}" style="#{col_style}">#{column_markup}</div>)
@@ -75,7 +75,7 @@ module MjmlRb
         GUTTER_ATTRIBUTES.any? { |name| attrs[name] && !attrs[name].empty? }
       end
 
-      def render_gutter(node, context, attrs, vertical_align)
+      def render_gutter(node, context, attrs, vertical_align, width_pct)
         table_attrs = {
           "border" => "0",
           "cellpadding" => "0",
@@ -88,10 +88,10 @@ module MjmlRb
           "style" => style_join(table_style(attrs, vertical_align).merge(gutter_style(attrs, vertical_align)))
         }
 
-        %(<table#{html_attrs(table_attrs)}><tbody><tr><td#{html_attrs(td_attrs)}>#{render_column(node, context, attrs, vertical_align, inside_gutter: true)}</td></tr></tbody></table>)
+        %(<table#{html_attrs(table_attrs)}><tbody><tr><td#{html_attrs(td_attrs)}>#{render_column(node, context, attrs, vertical_align, width_pct, inside_gutter: true)}</td></tr></tbody></table>)
       end
 
-      def render_column(node, context, attrs, vertical_align, inside_gutter:)
+      def render_column(node, context, attrs, vertical_align, width_pct, inside_gutter:)
         table_attrs = {
           "border" => "0",
           "cellpadding" => "0",
@@ -103,7 +103,9 @@ module MjmlRb
         styles = inside_gutter ? inner_table_style(attrs) : table_style(attrs, vertical_align)
         table_attrs["style"] = style_join(styles) if styles.any?
 
-        children = render_children(node, context, parent: "mj-column")
+        children = with_child_container_width(context, attrs, width_pct, inside_gutter: inside_gutter) do
+          render_children(node, context, parent: "mj-column")
+        end
         %(<table#{html_attrs(table_attrs)}><tbody>#{children}</tbody></table>)
       end
 
@@ -157,6 +159,76 @@ module MjmlRb
 
       def present_attr?(value)
         value && !value.empty?
+      end
+
+      def with_child_container_width(context, attrs, width_pct, inside_gutter:)
+        previous_container_width = context[:container_width]
+        context[:container_width] = child_container_width(context, attrs, width_pct, inside_gutter: inside_gutter)
+        yield
+      ensure
+        context[:container_width] = previous_container_width
+      end
+
+      def child_container_width(context, attrs, width_pct, inside_gutter:)
+        parent_width = parse_pixel_value(context[:container_width] || "600px")
+        raw_width = parent_width * width_pct / 100.0
+
+        box_width = if inside_gutter
+                      raw_width - horizontal_border_width(attrs, "inner-border")
+                    else
+                      raw_width - horizontal_padding_width(attrs) - horizontal_border_width(attrs, "border") - horizontal_border_width(attrs, "inner-border")
+                    end
+
+        "#{[box_width, 0].max}px"
+      end
+
+      def horizontal_padding_width(attrs)
+        padding_value(attrs, "left") + padding_value(attrs, "right")
+      end
+
+      def padding_value(attrs, side)
+        specific_padding = attrs["padding-#{side}"]
+        return parse_pixel_value(specific_padding) if present_attr?(specific_padding)
+
+        shorthand_padding_value(attrs["padding"], side)
+      end
+
+      def shorthand_padding_value(value, side)
+        return 0.0 unless present_attr?(value)
+
+        parts = value.split(/\s+/)
+        case parts.length
+        when 1
+          parse_pixel_value(parts[0])
+        when 2
+          side == "left" || side == "right" ? parse_pixel_value(parts[1]) : parse_pixel_value(parts[0])
+        when 3
+          side == "left" || side == "right" ? parse_pixel_value(parts[1]) : parse_pixel_value(side == "top" ? parts[0] : parts[2])
+        when 4
+          parse_pixel_value(parts[side == "left" ? 3 : 1])
+        else
+          0.0
+        end
+      end
+
+      def horizontal_border_width(attrs, attribute_prefix)
+        border_width(attrs["#{attribute_prefix}-left"] || attrs[attribute_prefix]) +
+          border_width(attrs["#{attribute_prefix}-right"] || attrs[attribute_prefix])
+      end
+
+      def border_width(value)
+        return 0.0 unless present_attr?(value)
+        return 0.0 if value.strip == "none"
+
+        matched = value.match(/(-?\d+(?:\.\d+)?)px/)
+        matched ? matched[1].to_f : 0.0
+      end
+
+      def parse_pixel_value(value)
+        return 0.0 unless present_attr?(value)
+
+        matched = value.to_s.match(/(-?\d+(?:\.\d+)?)/)
+        matched ? matched[1].to_f : 0.0
       end
     end
   end

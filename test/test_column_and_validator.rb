@@ -89,6 +89,27 @@ class MJMLColumnAndValidatorTest < Minitest::Test
     assert_includes(result.html, 'border-collapse:separate')
   end
 
+  def test_image_inside_half_width_column_uses_column_container_width
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column width="50%" padding="0">
+              <mj-image src="https://example.com/photo.jpg" alt="Photo" />
+            </mj-column>
+            <mj-column width="50%" padding="0">
+              <mj-text>Right</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, 'width="250"')
+    refute_includes(result.html, 'width="550"')
+  end
+
   def test_column_exposes_allowed_and_default_attributes
     assert_equal("color", MjmlRb::Components::Column.allowed_attributes["background-color"])
     assert_equal("enum(ltr,rtl)", MjmlRb::Components::Column.allowed_attributes["direction"])
