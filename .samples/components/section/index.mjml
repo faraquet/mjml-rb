@@ -1,0 +1,58 @@
+<mjml>
+  <mj-body>
+
+    <!-- 1: default section (no background, one column) -->
+    <mj-section>
+      <mj-column>
+        <mj-text>Single column default</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- 2: section with background-color, custom padding, text-align left -->
+    <mj-section background-color="#fafafa" padding="30px 20px" text-align="left">
+      <mj-column>
+        <mj-text>Section with background</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- 3: two-column section (50/50) -->
+    <mj-section>
+      <mj-column>
+        <mj-text>Left column</mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text>Right column</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- 4: three-column section -->
+    <mj-section>
+      <mj-column>
+        <mj-text>Col 1</mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text>Col 2</mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text>Col 3</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- 5: section with css-class and border -->
+    <mj-section css-class="hero-section" border="1px solid #dddddd">
+      <mj-column>
+        <mj-text>With class and border</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- 6: mj-wrapper -->
+    <mj-wrapper background-color="#eeeeee" padding="10px 0">
+      <mj-section>
+        <mj-column>
+          <mj-text>Inside wrapper</mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+
+  </mj-body>
+</mjml>

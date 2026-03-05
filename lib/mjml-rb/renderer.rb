@@ -7,6 +7,7 @@ require_relative "components/text"
 require_relative "components/divider"
 require_relative "components/table"
 require_relative "components/social"
+require_relative "components/section"
 
 module MjmlRb
   class Renderer
@@ -25,7 +26,7 @@ module MjmlRb
       context = build_context(head, options)
       context[:lang] = options[:lang] || document.attributes["lang"] || "en"
       context[:dir] = options[:dir] || document.attributes["dir"]
-      context[:column_widths] = []
+      context[:column_widths] = {}
       append_component_head_styles(document, context)
       content = render_node(body, context, parent: "mjml")
       append_column_width_styles(context)
@@ -132,10 +133,6 @@ module MjmlRb
       end
 
       case node.tag_name
-      when "mj-wrapper"
-        render_wrapper_element(node, context, attrs)
-      when "mj-section"
-        render_section_element(node, context, attrs)
       when "mj-group"
         render_group(node, context)
       when "mj-column"
@@ -155,73 +152,6 @@ module MjmlRb
       end
     end
 
-    def render_section_element(node, context, attrs)
-      container_width = context[:container_width] || "600px"
-      css_class = attrs["css-class"]
-      bg_color = attrs["background-color"]
-      padding = attrs["padding"] || "20px 0"
-
-      div_style = style_join(
-        "margin" => "0px auto",
-        "max-width" => container_width
-      )
-      td_style = style_join(
-        "direction" => "ltr",
-        "font-size" => "0px",
-        "padding" => padding,
-        "padding-top" => attrs["padding-top"],
-        "padding-bottom" => attrs["padding-bottom"],
-        "padding-left" => attrs["padding-left"],
-        "padding-right" => attrs["padding-right"],
-        "text-align" => "center",
-        "background-color" => bg_color
-      )
-      td_attrs = {"style" => td_style, "align" => "center"}
-      td_attrs["bgcolor"] = bg_color if bg_color
-      div_attrs = {"class" => css_class, "style" => div_style}
-      inner = render_section_columns(node, context)
-
-      %(<div#{html_attrs(div_attrs)}><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;" width="100%"><tbody><tr><td#{html_attrs(td_attrs)}>#{inner}</td></tr></tbody></table></div>)
-    end
-
-    def render_wrapper_element(node, context, attrs)
-      container_width = context[:container_width] || "600px"
-      css_class = attrs["css-class"]
-      bg_color = attrs["background-color"]
-      padding = attrs["padding"] || "20px 0"
-
-      div_style = style_join(
-        "background-color" => bg_color,
-        "margin" => "0px auto",
-        "max-width" => container_width
-      )
-      td_style = style_join(
-        "direction" => "ltr",
-        "font-size" => "0px",
-        "padding" => padding,
-        "text-align" => "center"
-      )
-      div_attrs = {"class" => css_class, "style" => div_style}
-      children = render_children(node, context, parent: "mj-wrapper")
-
-      %(<div#{html_attrs(div_attrs)}><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;" width="100%"><tbody><tr><td style="#{td_style}">#{children}</td></tr></tbody></table></div>)
-    end
-
-    def render_section_columns(node, context)
-      columns = node.element_children.select { |e| %w[mj-column mj-group].include?(e.tag_name) }
-      return render_children(node, context, parent: "mj-section") if columns.empty?
-
-      widths = compute_column_widths(columns, context)
-      columns.each_with_index.map do |col, i|
-        attrs = resolved_attributes(col, context)
-        if col.tag_name == "mj-group"
-          render_group(col, context, widths[i])
-        else
-          render_column(col, context, attrs, widths[i])
-        end
-      end.join("\n")
-    end
-
     def render_group(node, context, width_pct = 100)
       items = node.element_children.select { |e| e.tag_name == "mj-column" }
       widths = compute_column_widths(items, context)
@@ -233,22 +163,27 @@ module MjmlRb
 
     def render_column(node, context, attrs, width_pct = 100)
       css_class = attrs["css-class"]
-      pct_rounded = width_pct.to_f.round(4).to_s.sub(/\.?0+$/, "")
-      context[:column_widths] << pct_rounded if context[:column_widths]
-      col_class = "mj-column-per-#{pct_rounded} mj-outlook-group-fix"
+      # Use Ruby's shortest float representation, replacing "." with "-" for the class suffix
+      pct_str          = width_pct.to_f.to_s.sub(/\.?0+$/, "")
+      col_class_suffix = pct_str.gsub(".", "-")
+      if context[:column_widths]
+        context[:column_widths][col_class_suffix] = pct_str
+      end
+      col_class = "mj-column-per-#{col_class_suffix} mj-outlook-group-fix"
       col_class = "#{col_class} #{css_class}" if css_class && !css_class.empty?
 
+      v_align = attrs["vertical-align"] || "top"
       col_style = style_join(
-        "font-size" => "0px",
-        "text-align" => "left",
-        "direction" => "ltr",
-        "display" => "inline-block",
-        "vertical-align" => attrs["vertical-align"] || "top",
-        "width" => "100%"
+        "font-size"      => "0px",
+        "text-align"     => "left",
+        "direction"      => "ltr",
+        "display"        => "inline-block",
+        "vertical-align" => v_align,
+        "width"          => "100%"
       )
       children = render_children(node, context, parent: "mj-column")
 
-      %(<div class="#{escape_attr(col_class)}" style="#{col_style}"><table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="width:100%;"><tbody>#{children}</tbody></table></div>)
+      %(<div class="#{escape_attr(col_class)}" style="#{col_style}"><table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:#{escape_attr(v_align)};" width="100%"><tbody>#{children}</tbody></table></div>)
     end
 
     def compute_column_widths(columns, context)
@@ -271,7 +206,7 @@ module MjmlRb
       unset_count = widths.count(&:nil?)
 
       if unset_count > 0
-        remaining = [100 - specified, 0].max
+        remaining = [100.0 - specified, 0.0].max
         each_unset = remaining / unset_count
         widths.map { |w| w || each_unset }
       else
@@ -316,13 +251,19 @@ module MjmlRb
     end
 
     def append_column_width_styles(context)
-      widths = (context[:column_widths] || []).uniq.sort
+      widths = context[:column_widths] || {}
       return if widths.empty?
 
-      css = widths.map do |w|
-        ".mj-column-per-#{w} { width:#{w}% !important; max-width: #{w}%; }"
+      css = widths.map do |suffix, pct|
+        ".mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
       end.join("\n")
       context[:head_styles] << css
+    end
+
+    def merge_outlook_conditionals(html)
+      # MJML post-processes the HTML to merge adjacent Outlook conditional comments.
+      # e.g. <![endif]-->\n<!--[if mso | IE]> become a single conditional block.
+      html.gsub(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, "")
     end
 
     def append_component_head_styles(document, context)
@@ -359,6 +300,7 @@ module MjmlRb
         register_component(registry, Components::Divider.new(self))
         register_component(registry, Components::Table.new(self))
         register_component(registry, Components::Social.new(self))
+        register_component(registry, Components::Section.new(self))
         registry
       end
     end

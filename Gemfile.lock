@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mjml-rb (0.1.21)
+    mjml-rb (0.1.22)
       rexml
 
 GEM
@@ -17,7 +17,7 @@ DEPENDENCIES
   mjml-rb!
 
 CHECKSUMS
-  mjml-rb (0.1.21)
+  mjml-rb (0.1.22)
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
 
 BUNDLED WITH
