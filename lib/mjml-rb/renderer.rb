@@ -6,6 +6,7 @@ require_relative "components/image"
 require_relative "components/text"
 require_relative "components/divider"
 require_relative "components/table"
+require_relative "components/social"
 
 module MjmlRb
   class Renderer
@@ -145,10 +146,6 @@ module MjmlRb
         raw_inner(node)
       when "mj-hero"
         render_hero(node, context, attrs)
-      when "mj-social"
-        render_social(node, context, attrs)
-      when "mj-social-element"
-        render_social_element(node, attrs)
       when "mj-navbar"
         render_navbar(node, context, attrs)
       when "mj-navbar-link"
@@ -296,21 +293,6 @@ module MjmlRb
       %(<tr><td style="padding:#{escape_attr(attrs["padding"] || "0")};#{background}">#{section}</td></tr>)
     end
 
-    def render_social(node, context, attrs)
-      align = attrs["align"] || "left"
-      items = node.element_children.select { |child| child.tag_name == "mj-social-element" }
-      content = items.map { |item| render_node(item, context, parent: "mj-social") }.join
-      %(<tr><td style="padding:#{escape_attr(attrs["padding"] || "10px 25px")};text-align:#{escape_attr(align)};"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tbody><tr>#{content}</tr></tbody></table></td></tr>)
-    end
-
-    def render_social_element(node, attrs)
-      href = escape_attr(attrs["href"] || "#")
-      name = node.attributes["name"] || "social"
-      label = node.text_content.strip
-      label = name.capitalize if label.empty?
-      %(<td style="padding-right:10px;"><a href="#{href}" style="text-decoration:none;color:#{escape_attr(attrs["color"] || "#000000")};">#{escape_html(label)}</a></td>)
-    end
-
     def render_navbar(node, context, attrs)
       align = attrs["align"] || "center"
       links = node.element_children.select { |child| child.tag_name == "mj-navbar-link" }
@@ -376,6 +358,7 @@ module MjmlRb
         register_component(registry, Components::Text.new(self))
         register_component(registry, Components::Divider.new(self))
         register_component(registry, Components::Table.new(self))
+        register_component(registry, Components::Social.new(self))
         registry
       end
     end

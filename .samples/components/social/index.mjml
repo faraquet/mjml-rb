@@ -1,0 +1,49 @@
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+
+        <!-- Horizontal (default) with named networks -->
+        <mj-social font-size="15px" icon-size="30px" mode="horizontal">
+          <mj-social-element name="facebook" href="https://facebook.com">
+            Facebook
+          </mj-social-element>
+          <mj-social-element name="twitter" href="https://twitter.com">
+            Twitter
+          </mj-social-element>
+          <mj-social-element name="linkedin" href="https://linkedin.com">
+            LinkedIn
+          </mj-social-element>
+        </mj-social>
+
+        <!-- Vertical mode -->
+        <mj-social mode="vertical" align="left">
+          <mj-social-element name="github" href="https://github.com">
+            GitHub
+          </mj-social-element>
+          <mj-social-element name="instagram">
+            Instagram
+          </mj-social-element>
+        </mj-social>
+
+        <!-- Custom icon (no named network), no href (no link) -->
+        <mj-social>
+          <mj-social-element
+            src="https://example.com/icon.png"
+            background-color="#ff5733"
+            color="#ffffff"
+            font-size="12px"
+          >
+            Custom
+          </mj-social-element>
+        </mj-social>
+
+        <!-- No text content (icon only) -->
+        <mj-social>
+          <mj-social-element name="youtube" href="https://youtube.com" />
+        </mj-social>
+
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
