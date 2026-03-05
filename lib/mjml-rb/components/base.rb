@@ -29,6 +29,17 @@ module MjmlRb
         renderer.send(:raw_inner, node)
       end
 
+      # Like raw_inner but HTML-escapes text nodes. Use for components such as
+      # mj-text where the inner content is treated as HTML but bare text must
+      # be properly encoded (e.g. & → &amp;).
+      def html_inner(node)
+        renderer.send(:html_inner, node)
+      end
+
+      def escape_html(value)
+        renderer.send(:escape_html, value)
+      end
+
       def style_join(hash)
         renderer.send(:style_join, hash)
       end

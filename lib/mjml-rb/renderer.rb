@@ -3,6 +3,7 @@ require_relative "components/accordion"
 require_relative "components/body"
 require_relative "components/button"
 require_relative "components/image"
+require_relative "components/text"
 
 module MjmlRb
   class Renderer
@@ -136,8 +137,6 @@ module MjmlRb
         render_group(node, context)
       when "mj-column"
         render_column(node, context, attrs, 100)
-      when "mj-text"
-        render_text(node, attrs)
       when "mj-divider"
         render_divider(attrs)
       when "mj-spacer"
@@ -285,34 +284,6 @@ module MjmlRb
       end
     end
 
-    def render_text(node, attrs)
-      css_class = attrs["css-class"]
-      td_style = style_join(
-        "font-size" => "0px",
-        "padding" => attrs["padding"] || "10px 25px",
-        "word-break" => "break-word"
-      )
-      td_attrs = {"align" => attrs["align"] || "left", "class" => css_class, "style" => td_style}
-
-      div_style = style_join(
-        "font-family" => attrs["font-family"] || "Arial, sans-serif",
-        "font-size" => attrs["font-size"] || "13px",
-        "line-height" => attrs["line-height"] || "1.5",
-        "text-align" => attrs["align"],
-        "color" => attrs["color"] || "#000000"
-      )
-
-      content = node.children.map do |child|
-        if child.text?
-          escape_html(child.content.to_s)
-        elsif child.comment?
-          "<!--#{child.content}-->"
-        else
-          serialize_node(child)
-        end
-      end.join
-      %(<tr><td#{html_attrs(td_attrs)}><div style="#{div_style}">#{content}</div></td></tr>)
-    end
 
     def render_divider(attrs)
       css_class = attrs["css-class"]
@@ -423,6 +394,7 @@ module MjmlRb
         register_component(registry, Components::Accordion.new(self))
         register_component(registry, Components::Button.new(self))
         register_component(registry, Components::Image.new(self))
+        register_component(registry, Components::Text.new(self))
         registry
       end
     end
@@ -443,6 +415,22 @@ module MjmlRb
 
       attrs.merge!(node.attributes)
       attrs
+    end
+
+    def html_inner(node)
+      if node.respond_to?(:children)
+        node.children.map do |child|
+          if child.text?
+            escape_html(child.content.to_s)
+          elsif child.comment?
+            "<!--#{child.content}-->"
+          else
+            serialize_node(child)
+          end
+        end.join
+      else
+        escape_html(node.text_content)
+      end
     end
 
     def raw_inner(node)
