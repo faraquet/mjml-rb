@@ -8,6 +8,7 @@ require_relative "components/divider"
 require_relative "components/table"
 require_relative "components/social"
 require_relative "components/section"
+require_relative "components/column"
 
 module MjmlRb
   class Renderer
@@ -135,8 +136,6 @@ module MjmlRb
       case node.tag_name
       when "mj-group"
         render_group(node, context)
-      when "mj-column"
-        render_column(node, context, attrs, 100)
       when "mj-spacer"
         render_spacer(attrs)
       when "mj-raw"
@@ -156,34 +155,9 @@ module MjmlRb
       items = node.element_children.select { |e| e.tag_name == "mj-column" }
       widths = compute_column_widths(items, context)
       items.each_with_index.map do |item, i|
-        attrs = resolved_attributes(item, context)
-        render_column(item, context, attrs, widths[i])
+        context[:_column_width_pct] = widths[i]
+        render_node(item, context, parent: "mj-group")
       end.join("\n")
-    end
-
-    def render_column(node, context, attrs, width_pct = 100)
-      css_class = attrs["css-class"]
-      # Use Ruby's shortest float representation, replacing "." with "-" for the class suffix
-      pct_str          = width_pct.to_f.to_s.sub(/\.?0+$/, "")
-      col_class_suffix = pct_str.gsub(".", "-")
-      if context[:column_widths]
-        context[:column_widths][col_class_suffix] = pct_str
-      end
-      col_class = "mj-column-per-#{col_class_suffix} mj-outlook-group-fix"
-      col_class = "#{col_class} #{css_class}" if css_class && !css_class.empty?
-
-      v_align = attrs["vertical-align"] || "top"
-      col_style = style_join(
-        "font-size"      => "0px",
-        "text-align"     => "left",
-        "direction"      => "ltr",
-        "display"        => "inline-block",
-        "vertical-align" => v_align,
-        "width"          => "100%"
-      )
-      children = render_children(node, context, parent: "mj-column")
-
-      %(<div class="#{escape_attr(col_class)}" style="#{col_style}"><table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:#{escape_attr(v_align)};" width="100%"><tbody>#{children}</tbody></table></div>)
     end
 
     def compute_column_widths(columns, context)
@@ -301,6 +275,7 @@ module MjmlRb
         register_component(registry, Components::Table.new(self))
         register_component(registry, Components::Social.new(self))
         register_component(registry, Components::Section.new(self))
+        register_component(registry, Components::Column.new(self))
         registry
       end
     end

@@ -185,7 +185,8 @@ module MjmlRb
           col_html = if col.tag_name == "mj-group"
                        renderer.send(:render_group, col, context, widths[i])
                      else
-                       renderer.send(:render_column, col, context, col_attrs, widths[i])
+                       context[:_column_width_pct] = widths[i]
+                       render_node(col, context, parent: "mj-section")
                      end
 
           "#{td_open}\n#{col_html}\n#{td_close}"
