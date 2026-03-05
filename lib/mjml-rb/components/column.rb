@@ -5,42 +5,68 @@ module MjmlRb
     class Column < Base
       TAGS = %w[mj-column].freeze
 
-      def tags
-        TAGS
-      end
+      ALLOWED_ATTRIBUTES = {
+        "background-color" => "color",
+        "border" => "string",
+        "border-bottom" => "string",
+        "border-left" => "string",
+        "border-radius" => "unit(px,%){1,4}",
+        "border-right" => "string",
+        "border-top" => "string",
+        "direction" => "enum(ltr,rtl)",
+        "inner-background-color" => "color",
+        "inner-border" => "string",
+        "inner-border-bottom" => "string",
+        "inner-border-left" => "string",
+        "inner-border-radius" => "unit(px,%){1,4}",
+        "inner-border-right" => "string",
+        "inner-border-top" => "string",
+        "padding" => "unit(px,%){1,4}",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "vertical-align" => "enum(top,bottom,middle)",
+        "width" => "unit(px,%)"
+      }.freeze
+
+      DEFAULT_ATTRIBUTES = {
+        "direction" => "ltr",
+        "vertical-align" => "top"
+      }.freeze
 
       GUTTER_ATTRIBUTES = %w[padding padding-top padding-right padding-bottom padding-left].freeze
 
       def render(tag_name:, node:, context:, attrs:, parent:)
         width_pct = context.delete(:_column_width_pct) || 100.0
         css_class = attrs["css-class"]
+        a = self.class.default_attributes.merge(attrs)
 
-        pct_str = width_pct.to_f.to_s.sub(/\.?0+$/, "")
+        pct_str          = width_pct.to_f.to_s.sub(/\.?0+$/, "")
         col_class_suffix = pct_str.gsub(".", "-")
         context[:column_widths][col_class_suffix] = pct_str if context[:column_widths]
 
         col_class = "mj-column-per-#{col_class_suffix} mj-outlook-group-fix"
         col_class = "#{col_class} #{css_class}" if css_class && !css_class.empty?
 
-        vertical_align = attrs["vertical-align"] || "top"
-        column_direction = attrs["direction"] || "ltr"
+        vertical_align = a["vertical-align"]
         col_style = style_join(
           "font-size" => "0px",
           "text-align" => "left",
-          "direction" => column_direction,
+          "direction" => a["direction"],
           "display" => "inline-block",
           "vertical-align" => vertical_align,
           "width" => "100%"
         )
 
-        content =
-          if gutter?(attrs)
-            render_gutter(node, context, attrs, vertical_align)
+        column_markup =
+          if gutter?(a)
+            render_gutter(node, context, a, vertical_align)
           else
-            render_column(node, context, attrs, vertical_align, inside_gutter: false)
+            render_column(node, context, a, vertical_align, inside_gutter: false)
           end
 
-        %(<div class="#{escape_attr(col_class)}" style="#{col_style}">#{content}</div>)
+        %(<div class="#{escape_attr(col_class)}" style="#{col_style}">#{column_markup}</div>)
       end
 
       private
@@ -58,12 +84,8 @@ module MjmlRb
           "width" => "100%",
           "style" => (has_border_radius?(attrs) ? "border-collapse:separate" : nil)
         }
-
         td_attrs = {
-          "style" => style_join(
-            table_style(attrs, vertical_align),
-            gutter_style(attrs, vertical_align)
-          )
+          "style" => style_join(table_style(attrs, vertical_align).merge(gutter_style(attrs, vertical_align)))
         }
 
         %(<table#{html_attrs(table_attrs)}><tbody><tr><td#{html_attrs(td_attrs)}>#{render_column(node, context, attrs, vertical_align, inside_gutter: true)}</td></tr></tbody></table>)
@@ -78,13 +100,8 @@ module MjmlRb
           "width" => "100%"
         }
 
-        table_style_hash =
-          if inside_gutter
-            inner_table_style(attrs)
-          else
-            table_style(attrs, vertical_align)
-          end
-        table_attrs["style"] = style_join(table_style_hash) if table_style_hash.any?
+        styles = inside_gutter ? inner_table_style(attrs) : table_style(attrs, vertical_align)
+        table_attrs["style"] = style_join(styles) if styles.any?
 
         children = render_children(node, context, parent: "mj-column")
         %(<table#{html_attrs(table_attrs)}><tbody>#{children}</tbody></table>)
@@ -140,10 +157,6 @@ module MjmlRb
 
       def present_attr?(value)
         value && !value.empty?
-      end
-
-      def style_join(*hashes)
-        super(hashes.reduce({}, :merge))
       end
     end
   end

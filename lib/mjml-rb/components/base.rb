@@ -1,12 +1,32 @@
 module MjmlRb
   module Components
     class Base
+      class << self
+        def tags
+          const_defined?(:TAGS) ? const_get(:TAGS) : []
+        end
+
+        def allowed_attributes
+          const_defined?(:ALLOWED_ATTRIBUTES) ? const_get(:ALLOWED_ATTRIBUTES) : {}
+        end
+
+        def default_attributes
+          if const_defined?(:DEFAULT_ATTRIBUTES)
+            const_get(:DEFAULT_ATTRIBUTES)
+          elsif const_defined?(:DEFAULTS)
+            const_get(:DEFAULTS)
+          else
+            {}
+          end
+        end
+      end
+
       def initialize(renderer)
         @renderer = renderer
       end
 
       def tags
-        []
+        self.class.tags
       end
 
       private
@@ -31,7 +51,7 @@ module MjmlRb
 
       # Like raw_inner but HTML-escapes text nodes. Use for components such as
       # mj-text where the inner content is treated as HTML but bare text must
-      # be properly encoded (e.g. & → &amp;).
+      # be properly encoded (e.g. & -> &amp;).
       def html_inner(node)
         renderer.send(:html_inner, node)
       end

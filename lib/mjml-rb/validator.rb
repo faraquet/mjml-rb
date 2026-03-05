@@ -3,6 +3,8 @@ require_relative "parser"
 
 module MjmlRb
   class Validator
+    GLOBAL_ALLOWED_ATTRIBUTES = %w[css-class mj-class].freeze
+
     REQUIRED_BY_TAG = {
       "mj-image" => %w[src],
       "mj-font" => %w[name href],
@@ -43,6 +45,8 @@ module MjmlRb
 
       validate_allowed_children(node, errors)
       validate_required_attributes(node, errors)
+      validate_supported_attributes(node, errors)
+      validate_attribute_types(node, errors)
 
       node.element_children.each { |child| walk(child, errors) }
     end
@@ -67,6 +71,92 @@ module MjmlRb
         next if node.attributes.key?(attr)
 
         errors << error("Attribute `#{attr}` is required for <#{node.tag_name}>", tag_name: node.tag_name)
+      end
+    end
+
+    def validate_supported_attributes(node, errors)
+      allowed_attributes = allowed_attributes_for(node.tag_name)
+      return if allowed_attributes.empty?
+
+      node.attributes.each_key do |attribute_name|
+        next if allowed_attributes.key?(attribute_name)
+        next if GLOBAL_ALLOWED_ATTRIBUTES.include?(attribute_name)
+
+        errors << error("Attribute `#{attribute_name}` is not allowed for <#{node.tag_name}>", tag_name: node.tag_name)
+      end
+    end
+
+    def validate_attribute_types(node, errors)
+      allowed_attributes = allowed_attributes_for(node.tag_name)
+      return if allowed_attributes.empty?
+
+      node.attributes.each do |attribute_name, attribute_value|
+        next if GLOBAL_ALLOWED_ATTRIBUTES.include?(attribute_name)
+
+        expected_type = allowed_attributes[attribute_name]
+        next unless expected_type
+        next if valid_attribute_value?(attribute_value, expected_type)
+
+        errors << error(
+          "Attribute `#{attribute_name}` on <#{node.tag_name}> has invalid value `#{attribute_value}` for type `#{expected_type}`",
+          tag_name: node.tag_name
+        )
+      end
+    end
+
+    def allowed_attributes_for(tag_name)
+      component_class = component_class_for_tag(tag_name)
+      component_class ? component_class.allowed_attributes : {}
+    end
+
+    def component_class_for_tag(tag_name)
+      MjmlRb::Components.constants.filter_map do |name|
+        value = MjmlRb::Components.const_get(name)
+        value if value.is_a?(Class) && value < MjmlRb::Components::Base
+      rescue NameError
+        nil
+      end.find { |klass| klass.tags.include?(tag_name) }
+    end
+
+    def valid_attribute_value?(value, expected_type)
+      return true if value.nil?
+
+      case expected_type
+      when "string"
+        true
+      when "color"
+        color?(value)
+      when /\Aenum\((.+)\)\z/
+        Regexp.last_match(1).split(",").map(&:strip).include?(value)
+      when /\Aunit\((.+)\)(?:\{(\d+),(\d+)\})?\z/
+        units = Regexp.last_match(1).split(",").map(&:strip)
+        min_count = Regexp.last_match(2)&.to_i || 1
+        max_count = Regexp.last_match(3)&.to_i || 1
+        unit_values?(value, units, min_count: min_count, max_count: max_count)
+      else
+        true
+      end
+    end
+
+    def color?(value)
+      value.match?(/\A#[0-9a-fA-F]{3,8}\z/) ||
+        value.match?(/\Argb[a]?\([^)]+\)\z/i) ||
+        value.match?(/\Ahsl[a]?\([^)]+\)\z/i) ||
+        value.match?(/\A[a-z]+\z/i)
+    end
+
+    def unit_values?(value, units, min_count:, max_count:)
+      parts = value.to_s.strip.split(/\s+/)
+      return false if parts.empty? || parts.size < min_count || parts.size > max_count
+
+      parts.all? { |part| unit_value?(part, units) }
+    end
+
+    def unit_value?(value, units)
+      return true if value.match?(/\A0(?:\.0+)?\z/)
+
+      units.any? do |unit|
+        value.match?(/\A-?\d+(?:\.\d+)?#{Regexp.escape(unit)}\z/)
       end
     end
 
