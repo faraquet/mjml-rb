@@ -2,6 +2,7 @@ require "cgi"
 require_relative "components/accordion"
 require_relative "components/body"
 require_relative "components/button"
+require_relative "components/image"
 
 module MjmlRb
   class Renderer
@@ -137,8 +138,6 @@ module MjmlRb
         render_column(node, context, attrs, 100)
       when "mj-text"
         render_text(node, attrs)
-      when "mj-image"
-        render_image(attrs)
       when "mj-divider"
         render_divider(attrs)
       when "mj-spacer"
@@ -315,22 +314,6 @@ module MjmlRb
       %(<tr><td#{html_attrs(td_attrs)}><div style="#{div_style}">#{content}</div></td></tr>)
     end
 
-    def render_image(attrs)
-      css_class = attrs["css-class"]
-      style = style_join(
-        "max-width" => "100%",
-        "display" => "block",
-        "border" => "0"
-      )
-      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
-      td_attrs = {"align" => attrs["align"] || "center", "class" => css_class, "style" => td_style}
-      src = escape_attr(attrs["src"])
-      alt = escape_attr(attrs["alt"])
-      width = attrs["width"] ? %( width="#{escape_attr(attrs["width"])}") : ""
-
-      %(<tr><td#{html_attrs(td_attrs)}><img src="#{src}" alt="#{alt}" style="#{style}"#{width}></td></tr>)
-    end
-
     def render_divider(attrs)
       css_class = attrs["css-class"]
       border_width = attrs["border-width"] || "1px"
@@ -439,6 +422,7 @@ module MjmlRb
         register_component(registry, Components::Body.new(self))
         register_component(registry, Components::Accordion.new(self))
         register_component(registry, Components::Button.new(self))
+        register_component(registry, Components::Image.new(self))
         registry
       end
     end
