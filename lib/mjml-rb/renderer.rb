@@ -5,6 +5,7 @@ require_relative "components/button"
 require_relative "components/image"
 require_relative "components/text"
 require_relative "components/divider"
+require_relative "components/table"
 
 module MjmlRb
   class Renderer
@@ -140,8 +141,6 @@ module MjmlRb
         render_column(node, context, attrs, 100)
       when "mj-spacer"
         render_spacer(attrs)
-      when "mj-table"
-        render_table(node, attrs)
       when "mj-raw"
         raw_inner(node)
       when "mj-hero"
@@ -291,14 +290,6 @@ module MjmlRb
       %(<tr><td#{html_attrs(td_attrs)}>&nbsp;</td></tr>)
     end
 
-    def render_table(node, attrs)
-      css_class = attrs["css-class"]
-      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
-      td_attrs = {"align" => attrs["align"] || "left", "class" => css_class, "style" => td_style}
-      raw = raw_inner(node)
-      %(<tr><td#{html_attrs(td_attrs)}><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">#{raw}</table></td></tr>)
-    end
-
     def render_hero(node, context, attrs)
       background = attrs["background-url"] ? "background-image:url('#{escape_attr(attrs["background-url"])}');background-size:cover;" : ""
       section = %(<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody>#{render_children(node, context, parent: "mj-hero")}</tbody></table>)
@@ -384,6 +375,7 @@ module MjmlRb
         register_component(registry, Components::Image.new(self))
         register_component(registry, Components::Text.new(self))
         register_component(registry, Components::Divider.new(self))
+        register_component(registry, Components::Table.new(self))
         registry
       end
     end
