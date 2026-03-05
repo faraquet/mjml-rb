@@ -1,6 +1,7 @@
 require "cgi"
 require_relative "components/accordion"
 require_relative "components/body"
+require_relative "components/button"
 
 module MjmlRb
   class Renderer
@@ -138,8 +139,6 @@ module MjmlRb
         render_text(node, attrs)
       when "mj-image"
         render_image(attrs)
-      when "mj-button"
-        render_button(node, attrs)
       when "mj-divider"
         render_divider(attrs)
       when "mj-spacer"
@@ -332,24 +331,6 @@ module MjmlRb
       %(<tr><td#{html_attrs(td_attrs)}><img src="#{src}" alt="#{alt}" style="#{style}"#{width}></td></tr>)
     end
 
-    def render_button(node, attrs)
-      css_class = attrs["css-class"]
-      href = escape_attr(attrs["href"] || "#")
-      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
-      td_attrs = {"align" => attrs["align"] || "center", "class" => css_class, "style" => td_style, "vertical-align" => attrs["vertical-align"] || "middle"}
-      link_style = style_join(
-        "display" => "inline-block",
-        "padding" => attrs["inner-padding"] || "12px 24px",
-        "background" => attrs["background-color"] || "#414141",
-        "color" => attrs["color"] || "#ffffff",
-        "text-decoration" => "none",
-        "border-radius" => attrs["border-radius"] || "3px",
-        "font-family" => attrs["font-family"] || "Arial, sans-serif"
-      )
-      label = escape_html(node.text_content.strip)
-      %(<tr><td#{html_attrs(td_attrs)}><a href="#{href}" style="#{link_style}">#{label}</a></td></tr>)
-    end
-
     def render_divider(attrs)
       css_class = attrs["css-class"]
       border_width = attrs["border-width"] || "1px"
@@ -457,6 +438,7 @@ module MjmlRb
         # Register component classes here as they are implemented.
         register_component(registry, Components::Body.new(self))
         register_component(registry, Components::Accordion.new(self))
+        register_component(registry, Components::Button.new(self))
         registry
       end
     end

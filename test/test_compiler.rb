@@ -202,6 +202,92 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, "<tr><td>B</td></tr>")
   end
 
+  def test_button_component_renders_with_href
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button href="https://example.com">Click me</mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    # Outer wrapper
+    assert_includes(result.html, 'align="center"')
+    assert_includes(result.html, 'word-break:break-word')
+    # Inner button table
+    assert_includes(result.html, 'border-collapse:separate')
+    assert_includes(result.html, 'line-height:100%')
+    # Inner td with bgcolor
+    assert_includes(result.html, 'bgcolor="#414141"')
+    assert_includes(result.html, 'border-radius:3px')
+    assert_includes(result.html, 'cursor:auto')
+    assert_includes(result.html, 'mso-padding-alt:10px 25px')
+    # Link
+    assert_includes(result.html, 'href="https://example.com"')
+    assert_includes(result.html, 'target="_blank"')
+    assert_includes(result.html, 'display:inline-block')
+    assert_includes(result.html, 'mso-padding-alt:0px')
+    assert_includes(result.html, 'Click me')
+  end
+
+  def test_button_component_renders_without_href_as_p_tag
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button>No link</mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, '<p ')
+    refute_includes(result.html, '<a ')
+    assert_includes(result.html, 'No link')
+  end
+
+  def test_button_component_respects_custom_attributes
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button href="https://example.com"
+                background-color="#ff0000"
+                color="#000000"
+                font-size="16px"
+                border-radius="8px"
+                inner-padding="15px 30px"
+                padding="20px 30px"
+                target="_self">Buy Now</mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'bgcolor="#ff0000"')
+    assert_includes(result.html, 'background:#ff0000')
+    assert_includes(result.html, 'color:#000000')
+    assert_includes(result.html, 'font-size:16px')
+    assert_includes(result.html, 'border-radius:8px')
+    assert_includes(result.html, 'padding:15px 30px')
+    assert_includes(result.html, 'target="_self"')
+    assert_includes(result.html, 'Buy Now')
+  end
+
   def test_accordion_component_renders
     accordion = <<~MJML
       <mjml>
