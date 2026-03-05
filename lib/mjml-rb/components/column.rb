@@ -103,7 +103,7 @@ module MjmlRb
         styles = inside_gutter ? inner_table_style(attrs) : table_style(attrs, vertical_align)
         table_attrs["style"] = style_join(styles) if styles.any?
 
-        children = with_child_container_width(context, attrs, width_pct, inside_gutter: inside_gutter) do
+        children = with_child_container_width(context, attrs, width_pct) do
           render_children(node, context, parent: "mj-column")
         end
         %(<table#{html_attrs(table_attrs)}><tbody>#{children}</tbody></table>)
@@ -161,25 +161,31 @@ module MjmlRb
         value && !value.empty?
       end
 
-      def with_child_container_width(context, attrs, width_pct, inside_gutter:)
+      def with_child_container_width(context, attrs, width_pct)
         previous_container_width = context[:container_width]
-        context[:container_width] = child_container_width(context, attrs, width_pct, inside_gutter: inside_gutter)
+        context[:container_width] = child_container_width(context, attrs, width_pct)
         yield
       ensure
         context[:container_width] = previous_container_width
       end
 
-      def child_container_width(context, attrs, width_pct, inside_gutter:)
+      def child_container_width(context, attrs, width_pct)
         parent_width = parse_pixel_value(context[:container_width] || "600px")
-        raw_width = parent_width * width_pct / 100.0
+        width = attrs["width"]
+        raw_width =
+          if present_attr?(width) && width.end_with?("%")
+            parent_width * parse_pixel_value(width) / 100.0
+          elsif present_attr?(width) && width.end_with?("px")
+            parse_pixel_value(width)
+          else
+            parent_width * width_pct / 100.0
+          end
 
-        box_width = if inside_gutter
-                      raw_width - horizontal_border_width(attrs, "inner-border")
-                    else
-                      raw_width - horizontal_padding_width(attrs) - horizontal_border_width(attrs, "border") - horizontal_border_width(attrs, "inner-border")
-                    end
+        all_paddings = horizontal_padding_width(attrs) +
+                       horizontal_border_width(attrs, "border") +
+                       horizontal_border_width(attrs, "inner-border")
 
-        "#{[box_width, 0].max}px"
+        "#{[raw_width - all_paddings, 0].max}px"
       end
 
       def horizontal_padding_width(attrs)

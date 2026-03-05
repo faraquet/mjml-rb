@@ -73,11 +73,8 @@ module MjmlRb
           "class" => fluid ? "mj-full-width-mobile" : nil
         }
 
-        td_style = style_join(
-          "width" => full_width ? nil : "#{content_width}px"
-        )
         td_attrs = {
-          "style" => td_style,
+          "style" => style_join("width" => full_width ? nil : "#{content_width}px"),
           "class" => fluid ? "mj-full-width-mobile" : nil
         }
 
@@ -99,28 +96,23 @@ module MjmlRb
           "font-size" => a["font-size"]
         )
 
-        height_val = a["height"]
-        height_attr = if height_val && !height_val.empty?
-                        height_val == "auto" ? "auto" : height_val.to_i.to_s
-                      end
-
         img_attrs = {
           "alt" => a["alt"],
-          "src" => a["src"] ? escape_attr(a["src"]) : nil,
-          "srcset" => a["srcset"] ? escape_attr(a["srcset"]) : nil,
+          "src" => a["src"],
+          "srcset" => a["srcset"],
           "sizes" => a["sizes"],
           "style" => img_style,
           "title" => a["title"],
-          "width" => content_width.to_s,
+          "width" => content_width.to_i.to_s,
           "usemap" => a["usemap"],
-          "height" => height_attr
+          "height" => height_attribute(a["height"])
         }
 
         img_tag = "<img#{html_attrs(img_attrs)} />"
 
         inner = if a["href"]
                   link_attrs = {
-                    "href" => escape_attr(a["href"]),
+                    "href" => a["href"],
                     "target" => a["target"],
                     "rel" => a["rel"],
                     "name" => a["name"],
@@ -137,6 +129,12 @@ module MjmlRb
       end
 
       private
+
+      def height_attribute(height)
+        return if height.nil? || height.empty?
+
+        height == "auto" ? "auto" : height.to_i.to_s
+      end
 
       def get_content_width(attrs, context)
         container_width = (context[:container_width] || "600px").to_f
