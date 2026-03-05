@@ -4,6 +4,7 @@ require_relative "components/body"
 require_relative "components/button"
 require_relative "components/image"
 require_relative "components/text"
+require_relative "components/divider"
 
 module MjmlRb
   class Renderer
@@ -137,8 +138,6 @@ module MjmlRb
         render_group(node, context)
       when "mj-column"
         render_column(node, context, attrs, 100)
-      when "mj-divider"
-        render_divider(attrs)
       when "mj-spacer"
         render_spacer(attrs)
       when "mj-table"
@@ -285,17 +284,6 @@ module MjmlRb
     end
 
 
-    def render_divider(attrs)
-      css_class = attrs["css-class"]
-      border_width = attrs["border-width"] || "1px"
-      border_style = attrs["border-style"] || "solid"
-      border_color = attrs["border-color"] || "#000000"
-      td_style = style_join("font-size" => "0px", "padding" => attrs["padding"] || "10px 25px", "word-break" => "break-word")
-      td_attrs = {"class" => css_class, "style" => td_style}
-      hr_style = style_join("border" => "0", "border-top" => "#{border_width} #{border_style} #{border_color}")
-      %(<tr><td#{html_attrs(td_attrs)}><hr style="#{hr_style}"></td></tr>)
-    end
-
     def render_spacer(attrs)
       css_class = attrs["css-class"]
       height = attrs["height"] || "20px"
@@ -395,6 +383,7 @@ module MjmlRb
         register_component(registry, Components::Button.new(self))
         register_component(registry, Components::Image.new(self))
         register_component(registry, Components::Text.new(self))
+        register_component(registry, Components::Divider.new(self))
         registry
       end
     end
