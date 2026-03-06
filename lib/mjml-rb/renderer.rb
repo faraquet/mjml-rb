@@ -1,10 +1,12 @@
 require "cgi"
+require "nokogiri"
 require_relative "components/accordion"
 require_relative "components/body"
 require_relative "components/button"
 require_relative "components/image"
 require_relative "components/text"
 require_relative "components/divider"
+require_relative "components/html_attributes"
 require_relative "components/table"
 require_relative "components/social"
 require_relative "components/section"
@@ -42,6 +44,7 @@ module MjmlRb
         preview: "",
         head_styles: [],
         body_styles: [],
+        html_attributes: {},
         fonts: DEFAULT_FONTS.merge(hash_or_empty(options[:fonts])),
         global_defaults: {},
         tag_defaults: {},
@@ -64,6 +67,8 @@ module MjmlRb
           context[:fonts][name] = href if name && href
         when "mj-attributes"
           absorb_attribute_node(node, context)
+        when "mj-html-attributes"
+          absorb_html_attributes_node(node, context)
         when "mj-raw"
           context[:body_styles] << raw_inner(node)
         end
@@ -89,6 +94,28 @@ module MjmlRb
       end
     end
 
+    def absorb_html_attributes_node(html_attributes_node, context)
+      html_attributes_node.element_children.each do |selector|
+        next unless selector.tag_name == "mj-selector"
+
+        path = selector.attributes["path"].to_s.strip
+        next if path.empty?
+
+        custom_attrs = selector.element_children.each_with_object({}) do |child, memo|
+          next unless child.tag_name == "mj-html-attribute"
+
+          name = child.attributes["name"].to_s.strip
+          next if name.empty?
+
+          memo[name] = child.text_content
+        end
+        next if custom_attrs.empty?
+
+        context[:html_attributes][path] ||= {}
+        context[:html_attributes][path].merge!(custom_attrs)
+      end
+    end
+
     def build_html_document(content, context)
       title = context[:title].empty? ? "MJML Document" : context[:title]
       preview = context[:preview]
@@ -102,7 +129,7 @@ module MjmlRb
         "background" => context[:background_color] || "#ffffff"
       )
 
-      <<~HTML
+      html = <<~HTML
         <!doctype html>
         <html#{html_attrs(html_attributes)}>
           <head>
@@ -118,6 +145,8 @@ module MjmlRb
           </body>
         </html>
       HTML
+
+      apply_html_attributes(html, context)
     end
 
     def render_children(node, context, parent:)
@@ -238,6 +267,29 @@ module MjmlRb
       # MJML post-processes the HTML to merge adjacent Outlook conditional comments.
       # e.g. <![endif]-->\n<!--[if mso | IE]> become a single conditional block.
       html.gsub(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, "")
+    end
+
+    def apply_html_attributes(html, context)
+      rules = context[:html_attributes] || {}
+      return html if rules.empty?
+
+      document = Nokogiri::HTML(html)
+
+      rules.each do |selector, attrs|
+        next if selector.empty? || attrs.empty?
+
+        begin
+          document.css(selector).each do |node|
+            attrs.each do |name, value|
+              node[name] = value.to_s
+            end
+          end
+        rescue Nokogiri::CSS::SyntaxError
+          next
+        end
+      end
+
+      document.to_html
     end
 
     def append_component_head_styles(document, context)

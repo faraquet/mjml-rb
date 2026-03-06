@@ -363,6 +363,59 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'Default body width')
   end
 
+  def test_mj_html_attribute_applies_custom_attributes_to_rendered_nodes
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-html-attributes>
+            <mj-selector path=".cta a">
+              <mj-html-attribute name="data-track">primary</mj-html-attribute>
+              <mj-html-attribute name="data-source">newsletter</mj-html-attribute>
+            </mj-selector>
+          </mj-html-attributes>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button css-class="cta" href="https://example.com">Click me</mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'data-track="primary"')
+    assert_includes(result.html, 'data-source="newsletter"')
+  end
+
+  def test_mj_html_attribute_validates_metadata_in_strict_mode
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-html-attributes>
+            <mj-selector extra="x">
+              <mj-html-attribute invalid="x">primary</mj-html-attribute>
+            </mj-selector>
+          </mj-html-attributes>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    messages = result.errors.map { |error| error[:message] }
+    assert_includes(messages, "Attribute `extra` is not allowed for <mj-selector>")
+    assert_includes(messages, "Attribute `invalid` is not allowed for <mj-html-attribute>")
+  end
+
   def test_bare_ampersand_in_text_content
     mjml = <<~MJML
       <mjml>

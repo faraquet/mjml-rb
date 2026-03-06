@@ -106,7 +106,13 @@ module MjmlRb
 
     def allowed_attributes_for(tag_name)
       component_class = component_class_for_tag(tag_name)
-      component_class ? component_class.allowed_attributes : {}
+      return {} unless component_class
+
+      if component_class.respond_to?(:allowed_attributes_for)
+        component_class.allowed_attributes_for(tag_name)
+      else
+        component_class.allowed_attributes
+      end
     end
 
     def component_class_for_tag(tag_name)

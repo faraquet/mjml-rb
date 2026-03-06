@@ -17,5 +17,6 @@ Gem::Specification.new do |spec|
   spec.bindir = "bin"
   spec.executables = ["mjml"]
   spec.require_paths = ["lib"]
+  spec.add_dependency "nokogiri"
   spec.add_dependency "rexml"
 end
