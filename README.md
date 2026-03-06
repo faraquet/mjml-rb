@@ -32,3 +32,47 @@ bundle exec bin/mjml --validate example.mjml
 bundle exec bin/mjml --migrate old.mjml -s
 bundle exec bin/mjml doc/sample.mjml -o sample.html
 ```
+
+## Migration status
+
+The table below tracks current JS-to-Ruby migration status for MJML components in this repo.
+
+| Component | Status | Notes |
+| --- | --- | --- |
+| `mj-body` | migrated | Ruby component exists and matches the upstream `mj-body` behavior currently vendored in `lib/mjml-rb/components/mjml-body`. |
+| `mj-section` | migrated | Implemented in `section.rb`. |
+| `mj-wrapper` | migrated | Implemented via `section.rb`. |
+| `mj-column` | migrated | Implemented in `column.rb`. |
+| `mj-group` | migrated | Rendered directly by the renderer. |
+| `mj-text` | migrated | Implemented in `text.rb`. |
+| `mj-image` | migrated | Implemented in `image.rb`. |
+| `mj-button` | migrated | Implemented in `button.rb`. |
+| `mj-divider` | migrated | Implemented in `divider.rb`. |
+| `mj-table` | migrated | Implemented in `table.rb`. |
+| `mj-social` | migrated | Implemented in `social.rb`. |
+| `mj-social-element` | migrated | Implemented in `social.rb`. |
+| `mj-accordion` | migrated | Implemented in `accordion.rb`. |
+| `mj-accordion-element` | migrated | Implemented in `accordion.rb`. |
+| `mj-accordion-title` | migrated | Implemented in `accordion.rb`. |
+| `mj-accordion-text` | migrated | Implemented in `accordion.rb`. |
+| `mj-spacer` | partial | Rendered directly by the renderer; not yet split into a dedicated component class. |
+| `mj-hero` | partial | Rendered directly by the renderer with simplified behavior. |
+| `mj-navbar` | partial | Rendered directly by the renderer with simplified behavior. |
+| `mj-navbar-link` | partial | Rendered directly by the renderer with simplified behavior. |
+| `mj-raw` | partial | Supported as passthrough content, but not as a dedicated migrated component. |
+| `mj-head` | partial | Core tags such as `mj-title`, `mj-preview`, `mj-style`, `mj-font`, and `mj-attributes` are supported. |
+| `mj-attributes` | partial | `mj-all`, `mj-class`, and per-tag defaults are supported. |
+| `mj-all` | partial | Supported through `mj-attributes`. |
+| `mj-class` | partial | Supported through `mj-attributes`. |
+| `mj-title` | partial | Supported through head context. |
+| `mj-preview` | partial | Supported through head context. |
+| `mj-style` | partial | Supported, including inline CSS application. |
+| `mj-font` | partial | Supported for font link injection. |
+| `mj-carousel` | not migrated | Declared in dependency rules but no renderer implementation yet. |
+| `mj-carousel-image` | not migrated | Declared in dependency rules but no renderer implementation yet. |
+| `mj-breakpoint` | not migrated | Allowed in `mj-head`, but not implemented. |
+| `mj-html-attributes` | not migrated | Allowed in `mj-head`, but not implemented. |
+| `mj-selector` | not migrated | Validation-only dependency entry at the moment. |
+| `mj-html-attribute` | not migrated | Validation-only dependency entry at the moment. |
+
+Remaining top-level migration work is mainly `mj-carousel`, `mj-carousel-image`, `mj-breakpoint`, and `mj-html-attributes`, plus bringing the renderer-owned partial implementations closer to upstream JS behavior.
