@@ -77,3 +77,12 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-html-attribute` | migrated | Supported for injecting custom HTML attributes into matched rendered nodes. |
 
 A more detailed parity backlog lives in [doc/TODO.md](/doc/TODO.md).
+
+Even when a template looks visually the same in email clients, the generated HTML and CSS can still differ noticeably from the npm renderer. The main remaining sources of output differences are:
+
+- font injection: the Ruby renderer still does not fully match npm's conditional font import strategy and font-usage detection
+- skeleton markup: the outer HTML document still differs from npm in some head and Outlook-specific scaffolding
+- style bucket ordering: npm keeps several CSS buckets separate, while the Ruby renderer still flattens parts of head CSS differently
+- post-processing behavior: the Ruby renderer still relies on `Nokogiri`-based HTML post-processing for some features such as `mj-html-attributes` and inline style application
+
+So output size, CSS ordering, and exact markup can still differ even when the rendered email appears functionally equivalent.
