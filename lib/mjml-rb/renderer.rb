@@ -18,6 +18,15 @@ module MjmlRb
     DEFAULT_FONTS = {
       "Roboto" => "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700"
     }.freeze
+
+    DOCUMENT_RESET_CSS = <<~CSS.freeze
+      #outlook a { padding:0; }
+      body { margin:0;padding:0;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%; }
+      table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt; }
+      img { border:0;height:auto;line-height:100%; outline:none;text-decoration:none;-ms-interpolation-mode:bicubic; }
+      p { display:block;margin:13px 0; }
+    CSS
+
     def render(document, options = {})
       head = find_child(document, "mj-head")
       body = find_child(document, "mj-body")
@@ -118,7 +127,7 @@ module MjmlRb
     def build_html_document(content, context)
       title = context[:title].to_s
       preview = context[:preview]
-      head_styles = unique_strings(context[:head_styles]).join("\n")
+      head_styles = ([DOCUMENT_RESET_CSS] + unique_strings(context[:head_styles])).join("\n")
       font_links = context[:fonts].values.uniq.map { |href| %(<link href="#{escape_attr(href)}" rel="stylesheet" type="text/css">) }.join("\n")
       preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
       html_attributes = { "lang" => context[:lang], "dir" => context[:dir] }
