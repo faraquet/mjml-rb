@@ -63,7 +63,7 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-raw` | migrated | Implemented in `raw.rb`, including head insertion and top-level `position="file-start"` output before the doctype. |
 | `mj-head` | migrated | Implemented in `head.rb` and dispatches supported head children through component handlers. |
 | `mj-attributes` | migrated | Implemented in `attributes.rb`, including npm-style `mj-class` descendant defaults. |
-| `mj-all` | partial | Supported through `mj-attributes`. |
+| `mj-all` | migrated | Implemented through `attributes.rb` with npm-style global default attribute precedence. |
 | `mj-class` | migrated | Supported through `attributes.rb`, including nested per-tag descendant defaults. |
 | `mj-title` | migrated | Implemented in `head.rb`. |
 | `mj-preview` | migrated | Implemented in `head.rb`. |
@@ -76,6 +76,6 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-selector` | migrated | Supported as the selector container for `mj-html-attribute` rules. |
 | `mj-html-attribute` | migrated | Supported for injecting custom HTML attributes into matched rendered nodes. |
 
-Remaining top-level migration work is mainly `mj-carousel` and `mj-carousel-image`, plus bringing the remaining renderer-owned partial implementations closer to upstream JS behavior.
+Remaining top-level migration work is mainly `mj-carousel` and `mj-carousel-image`.
 
 TODO: `mj-html-attributes` currently uses `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections. Rewrite this path to avoid `Nokogiri` if we want to keep the runtime dependency surface minimal.
