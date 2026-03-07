@@ -76,6 +76,4 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-selector` | migrated | Supported as the selector container for `mj-html-attribute` rules. |
 | `mj-html-attribute` | migrated | Supported for injecting custom HTML attributes into matched rendered nodes. |
 
-Remaining top-level migration work is mainly `mj-carousel` and `mj-carousel-image`.
-
-TODO: `mj-html-attributes` currently uses `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections. Rewrite this path to avoid `Nokogiri` if we want to keep the runtime dependency surface minimal.
+A more detailed parity backlog lives in [doc/TODO.md](/doc/TODO.md).
