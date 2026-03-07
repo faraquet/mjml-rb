@@ -1,40 +1,47 @@
 # Port TODO
 
-This checklist is based on a direct comparison between the current Ruby code in `lib/mjml-rb` and the vendored npm sources under `.mjml-src/packages`.
+This checklist is based on a direct comparison between the current Ruby code in `lib/mjml-rb` and the upstream npm implementation. Source paths under `upstream/` refer to a local reference mirror when present.
+
+Even when a template looks visually the same in email clients, the generated HTML and CSS can still differ noticeably from the npm renderer. The main remaining sources of output differences are:
+
+- skeleton markup: the outer HTML document still differs from npm in some head and Outlook-specific scaffolding
+- style bucket ordering: npm keeps several CSS buckets separate, while the Ruby renderer still flattens parts of head CSS differently
+- post-processing behavior: the Ruby renderer still relies on `Nokogiri`-based HTML post-processing for some features such as `mj-html-attributes` and inline style application
+
+So output size, CSS ordering, and exact markup can still differ even when the rendered email appears functionally equivalent.
 
 ## P0: Remaining npm parity blockers
 
-- [ ] Implement `mj-carousel` and `mj-carousel-image` from `.mjml-src/packages/mjml-carousel/src/Carousel.js` and `.mjml-src/packages/mjml-carousel/src/CarouselImage.js`, then register them in `lib/mjml-rb/renderer.rb`.
-- [ ] Port `mj-group` into a real Ruby component. The current special case in `lib/mjml-rb/renderer.rb` only distributes widths and renders child columns, while the npm component in `.mjml-src/packages/mjml-group/src/index.js` also owns attribute validation, default attributes, Outlook table wrappers, group background handling, and child context width calculation.
+- [ ] Implement `mj-carousel` and `mj-carousel-image` from `upstream/packages/mjml-carousel/src/Carousel.js` and `upstream/packages/mjml-carousel/src/CarouselImage.js`, then register them in `lib/mjml-rb/renderer.rb`.
+- [ ] Port `mj-group` into a real Ruby component. The current special case in `lib/mjml-rb/renderer.rb` only distributes widths and renders child columns, while the npm component in `upstream/packages/mjml-group/src/index.js` also owns attribute validation, default attributes, Outlook table wrappers, group background handling, and child context width calculation.
 - [ ] Add `ALLOWED_ATTRIBUTES` and validator type coverage for components that currently render without npm-style validation metadata: `lib/mjml-rb/components/accordion.rb`, `lib/mjml-rb/components/button.rb`, `lib/mjml-rb/components/divider.rb`, `lib/mjml-rb/components/image.rb`, `lib/mjml-rb/components/social.rb`, `lib/mjml-rb/components/table.rb`, and `lib/mjml-rb/components/text.rb`.
 
 ## P1: Core runtime parity gaps
 
-- [ ] Bring `lib/mjml-rb/parser.rb` in line with `.mjml-src/packages/mjml-parser-xml/src/index.js` for `mj-include` handling:
+- [ ] Bring `lib/mjml-rb/parser.rb` in line with `upstream/packages/mjml-parser-xml/src/index.js` for `mj-include` handling:
   - support `type="css"`
   - support `css-inline="inline"`
   - track circular includes
   - preserve file and line metadata
   - collect include errors instead of failing immediately
 - [ ] Rework ending-tag parsing to match npm semantics. The npm parser preserves raw `content` for ending-tag components such as `mj-text`, `mj-button`, `mj-table`, `mj-raw`, `mj-style`, and `mj-preview`; the current REXML path parses nested markup structurally, which can diverge for HTML-ish or template-heavy content.
-- [ ] Extend `lib/mjml-rb/validator.rb` to support the npm core type set from `.mjml-src/packages/mjml-core/src/types`: `boolean` and `integer` are still missing.
-- [ ] Align the generated HTML skeleton in `lib/mjml-rb/renderer.rb` with `.mjml-src/packages/mjml-core/src/helpers/skeleton.js`:
+- [ ] Extend `lib/mjml-rb/validator.rb` to support the npm core type set from `upstream/packages/mjml-core/src/types`: `boolean` and `integer` are still missing.
+- [ ] Align the generated HTML skeleton in `lib/mjml-rb/renderer.rb` with `upstream/packages/mjml-core/src/helpers/skeleton.js`:
   - add `xmlns` attributes on `<html>`
   - add the `X-UA-Compatible` meta block
   - add Outlook `OfficeDocumentSettings`
   - add the `lte mso 11` `.mj-outlook-group-fix` style block
   - restore `word-spacing:normal` on `<body>`
   - keep separate head style buckets like npm instead of flattening everything into one style tag
-- [ ] Match npm font injection from `.mjml-src/packages/mjml-core/src/helpers/fonts.js`. The Ruby renderer currently emits every known font link unconditionally, while npm only emits fonts that are actually used in content or inline styles and wraps them in a non-MSO conditional block with `@import`.
-- [ ] Revisit inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. The current CSS parser strips `@` rules and applies a simplified declaration merge, while npm relies on a richer cascade-aware inlining path.
+- [ ] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. Bucket routing now matches npm more closely, but the current CSS parser still strips `@` rules and applies a simplified declaration merge instead of npm's richer cascade-aware inlining path.
 - [ ] Replace or further constrain the `Nokogiri` post-processing path used by `mj-html-attributes` and inline style injection. It works for the current cases, but it is still a behavior fork from npm and already needed selector fallbacks such as `:lang(...)`.
 - [ ] Rewrite `mj-html-attributes` so it does not depend on `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections, if we want to keep the runtime dependency surface minimal.
 
 ## P2: Component audit follow-ups
 
-- [ ] Compare `lib/mjml-rb/components/section.rb` against `.mjml-src/packages/mjml-section/src/index.js` and `.mjml-src/packages/mjml-wrapper/src/index.js` for remaining wrapper-only behavior, especially around Outlook wrappers, background handling, and `gap`.
-- [ ] Compare `lib/mjml-rb/components/column.rb` against `.mjml-src/packages/mjml-column/src/index.js` for the remaining width, gutter, and Outlook child wrapper edge cases after the already-ported border-radius work.
-- [ ] Compare `lib/mjml-rb/components/social.rb` against `.mjml-src/packages/mjml-social/src/Social.js` and `.mjml-src/packages/mjml-social/src/SocialElement.js` for network defaults, layout modes, and full validator metadata.
+- [ ] Compare `lib/mjml-rb/components/section.rb` against `upstream/packages/mjml-section/src/index.js` and `upstream/packages/mjml-wrapper/src/index.js` for remaining wrapper-only behavior, especially around Outlook wrappers, background handling, and `gap`.
+- [ ] Compare `lib/mjml-rb/components/column.rb` against `upstream/packages/mjml-column/src/index.js` for the remaining width, gutter, and Outlook child wrapper edge cases after the already-ported border-radius work.
+- [ ] Compare `lib/mjml-rb/components/social.rb` against `upstream/packages/mjml-social/src/Social.js` and `upstream/packages/mjml-social/src/SocialElement.js` for network defaults, layout modes, and full validator metadata.
 - [ ] Compare `lib/mjml-rb/components/accordion.rb` against the four upstream accordion classes for any remaining title/text defaults and ending-tag behavior that is currently only covered by ad-hoc tests.
 
 ## P3: Upstream test backlog
@@ -45,7 +52,7 @@ The dedicated npm-style test ports currently cover:
 - `html-attributes`
 - `navbar-ico-padding`
 
-Still worth porting from `.mjml-src/packages/mjml/test`:
+Still worth porting from `upstream/packages/mjml/test`:
 
 - [ ] `accordion-fontFamily`
 - [ ] `accordion-padding`

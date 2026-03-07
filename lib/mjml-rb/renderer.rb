@@ -85,7 +85,7 @@ module MjmlRb
       head_styles = ([DOCUMENT_RESET_CSS] + unique_strings(context[:head_styles])).join("\n")
       head_raw = Array(context[:head_raw]).join("\n")
       before_doctype = context[:before_doctype].to_s
-      font_links = context[:fonts].values.uniq.map { |href| %(<link href="#{escape_attr(href)}" rel="stylesheet" type="text/css">) }.join("\n")
+      font_tags = build_font_tags(content, context[:inline_styles], context[:fonts])
       preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
       html_attributes = { "lang" => context[:lang], "dir" => context[:dir] }
       body_style = style_join(
@@ -101,7 +101,7 @@ module MjmlRb
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>#{escape_html(title)}</title>
-            #{font_links}
+            #{font_tags}
             <style type="text/css">#{head_styles}</style>
             #{head_raw}
           </head>
@@ -115,6 +115,36 @@ module MjmlRb
       html = apply_html_attributes(html, context)
       html = apply_inline_styles(html, context)
       before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
+    end
+
+    def build_font_tags(content, inline_styles, fonts)
+      used_urls = Array(fonts).filter_map do |name, url|
+        next if name.nil? || name.empty? || url.nil? || url.empty?
+        next unless font_used?(content, inline_styles, name)
+
+        url
+      end.uniq
+      return "" if used_urls.empty?
+
+      links = used_urls.map { |url| %(<link href="#{escape_attr(url)}" rel="stylesheet" type="text/css">) }.join("\n")
+      imports = used_urls.map { |url| "@import url(#{url});" }.join("\n")
+
+      <<~HTML.chomp
+        <!--[if !mso]><!-->
+        #{links}
+        <style type="text/css">
+        #{imports}
+        </style>
+        <!--<![endif]-->
+      HTML
+    end
+
+    def font_used?(content, inline_styles, font_name)
+      escaped_name = Regexp.escape(font_name)
+      content_regex = /"[^"]*font-family:[^"]*#{escaped_name}[^"]*"/mi
+      inline_regex = /font-family:[^;}]*#{escaped_name}/mi
+
+      content.to_s.match?(content_regex) || Array(inline_styles).any? { |style| style.to_s.match?(inline_regex) }
     end
 
     def render_children(node, context, parent:)

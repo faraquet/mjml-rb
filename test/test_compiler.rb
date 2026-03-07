@@ -694,7 +694,7 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, '<html lang="und" dir="auto">')
     assert_includes(result.html, "<title></title>")
     assert_includes(result.html, 'table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt; }')
-    assert_includes(result.html, 'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700')
+    refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700')
     refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700')
     refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Droid+Sans:300,400,500,700')
     refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Lato:300,400,500,700')
