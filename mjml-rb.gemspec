@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.0"
 
   spec.files = Dir.chdir(__dir__) do
-    Dir.glob("{bin,lib}/**/*") + ["Gemfile", "mjml-rb.gemspec", "README.md"]
+    Dir.glob("{bin,lib}/**/*") + ["Gemfile", "LICENSE", "mjml-rb.gemspec", "README.md"]
   end
   spec.bindir = "bin"
   spec.executables = ["mjml"]
