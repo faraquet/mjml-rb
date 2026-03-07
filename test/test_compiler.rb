@@ -858,6 +858,7 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'class="mail-body"')
     assert_includes(result.html, 'background-color: #f5f5f5')
     assert_includes(result.html, 'padding-top: 10px')
+    refute_includes(result.html, '.app-bnr > table > tbody > tr > td { background-color: #e0f5f3; padding-left: 15px; padding-right: 15px; }')
     assert_includes(result.html, 'class="app-bnr radius--top radius--bottom"')
     assert_includes(result.html, 'border-top-left-radius: 8px')
     assert_includes(result.html, 'border-bottom-right-radius: 8px')

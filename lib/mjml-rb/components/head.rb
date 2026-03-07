@@ -46,8 +46,11 @@ module MjmlRb
           context[:preview] = raw_inner(node).strip
         when "mj-style"
           css = raw_inner(node)
-          context[:head_styles] << css
-          context[:inline_styles] << css if node.attributes["inline"] == "inline"
+          if node.attributes["inline"] == "inline"
+            context[:inline_styles] << css
+          else
+            context[:head_styles] << css
+          end
         when "mj-font"
           name = node.attributes["name"]
           href = node.attributes["href"]
