@@ -58,7 +58,7 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-hero` | migrated | Implemented in `hero.rb` with fixed/fluid modes, inner content wrapper, and Outlook VML background fallback. |
 | `mj-navbar` | migrated | Implemented in `navbar.rb`, including `base-url` propagation and breakpoint-aware hamburger CSS. |
 | `mj-navbar-link` | migrated | Implemented in `navbar.rb` as an ending-tag navbar child component. |
-| `mj-raw` | partial | Supported as passthrough content, but not as a dedicated migrated component. |
+| `mj-raw` | migrated | Implemented in `raw.rb`, including head insertion and top-level `position="file-start"` output before the doctype. |
 | `mj-head` | partial | Core tags such as `mj-title`, `mj-preview`, `mj-style`, `mj-font`, and `mj-attributes` are supported. |
 | `mj-attributes` | partial | `mj-all`, `mj-class`, and per-tag defaults are supported. |
 | `mj-all` | partial | Supported through `mj-attributes`. |

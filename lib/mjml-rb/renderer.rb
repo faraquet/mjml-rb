@@ -7,6 +7,7 @@ require_relative "components/button"
 require_relative "components/hero"
 require_relative "components/image"
 require_relative "components/navbar"
+require_relative "components/raw"
 require_relative "components/text"
 require_relative "components/divider"
 require_relative "components/html_attributes"
@@ -36,6 +37,7 @@ module MjmlRb
       raise ArgumentError, "Missing <mj-body>" unless body
 
       context = build_context(head, options)
+      context[:before_doctype] = root_file_start_raw(document)
       context[:lang] = options[:lang] || document.attributes["lang"] || "und"
       context[:dir] = options[:dir] || document.attributes["dir"] || "auto"
       context[:column_widths] = {}
@@ -52,9 +54,10 @@ module MjmlRb
         title: "",
         preview: "",
         breakpoint: "480px",
+        before_doctype: "",
+        head_raw: [],
         head_styles: [],
         inline_styles: [],
-        body_styles: [],
         html_attributes: {},
         fonts: DEFAULT_FONTS.merge(hash_or_empty(options[:fonts])),
         global_defaults: {},
@@ -85,7 +88,7 @@ module MjmlRb
         when "mj-html-attributes"
           absorb_html_attributes_node(node, context)
         when "mj-raw"
-          context[:body_styles] << raw_inner(node)
+          context[:head_raw] << raw_inner(node)
         end
       end
 
@@ -135,6 +138,8 @@ module MjmlRb
       title = context[:title].to_s
       preview = context[:preview]
       head_styles = ([DOCUMENT_RESET_CSS] + unique_strings(context[:head_styles])).join("\n")
+      head_raw = Array(context[:head_raw]).join("\n")
+      before_doctype = context[:before_doctype].to_s
       font_links = context[:fonts].values.uniq.map { |href| %(<link href="#{escape_attr(href)}" rel="stylesheet" type="text/css">) }.join("\n")
       preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
       html_attributes = { "lang" => context[:lang], "dir" => context[:dir] }
@@ -153,6 +158,7 @@ module MjmlRb
             <title>#{escape_html(title)}</title>
             #{font_links}
             <style type="text/css">#{head_styles}</style>
+            #{head_raw}
           </head>
           <body style="#{body_style}">
             #{preview_block}
@@ -162,7 +168,8 @@ module MjmlRb
       HTML
 
       html = apply_html_attributes(html, context)
-      apply_inline_styles(html, context)
+      html = apply_inline_styles(html, context)
+      before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
     end
 
     def render_children(node, context, parent:)
@@ -181,8 +188,6 @@ module MjmlRb
       case node.tag_name
       when "mj-group"
         render_group(node, context)
-      when "mj-raw"
-        raw_inner(node)
       else
         render_children(node, context, parent: node.tag_name)
       end
@@ -392,6 +397,7 @@ module MjmlRb
         register_component(registry, Components::Hero.new(self))
         register_component(registry, Components::Image.new(self))
         register_component(registry, Components::Navbar.new(self))
+        register_component(registry, Components::Raw.new(self))
         register_component(registry, Components::Text.new(self))
         register_component(registry, Components::Divider.new(self))
         register_component(registry, Components::Table.new(self))
@@ -474,6 +480,15 @@ module MjmlRb
 
     def find_child(node, tag_name)
       node.element_children.find { |child| child.tag_name == tag_name }
+    end
+
+    def root_file_start_raw(document)
+      document.element_children.filter_map do |child|
+        next unless child.tag_name == "mj-raw"
+        next unless child.attributes["position"] == "file-start"
+
+        raw_inner(child)
+      end.join("\n")
     end
 
     def contains_tag?(node, tag_name)
