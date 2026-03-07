@@ -30,7 +30,6 @@ bundle exec ruby -Ilib -e 'require "mjml-rb"; puts MjmlRb.mjml2html("<mjml><mj-b
 bundle exec bin/mjml example.mjml -o output.html
 bundle exec bin/mjml --validate example.mjml
 bundle exec bin/mjml --migrate old.mjml -s
-bundle exec bin/mjml doc/sample.mjml -o sample.html
 ```
 
 ## Migration status
@@ -55,7 +54,7 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-accordion-element` | migrated | Implemented in `accordion.rb`. |
 | `mj-accordion-title` | migrated | Implemented in `accordion.rb`. |
 | `mj-accordion-text` | migrated | Implemented in `accordion.rb`. |
-| `mj-spacer` | partial | Rendered directly by the renderer; not yet split into a dedicated component class. |
+| `mj-spacer` | migrated | Implemented in `spacer.rb`. |
 | `mj-hero` | partial | Rendered directly by the renderer with simplified behavior. |
 | `mj-navbar` | partial | Rendered directly by the renderer with simplified behavior. |
 | `mj-navbar-link` | partial | Rendered directly by the renderer with simplified behavior. |
@@ -75,6 +74,6 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-selector` | migrated | Supported as the selector container for `mj-html-attribute` rules. |
 | `mj-html-attribute` | migrated | Supported for injecting custom HTML attributes into matched rendered nodes. |
 
-Remaining top-level migration work is mainly `mj-carousel`, `mj-carousel-image`, and `mj-breakpoint`, plus bringing the renderer-owned partial implementations closer to upstream JS behavior.
+Remaining top-level migration work is mainly `mj-carousel`, `mj-carousel-image`, and `mj-breakpoint`, plus bringing the remaining renderer-owned partial implementations closer to upstream JS behavior.
 
 TODO: `mj-html-attributes` currently uses `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections. Rewrite this path to avoid `Nokogiri` if we want to keep the runtime dependency surface minimal.

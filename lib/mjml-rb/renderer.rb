@@ -11,6 +11,7 @@ require_relative "components/table"
 require_relative "components/social"
 require_relative "components/section"
 require_relative "components/column"
+require_relative "components/spacer"
 
 module MjmlRb
   class Renderer
@@ -165,8 +166,6 @@ module MjmlRb
       case node.tag_name
       when "mj-group"
         render_group(node, context)
-      when "mj-spacer"
-        render_spacer(attrs)
       when "mj-raw"
         raw_inner(node)
       when "mj-hero"
@@ -215,14 +214,6 @@ module MjmlRb
       else
         widths
       end
-    end
-
-
-    def render_spacer(attrs)
-      css_class = attrs["css-class"]
-      height = attrs["height"] || "20px"
-      td_attrs = {"class" => css_class, "style" => "line-height:#{escape_attr(height)};font-size:0;"}
-      %(<tr><td#{html_attrs(td_attrs)}>&nbsp;</td></tr>)
     end
 
     def render_hero(node, context, attrs)
@@ -328,6 +319,7 @@ module MjmlRb
         register_component(registry, Components::Social.new(self))
         register_component(registry, Components::Section.new(self))
         register_component(registry, Components::Column.new(self))
+        register_component(registry, Components::Spacer.new(self))
         registry
       end
     end
