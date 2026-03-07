@@ -5,7 +5,24 @@ module MjmlRb
     class Section < Base
       TAGS = %w[mj-section mj-wrapper].freeze
 
-      SECTION_DEFAULTS = {
+      ALLOWED_ATTRIBUTES = {
+        "background-color" => "color",
+        "border" => "string",
+        "border-bottom" => "string",
+        "border-left" => "string",
+        "border-radius" => "unit(px,%){1,4}",
+        "border-right" => "string",
+        "border-top" => "string",
+        "direction" => "enum(ltr,rtl)",
+        "padding" => "unit(px,%){1,4}",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "text-align" => "enum(left,center,right)"
+      }.freeze
+
+      DEFAULT_ATTRIBUTES = {
         "direction"  => "ltr",
         "padding"    => "20px 0",
         "text-align" => "center"
@@ -88,10 +105,11 @@ module MjmlRb
       # ── mj-section ─────────────────────────────────────────────────────────
 
       def render_section(node, context, attrs)
-        a            = SECTION_DEFAULTS.merge(attrs)
+        a            = self.class.default_attributes.merge(attrs)
         container_px = parse_px(context[:container_width] || "600px")
         css_class    = a["css-class"]
         bg_color     = a["background-color"]
+        border_radius = a["border-radius"]
 
         # Box width: container minus horizontal padding and borders
         border_left  = parse_border_width(a["border-left"] || a["border"])
@@ -133,6 +151,9 @@ module MjmlRb
           "border-right"   => a["border-right"],
           "border-bottom"  => a["border-bottom"],
           "border-left"    => a["border-left"],
+          "border-radius"  => border_radius,
+          "background"     => bg_color,
+          "background-color" => bg_color,
           "direction"      => a["direction"],
           "font-size"      => "0px",
           "padding"        => a["padding"],
@@ -146,16 +167,31 @@ module MjmlRb
         table_style = style_join(
           "background"       => bg_color,
           "background-color" => bg_color,
+          "border-radius"    => border_radius,
           "width"            => "100%"
         )
 
         div_attrs = {"class" => css_class, "style" => div_style}
+        table_attrs = {
+          "align" => "center",
+          "border" => "0",
+          "cellpadding" => "0",
+          "cellspacing" => "0",
+          "role" => "presentation",
+          "style" => table_style,
+          "width" => "100%"
+        }
+        td_attrs = {
+          "align" => a["text-align"],
+          "bgcolor" => bg_color,
+          "style" => td_style
+        }
         inner = merge_outlook_conditionals(render_section_columns(node, context, box_width))
 
         section_html =
           %(<div#{html_attrs(div_attrs)}>) +
-          %(<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="#{table_style}">) +
-          %(<tbody><tr><td style="#{td_style}">#{inner}</td></tr></tbody></table></div>)
+          %(<table#{html_attrs(table_attrs)}>) +
+          %(<tbody><tr><td#{html_attrs(td_attrs)}>#{inner}</td></tr></tbody></table></div>)
 
         render_after = %(<!--[if mso | IE]></td></tr></table><![endif]-->)
 
@@ -198,7 +234,7 @@ module MjmlRb
       # ── mj-wrapper ─────────────────────────────────────────────────────────
 
       def render_wrapper(node, context, attrs)
-        a            = SECTION_DEFAULTS.merge(attrs)
+        a            = self.class.default_attributes.merge(attrs)
         container_px = parse_px(context[:container_width] || "600px")
         css_class    = a["css-class"]
         bg_color     = a["background-color"]

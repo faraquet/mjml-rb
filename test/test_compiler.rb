@@ -425,6 +425,44 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'Default body width')
   end
 
+  def test_section_component_applies_mj_class_background_radius_and_padding
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-attributes>
+            <mj-class
+              name="app-banner"
+              background-color="#e0f5f3"
+              border-radius="8px"
+              padding-left="15px"
+              padding-right="15px"
+            />
+          </mj-attributes>
+        </mj-head>
+        <mj-body>
+          <mj-section mj-class="app-banner" css-class="app-bnr">
+            <mj-column>
+              <mj-table padding="0">
+                <tr><td>Banner</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="app-bnr"')
+    assert_includes(result.html, 'style="background:#e0f5f3;background-color:#e0f5f3;margin:0px auto;max-width:600px"')
+    assert_includes(result.html, 'role="presentation" style="background:#e0f5f3;background-color:#e0f5f3;border-radius:8px;width:100%" width="100%"')
+    assert_includes(result.html, 'align="center" bgcolor="#e0f5f3"')
+    assert_includes(result.html, 'border-radius:8px')
+    assert_includes(result.html, 'padding-left:15px')
+    assert_includes(result.html, 'padding-right:15px')
+    assert_includes(result.html, '<td align="left" style="font-size:0px;padding:0;word-break:break-word">')
+  end
+
   def test_mj_html_attribute_applies_custom_attributes_to_rendered_nodes
     mjml = <<~MJML
       <mjml>
