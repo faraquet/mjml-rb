@@ -29,6 +29,7 @@ module MjmlRb
         outer_td_style = style_join(
           "background"     => a["container-background-color"],
           "font-size"      => "0px",
+          "font-family"    => "inherit",
           "padding"        => a["padding"],
           "padding-top"    => a["padding-top"],
           "padding-right"  => a["padding-right"],
@@ -65,7 +66,7 @@ module MjmlRb
           "style"       => table_style
         }
 
-        content = raw_inner(node)
+        content = serialize_table_children(node)
         table_html = %(<table#{html_attrs(table_attrs)}>#{content}</table>)
 
         %(<tr><td#{html_attrs(outer_td_attrs)}>#{table_html}</td></tr>)
@@ -90,6 +91,71 @@ module MjmlRb
 
         num = cellspacing.to_s.gsub(/[^\d.]/, "").to_f
         num > 0
+      end
+
+      def serialize_table_children(node)
+        node.children.map { |child| serialize_table_node(child) }.join
+      end
+
+      def serialize_table_node(node)
+        return node.content.to_s if node.text?
+        return "" if node.comment?
+
+        attrs = normalize_table_node_attributes(node)
+        attr_html = attrs.map { |key, value| %( #{key}="#{escape_attr(value)}") }.join
+
+        return "<#{node.tag_name}#{attr_html} />" if node.children.empty?
+
+        inner = node.children.map { |child| serialize_table_node(child) }.join
+        "<#{node.tag_name}#{attr_html}>#{inner}</#{node.tag_name}>"
+      end
+
+      def normalize_table_node_attributes(node)
+        attrs = node.attributes.dup
+        style_map = parse_style_map(attrs["style"])
+
+        if %w[table td th a].include?(node.tag_name)
+          style_map["font-family"] ||= "inherit"
+        end
+
+        if node.tag_name == "table"
+          unless attrs.key?("width") || style_map.key?("width")
+            attrs["width"] = "100%"
+            style_map["width"] = "100%"
+          end
+        end
+
+        if %w[td th].include?(node.tag_name)
+          attrs["width"] ||= style_to_html_width(style_map["width"])
+          attrs["align"] ||= style_map["text-align"] if style_map["text-align"]
+          attrs["valign"] ||= style_map["vertical-align"] if style_map["vertical-align"]
+        end
+
+        attrs["style"] = serialize_style_map(style_map) unless style_map.empty?
+        attrs.delete("style") if style_map.empty?
+        attrs.compact
+      end
+
+      def parse_style_map(style)
+        return {} if style.nil? || style.strip.empty?
+
+        style.split(";").each_with_object({}) do |declaration, memo|
+          key, value = declaration.split(":", 2).map { |part| part&.strip }
+          next if key.nil? || key.empty? || value.nil? || value.empty?
+
+          memo[key] = value
+        end
+      end
+
+      def serialize_style_map(style_map)
+        style_map.map { |key, value| "#{key}: #{value}" }.join("; ")
+      end
+
+      def style_to_html_width(value)
+        return if value.nil?
+
+        match = value.match(/\A(\d+(?:\.\d+)?)px\z/)
+        match ? match[1] : value
       end
     end
   end
