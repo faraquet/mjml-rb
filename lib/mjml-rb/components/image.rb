@@ -15,19 +15,19 @@ module MjmlRb
         "font-size" => "13px"
       }.freeze
 
-      HEAD_STYLE = <<~CSS.freeze
-        @media only screen and (max-width:480px) {
-          table.mj-full-width-mobile { width: 100% !important; }
-          td.mj-full-width-mobile { width: auto !important; }
-        }
-      CSS
-
       def tags
         TAGS
       end
 
-      def head_style
-        HEAD_STYLE
+      def head_style(breakpoint)
+        lower_breakpoint = make_lower_breakpoint(breakpoint)
+
+        <<~CSS
+          @media only screen and (max-width:#{lower_breakpoint}) {
+            table.mj-full-width-mobile { width: 100% !important; }
+            td.mj-full-width-mobile { width: auto !important; }
+          }
+        CSS
       end
 
       def head_style_tags
@@ -177,6 +177,13 @@ module MjmlRb
         when 4 then side == :left ? parts[3] : parts[1]
         else "0"
         end
+      end
+
+      def make_lower_breakpoint(breakpoint)
+        matched = breakpoint.to_s.match(/[0-9]+/)
+        return breakpoint if matched.nil?
+
+        "#{matched[0].to_i - 1}px"
       end
     end
   end

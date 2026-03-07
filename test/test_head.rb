@@ -34,4 +34,24 @@ class HeadTest < Minitest::Test
     assert_includes(result.html, ".caps { text-transform: uppercase; }")
     assert_includes(result.html, '<meta name="x-head" content="1" />')
   end
+
+  def test_image_mobile_head_style_uses_active_breakpoint
+    result = compile(<<~MJML, validation_level: "strict")
+      <mjml>
+        <mj-head>
+          <mj-breakpoint width="320px" />
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-image src="https://example.test/image.png" fluid-on-mobile="true" />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, "@media only screen and (max-width:319px)")
+  end
 end

@@ -27,7 +27,6 @@ This checklist is based on a direct comparison between the current Ruby code in 
   - keep separate head style buckets like npm instead of flattening everything into one style tag
 - [ ] Match npm font injection from `.mjml-src/packages/mjml-core/src/helpers/fonts.js`. The Ruby renderer currently emits every known font link unconditionally, while npm only emits fonts that are actually used in content or inline styles and wraps them in a non-MSO conditional block with `@import`.
 - [ ] Revisit inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. The current CSS parser strips `@` rules and applies a simplified declaration merge, while npm relies on a richer cascade-aware inlining path.
-- [ ] Replace the fixed mobile breakpoint CSS in `lib/mjml-rb/components/image.rb` with the npm behavior from `.mjml-src/packages/mjml-image/src/index.js`, which derives the max-width query from the active breakpoint via `makeLowerBreakpoint`.
 - [ ] Replace or further constrain the `Nokogiri` post-processing path used by `mj-html-attributes` and inline style injection. It works for the current cases, but it is still a behavior fork from npm and already needed selector fallbacks such as `:lang(...)`.
 - [ ] Rewrite `mj-html-attributes` so it does not depend on `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections, if we want to keep the runtime dependency surface minimal.
 
