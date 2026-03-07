@@ -5,7 +5,7 @@ module MjmlRb
     class Section < Base
       TAGS = %w[mj-section mj-wrapper].freeze
 
-      ALLOWED_ATTRIBUTES = {
+      SECTION_ALLOWED_ATTRIBUTES = {
         "background-color" => "color",
         "border" => "string",
         "border-bottom" => "string",
@@ -22,11 +22,25 @@ module MjmlRb
         "text-align" => "enum(left,center,right)"
       }.freeze
 
+      WRAPPER_ALLOWED_ATTRIBUTES = SECTION_ALLOWED_ATTRIBUTES.merge(
+        "full-width" => "enum(full-width)"
+      ).freeze
+
       DEFAULT_ATTRIBUTES = {
         "direction"  => "ltr",
         "padding"    => "20px 0",
         "text-align" => "center"
       }.freeze
+
+      class << self
+        def allowed_attributes_for(tag_name)
+          tag_name == "mj-wrapper" ? WRAPPER_ALLOWED_ATTRIBUTES : SECTION_ALLOWED_ATTRIBUTES
+        end
+
+        def allowed_attributes
+          SECTION_ALLOWED_ATTRIBUTES
+        end
+      end
 
       def tags
         TAGS
@@ -238,6 +252,7 @@ module MjmlRb
         container_px = parse_px(context[:container_width] || "600px")
         css_class    = a["css-class"]
         bg_color     = a["background-color"]
+        full_width   = a["full-width"] == "full-width"
 
         # renderBefore — same structure as section
         outlook_class = css_class ? "#{css_class}-outlook" : ""
@@ -259,7 +274,7 @@ module MjmlRb
           "background"       => bg_color,
           "background-color" => bg_color,
           "margin"           => "0px auto",
-          "max-width"        => "#{container_px}px"
+          "max-width"        => (full_width ? nil : "#{container_px}px")
         )
 
         table_style = style_join(
@@ -284,7 +299,7 @@ module MjmlRb
 
         wrapper_html =
           %(<div#{html_attrs(div_attrs)}>) +
-          %(<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="#{table_style}">) +
+          %(<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="#{table_style}" width="100%">) +
           %(<tbody><tr><td style="#{td_style}">#{inner}</td></tr></tbody></table></div>)
 
         render_after = %(<!--[if mso | IE]></td></tr></table><![endif]-->)

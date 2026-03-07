@@ -463,6 +463,29 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, '<td align="left" style="font-size:0px;padding:0;word-break:break-word">')
   end
 
+  def test_wrapper_accepts_full_width_in_strict_mode
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-wrapper full-width="full-width" background-color="#f0f0f0" css-class="hero-wrap">
+            <mj-section>
+              <mj-column>
+                <mj-text>Wrapped</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="hero-wrap"')
+    assert_includes(result.html, 'background:#f0f0f0')
+    assert_includes(result.html, 'role="presentation" style="background:#f0f0f0;background-color:#f0f0f0;width:100%" width="100%"')
+    assert_includes(result.html, "Wrapped")
+  end
+
   def test_mj_html_attribute_applies_custom_attributes_to_rendered_nodes
     mjml = <<~MJML
       <mjml>
