@@ -34,6 +34,8 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - restore `word-spacing:normal` on `<body>`
   - keep separate head style buckets like npm instead of flattening everything into one style tag
 - [ ] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. Bucket routing now matches npm more closely, but the current CSS parser still strips `@` rules and applies a simplified declaration merge instead of npm's richer cascade-aware inlining path.
+- [ ] Fix double-escaped query params in rendered links. Recent log comparison showed Ruby output producing `&amp;amp;utm_...` in some signed URLs where npm correctly emits `&amp;utm_...`.
+- [ ] Fix button/table fallback attribute mismatches against npm. Recent log comparison showed cases where Ruby emitted `bgcolor="#414141"` while the effective button background was white, which is risky for Outlook-style fallback rendering.
 - [ ] Replace or further constrain the `Nokogiri` post-processing path used by `mj-html-attributes` and inline style injection. It works for the current cases, but it is still a behavior fork from npm and already needed selector fallbacks such as `:lang(...)`.
 - [ ] Rewrite `mj-html-attributes` so it does not depend on `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections, if we want to keep the runtime dependency surface minimal.
 
