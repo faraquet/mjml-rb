@@ -450,6 +450,41 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'Buy Now')
   end
 
+  def test_button_inlined_background_color_updates_fallback_background
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .btn table td {
+              background-color: white;
+              border: 1px solid #e6e6e6;
+            }
+
+            .btn a {
+              background-color: white;
+              color: #00ada5;
+            }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button css-class="btn" href="https://example.com">Manage your booking</mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'bgcolor="white"')
+    assert_includes(result.html, 'background: white')
+    assert_includes(result.html, 'background-color: white')
+    refute_includes(result.html, 'bgcolor="#414141"')
+    refute_includes(result.html, 'background: #414141')
+  end
+
   def test_accordion_component_renders
     accordion = <<~MJML
       <mjml>

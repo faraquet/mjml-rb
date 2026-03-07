@@ -367,7 +367,41 @@ module MjmlRb
       declarations.each do |property, value|
         existing[property] = value
       end
+      normalize_background_fallbacks!(node, existing)
       node["style"] = existing.map { |property, value| "#{property}: #{value}" }.join("; ")
+    end
+
+    def normalize_background_fallbacks!(node, declarations)
+      background_color = declarations["background-color"]
+      return if background_color.nil? || background_color.empty?
+
+      if syncable_background?(declarations["background"])
+        declarations["background"] = background_color
+      end
+
+      return unless node.name == "td"
+      return unless node["bgcolor"]
+      return if %w[none transparent].include?(background_color.downcase)
+
+      node["bgcolor"] = background_color
+    end
+
+    def syncable_background?(value)
+      return true if value.nil? || value.empty?
+
+      normalized = value.downcase
+      !normalized.include?("url(") &&
+        !normalized.include?("gradient(") &&
+        !normalized.include?("/") &&
+        !normalized.include?(" no-repeat") &&
+        !normalized.include?(" repeat") &&
+        !normalized.include?(" fixed") &&
+        !normalized.include?(" scroll") &&
+        !normalized.include?(" center") &&
+        !normalized.include?(" top") &&
+        !normalized.include?(" bottom") &&
+        !normalized.include?(" left") &&
+        !normalized.include?(" right")
     end
 
     def append_component_head_styles(document, context)
