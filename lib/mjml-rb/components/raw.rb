@@ -16,6 +16,10 @@ module MjmlRb
       def render(tag_name:, node:, context:, attrs:, parent:)
         raw_inner(node)
       end
+
+      def handle_head(node, context)
+        context[:head_raw] << raw_inner(node)
+      end
     end
   end
 end

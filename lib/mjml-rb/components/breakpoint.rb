@@ -20,6 +20,11 @@ module MjmlRb
       def render(tag_name:, node:, context:, attrs:, parent:)
         ""
       end
+
+      def handle_head(node, context)
+        width = node.attributes["width"].to_s.strip
+        context[:breakpoint] = width unless width.empty?
+      end
     end
   end
 end

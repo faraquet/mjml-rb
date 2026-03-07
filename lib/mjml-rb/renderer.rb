@@ -5,6 +5,7 @@ require_relative "components/attributes"
 require_relative "components/body"
 require_relative "components/breakpoint"
 require_relative "components/button"
+require_relative "components/head"
 require_relative "components/hero"
 require_relative "components/image"
 require_relative "components/navbar"
@@ -71,74 +72,11 @@ module MjmlRb
       return context unless head
 
       head.element_children.each do |node|
-        case node.tag_name
-        when "mj-title"
-          context[:title] = node.text_content.strip
-        when "mj-preview"
-          context[:preview] = node.text_content.strip
-        when "mj-style"
-          context[:head_styles] << node.text_content
-          context[:inline_styles] << node.text_content if node.attributes["inline"] == "inline"
-        when "mj-font"
-          name = node.attributes["name"]
-          href = node.attributes["href"]
-          context[:fonts][name] = href if name && href
-        when "mj-breakpoint"
-          width = node.attributes["width"].to_s.strip
-          context[:breakpoint] = width unless width.empty?
-        when "mj-attributes"
-          if (component = component_for(node.tag_name)) && component.respond_to?(:handle_head)
-            component.handle_head(node, context)
-          else
-            absorb_attribute_node(node, context)
-          end
-        when "mj-html-attributes"
-          absorb_html_attributes_node(node, context)
-        when "mj-raw"
-          context[:head_raw] << raw_inner(node)
-        end
+        component = component_for(node.tag_name)
+        component.handle_head(node, context) if component&.respond_to?(:handle_head)
       end
 
       context
-    end
-
-    def absorb_attribute_node(attributes_node, context)
-      attributes_node.element_children.each do |child|
-        case child.tag_name
-        when "mj-all"
-          context[:global_defaults].merge!(child.attributes)
-        when "mj-class"
-          name = child.attributes["name"]
-          next unless name
-
-          context[:classes][name] = child.attributes.reject { |k, _| k == "name" }
-        else
-          context[:tag_defaults][child.tag_name] ||= {}
-          context[:tag_defaults][child.tag_name].merge!(child.attributes)
-        end
-      end
-    end
-
-    def absorb_html_attributes_node(html_attributes_node, context)
-      html_attributes_node.element_children.each do |selector|
-        next unless selector.tag_name == "mj-selector"
-
-        path = selector.attributes["path"].to_s.strip
-        next if path.empty?
-
-        custom_attrs = selector.element_children.each_with_object({}) do |child, memo|
-          next unless child.tag_name == "mj-html-attribute"
-
-          name = child.attributes["name"].to_s.strip
-          next if name.empty?
-
-          memo[name] = child.text_content
-        end
-        next if custom_attrs.empty?
-
-        context[:html_attributes][path] ||= {}
-        context[:html_attributes][path].merge!(custom_attrs)
-      end
     end
 
     def build_html_document(content, context)
@@ -433,6 +371,7 @@ module MjmlRb
         registry = {}
         # Register component classes here as they are implemented.
         register_component(registry, Components::Body.new(self))
+        register_component(registry, Components::Head.new(self))
         register_component(registry, Components::Attributes.new(self))
         register_component(registry, Components::Breakpoint.new(self))
         register_component(registry, Components::Accordion.new(self))
@@ -443,6 +382,7 @@ module MjmlRb
         register_component(registry, Components::Raw.new(self))
         register_component(registry, Components::Text.new(self))
         register_component(registry, Components::Divider.new(self))
+        register_component(registry, Components::HtmlAttributes.new(self))
         register_component(registry, Components::Table.new(self))
         register_component(registry, Components::Social.new(self))
         register_component(registry, Components::Section.new(self))

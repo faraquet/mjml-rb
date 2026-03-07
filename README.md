@@ -61,14 +61,14 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-navbar` | migrated | Implemented in `navbar.rb`, including `base-url` propagation and breakpoint-aware hamburger CSS. |
 | `mj-navbar-link` | migrated | Implemented in `navbar.rb` as an ending-tag navbar child component. |
 | `mj-raw` | migrated | Implemented in `raw.rb`, including head insertion and top-level `position="file-start"` output before the doctype. |
-| `mj-head` | partial | Core tags such as `mj-title`, `mj-preview`, `mj-style`, `mj-font`, and `mj-attributes` are supported. |
+| `mj-head` | migrated | Implemented in `head.rb` and dispatches supported head children through component handlers. |
 | `mj-attributes` | migrated | Implemented in `attributes.rb`, including npm-style `mj-class` descendant defaults. |
 | `mj-all` | partial | Supported through `mj-attributes`. |
 | `mj-class` | migrated | Supported through `attributes.rb`, including nested per-tag descendant defaults. |
-| `mj-title` | partial | Supported through head context. |
-| `mj-preview` | partial | Supported through head context. |
-| `mj-style` | partial | Supported, including inline CSS application. |
-| `mj-font` | partial | Supported for font link injection. |
+| `mj-title` | migrated | Implemented in `head.rb`. |
+| `mj-preview` | migrated | Implemented in `head.rb`. |
+| `mj-style` | migrated | Implemented in `head.rb`, including inline-style registration. |
+| `mj-font` | migrated | Implemented in `head.rb`. |
 | `mj-carousel` | not migrated | Declared in dependency rules but no renderer implementation yet. |
 | `mj-carousel-image` | not migrated | Declared in dependency rules but no renderer implementation yet. |
 | `mj-breakpoint` | migrated | Supported in `mj-head` and used to control desktop column media-query widths. |
