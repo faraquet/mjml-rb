@@ -90,4 +90,31 @@ class TestColumnAndImage < Minitest::Test
     assert_includes html, "display:block"
     assert_includes html, 'width="550"'
   end
+
+  def test_image_emits_cell_and_image_dimension_attributes_like_mjml
+    html = render(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column padding="0">
+              <mj-image
+                src="https://example.com/logo.png"
+                alt=""
+                align="left"
+                width="140px"
+                height="24px"
+                padding="0"
+              />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_includes html, '<td style="width:140px" width="140" height="24" align="left">'
+    assert_includes html, 'style="border:0;display:block;outline:none;text-decoration:none;height:24px;width:100%;font-size:13px"'
+    assert_includes html, 'src="https://example.com/logo.png"'
+    assert_includes html, 'width="auto"'
+    assert_includes html, 'height="24"'
+  end
 end

@@ -461,6 +461,31 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'Default body width')
   end
 
+  def test_document_defaults_match_mjml_baseline_more_closely
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Defaults</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, '<html lang="und" dir="auto">')
+    assert_includes(result.html, "<title></title>")
+    assert_includes(result.html, 'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700')
+    refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700')
+    refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Droid+Sans:300,400,500,700')
+    refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Lato:300,400,500,700')
+    refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700')
+    assert_includes(result.html, 'lang="und" dir="auto"')
+  end
+
   def test_section_component_applies_mj_class_background_radius_and_padding
     mjml = <<~MJML
       <mjml>

@@ -16,11 +16,7 @@ require_relative "components/spacer"
 module MjmlRb
   class Renderer
     DEFAULT_FONTS = {
-      "Open Sans" => "https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700",
-      "Droid Sans" => "https://fonts.googleapis.com/css?family=Droid+Sans:300,400,500,700",
-      "Lato" => "https://fonts.googleapis.com/css?family=Lato:300,400,500,700",
-      "Roboto" => "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700",
-      "Ubuntu" => "https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700"
+      "Roboto" => "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700"
     }.freeze
     def render(document, options = {})
       head = find_child(document, "mj-head")
@@ -28,8 +24,8 @@ module MjmlRb
       raise ArgumentError, "Missing <mj-body>" unless body
 
       context = build_context(head, options)
-      context[:lang] = options[:lang] || document.attributes["lang"] || "en"
-      context[:dir] = options[:dir] || document.attributes["dir"]
+      context[:lang] = options[:lang] || document.attributes["lang"] || "und"
+      context[:dir] = options[:dir] || document.attributes["dir"] || "auto"
       context[:column_widths] = {}
       append_component_head_styles(document, context)
       content = render_node(body, context, parent: "mjml")
@@ -120,9 +116,9 @@ module MjmlRb
     end
 
     def build_html_document(content, context)
-      title = context[:title].empty? ? "MJML Document" : context[:title]
+      title = context[:title].to_s
       preview = context[:preview]
-      head_styles = context[:head_styles].join("\n")
+      head_styles = unique_strings(context[:head_styles]).join("\n")
       font_links = context[:fonts].values.uniq.map { |href| %(<link href="#{escape_attr(href)}" rel="stylesheet" type="text/css">) }.join("\n")
       preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
       html_attributes = { "lang" => context[:lang], "dir" => context[:dir] }
@@ -287,7 +283,7 @@ module MjmlRb
     end
 
     def apply_inline_styles(html, context)
-      css_blocks = Array(context[:inline_styles]).reject { |css| css.nil? || css.strip.empty? }
+      css_blocks = unique_strings(context[:inline_styles]).reject { |css| css.nil? || css.strip.empty? }
       return html if css_blocks.empty?
 
       document = Nokogiri::HTML(html)
@@ -509,6 +505,15 @@ module MjmlRb
       return "" if attrs.empty?
 
       " #{attrs.join(' ')}"
+    end
+
+    def unique_strings(values)
+      Array(values).each_with_object([]) do |value, memo|
+        next if value.nil? || value.empty?
+        next if memo.include?(value)
+
+        memo << value
+      end
     end
   end
 end

@@ -75,7 +75,10 @@ module MjmlRb
 
         td_attrs = {
           "style" => style_join("width" => full_width ? nil : "#{content_width}px"),
-          "class" => fluid ? "mj-full-width-mobile" : nil
+          "class" => fluid ? "mj-full-width-mobile" : nil,
+          "width" => full_width ? nil : content_width.to_i.to_s,
+          "height" => height_attribute(a["height"]),
+          "align" => a["align"]
         }
 
         img_style = style_join(
@@ -103,7 +106,7 @@ module MjmlRb
           "sizes" => a["sizes"],
           "style" => img_style,
           "title" => a["title"],
-          "width" => content_width.to_i.to_s,
+          "width" => img_width_attribute(a, content_width),
           "usemap" => a["usemap"],
           "height" => height_attribute(a["height"])
         }
@@ -134,6 +137,13 @@ module MjmlRb
         return if height.nil? || height.empty?
 
         height == "auto" ? "auto" : height.to_i.to_s
+      end
+
+      def img_width_attribute(attrs, content_width)
+        return "auto" if attrs["width"] && attrs["height"] && attrs["height"] != "auto"
+        return attrs["width"].to_i.to_s if attrs["width"] && attrs["width"] =~ /^(\d+(?:\.\d+)?)\s*px$/
+
+        content_width.to_i.to_s
       end
 
       def get_content_width(attrs, context)
