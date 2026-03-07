@@ -4,6 +4,7 @@ require_relative "components/accordion"
 require_relative "components/body"
 require_relative "components/breakpoint"
 require_relative "components/button"
+require_relative "components/hero"
 require_relative "components/image"
 require_relative "components/navbar"
 require_relative "components/text"
@@ -182,8 +183,6 @@ module MjmlRb
         render_group(node, context)
       when "mj-raw"
         raw_inner(node)
-      when "mj-hero"
-        render_hero(node, context, attrs)
       else
         render_children(node, context, parent: node.tag_name)
       end
@@ -224,12 +223,6 @@ module MjmlRb
       else
         widths
       end
-    end
-
-    def render_hero(node, context, attrs)
-      background = attrs["background-url"] ? "background-image:url('#{escape_attr(attrs["background-url"])}');background-size:cover;" : ""
-      section = %(<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody>#{render_children(node, context, parent: "mj-hero")}</tbody></table>)
-      %(<tr><td style="padding:#{escape_attr(attrs["padding"] || "0")};#{background}">#{section}</td></tr>)
     end
 
     def append_column_width_styles(context)
@@ -396,6 +389,7 @@ module MjmlRb
         register_component(registry, Components::Breakpoint.new(self))
         register_component(registry, Components::Accordion.new(self))
         register_component(registry, Components::Button.new(self))
+        register_component(registry, Components::Hero.new(self))
         register_component(registry, Components::Image.new(self))
         register_component(registry, Components::Navbar.new(self))
         register_component(registry, Components::Text.new(self))
