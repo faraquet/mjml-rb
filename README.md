@@ -69,11 +69,11 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-font` | partial | Supported for font link injection. |
 | `mj-carousel` | not migrated | Declared in dependency rules but no renderer implementation yet. |
 | `mj-carousel-image` | not migrated | Declared in dependency rules but no renderer implementation yet. |
-| `mj-breakpoint` | not migrated | Allowed in `mj-head`, but not implemented. |
+| `mj-breakpoint` | migrated | Supported in `mj-head` and used to control desktop column media-query widths. |
 | `mj-html-attributes` | migrated | Supported in `mj-head` and applied to the rendered HTML via CSS selectors. |
 | `mj-selector` | migrated | Supported as the selector container for `mj-html-attribute` rules. |
 | `mj-html-attribute` | migrated | Supported for injecting custom HTML attributes into matched rendered nodes. |
 
-Remaining top-level migration work is mainly `mj-carousel`, `mj-carousel-image`, and `mj-breakpoint`, plus bringing the remaining renderer-owned partial implementations closer to upstream JS behavior.
+Remaining top-level migration work is mainly `mj-carousel` and `mj-carousel-image`, plus bringing the remaining renderer-owned partial implementations closer to upstream JS behavior.
 
 TODO: `mj-html-attributes` currently uses `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections. Rewrite this path to avoid `Nokogiri` if we want to keep the runtime dependency surface minimal.

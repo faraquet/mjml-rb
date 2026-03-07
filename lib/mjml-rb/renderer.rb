@@ -2,6 +2,7 @@ require "cgi"
 require "nokogiri"
 require_relative "components/accordion"
 require_relative "components/body"
+require_relative "components/breakpoint"
 require_relative "components/button"
 require_relative "components/image"
 require_relative "components/text"
@@ -48,6 +49,7 @@ module MjmlRb
       context = {
         title: "",
         preview: "",
+        breakpoint: "480px",
         head_styles: [],
         inline_styles: [],
         body_styles: [],
@@ -73,6 +75,9 @@ module MjmlRb
           name = node.attributes["name"]
           href = node.attributes["href"]
           context[:fonts][name] = href if name && href
+        when "mj-breakpoint"
+          width = node.attributes["width"].to_s.strip
+          context[:breakpoint] = width unless width.empty?
         when "mj-attributes"
           absorb_attribute_node(node, context)
         when "mj-html-attributes"
@@ -259,7 +264,12 @@ module MjmlRb
       css = widths.map do |suffix, pct|
         ".mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
       end.join("\n")
-      context[:head_styles] << css
+      breakpoint = context[:breakpoint].to_s.strip
+      if breakpoint.empty?
+        context[:head_styles] << css
+      else
+        context[:head_styles] << "@media only screen and (min-width:#{breakpoint}) {\n#{css}\n}"
+      end
     end
 
     def merge_outlook_conditionals(html)
@@ -404,6 +414,7 @@ module MjmlRb
         registry = {}
         # Register component classes here as they are implemented.
         register_component(registry, Components::Body.new(self))
+        register_component(registry, Components::Breakpoint.new(self))
         register_component(registry, Components::Accordion.new(self))
         register_component(registry, Components::Button.new(self))
         register_component(registry, Components::Image.new(self))
