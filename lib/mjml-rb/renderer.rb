@@ -44,6 +44,7 @@ module MjmlRb
         title: "",
         preview: "",
         head_styles: [],
+        inline_styles: [],
         body_styles: [],
         html_attributes: {},
         fonts: DEFAULT_FONTS.merge(hash_or_empty(options[:fonts])),
@@ -62,6 +63,7 @@ module MjmlRb
           context[:preview] = node.text_content.strip
         when "mj-style"
           context[:head_styles] << node.text_content
+          context[:inline_styles] << node.text_content if node.attributes["inline"] == "inline"
         when "mj-font"
           name = node.attributes["name"]
           href = node.attributes["href"]
@@ -147,7 +149,8 @@ module MjmlRb
         </html>
       HTML
 
-      apply_html_attributes(html, context)
+      html = apply_html_attributes(html, context)
+      apply_inline_styles(html, context)
     end
 
     def render_children(node, context, parent:)
@@ -281,6 +284,92 @@ module MjmlRb
       end
 
       document.to_html
+    end
+
+    def apply_inline_styles(html, context)
+      css_blocks = Array(context[:inline_styles]).reject { |css| css.nil? || css.strip.empty? }
+      return html if css_blocks.empty?
+
+      document = Nokogiri::HTML(html)
+      parse_inline_css_rules(css_blocks.join("\n")).each do |selector, declarations|
+        next if selector.empty? || declarations.empty?
+
+        begin
+          document.css(selector).each do |node|
+            merge_inline_style!(node, declarations)
+          end
+        rescue Nokogiri::CSS::SyntaxError
+          next
+        end
+      end
+
+      document.to_html
+    end
+
+    def parse_inline_css_rules(css)
+      stripped_css = strip_css_comments(css.to_s)
+      plain_css = strip_css_at_rules(stripped_css)
+
+      plain_css.scan(/([^{}]+)\{([^{}]+)\}/m).flat_map do |selector_group, declarations|
+        selectors = selector_group.split(",").map(&:strip).reject(&:empty?)
+        declaration_map = parse_css_declarations(declarations)
+        selectors.map { |selector| [selector, declaration_map] }
+      end
+    end
+
+    def strip_css_comments(css)
+      css.gsub(%r{/\*.*?\*/}m, "")
+    end
+
+    def strip_css_at_rules(css)
+      result = +""
+      index = 0
+
+      while index < css.length
+        if css[index] == "@"
+          brace_index = css.index("{", index)
+          semicolon_index = css.index(";", index)
+
+          if semicolon_index && (brace_index.nil? || semicolon_index < brace_index)
+            index = semicolon_index + 1
+            next
+          end
+
+          if brace_index
+            depth = 1
+            cursor = brace_index + 1
+            while cursor < css.length && depth.positive?
+              depth += 1 if css[cursor] == "{"
+              depth -= 1 if css[cursor] == "}"
+              cursor += 1
+            end
+            index = cursor
+            next
+          end
+        end
+
+        result << css[index]
+        index += 1
+      end
+
+      result
+    end
+
+    def parse_css_declarations(declarations)
+      declarations.split(";").each_with_object({}) do |entry, memo|
+        property, value = entry.split(":", 2).map { |part| part&.strip }
+        next if property.nil? || property.empty? || value.nil? || value.empty?
+
+        memo[property] = value.sub(/\s*!important\s*\z/, "").strip
+      end
+    end
+
+    def merge_inline_style!(node, declarations)
+      existing = parse_css_declarations(node["style"].to_s)
+      declarations.each do |property, value|
+        existing[property] = value
+      end
+      node["style"] = existing.map { |property, value| "#{property}: #{value}" }.join("; ")
     end
 
     def append_component_head_styles(document, context)
