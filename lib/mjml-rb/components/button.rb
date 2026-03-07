@@ -101,7 +101,7 @@ module MjmlRb
         )
         link_attrs = { "style" => link_style }
         if tag == "a"
-          link_attrs["href"] = escape_attr(href)
+          link_attrs["href"] = href
           link_attrs["name"] = a["name"]
           link_attrs["rel"] = a["rel"]
           link_attrs["title"] = a["title"]

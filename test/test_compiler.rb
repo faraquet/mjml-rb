@@ -374,6 +374,30 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'Click me')
   end
 
+  def test_button_href_query_params_are_escaped_once
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button href="https://example.com/booking?utm_source=email&utm_medium=transactional&amp;utm_campaign=spring">
+                Manage booking
+              </mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(
+      result.html,
+      'href="https://example.com/booking?utm_source=email&amp;utm_medium=transactional&amp;utm_campaign=spring"'
+    )
+    refute_includes(result.html, "&amp;amp;")
+  end
+
   def test_button_component_renders_without_href_as_p_tag
     mjml = <<~MJML
       <mjml>
