@@ -139,14 +139,16 @@ module MjmlRb
         outlook_open  = %(<!--[if mso | IE]><table align="#{escape_attr(align)}" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr>)
         outlook_close = %(</tr></table><![endif]-->)
 
-        children_html = elements.map.with_index do |child, idx|
-          child_attrs  = resolved_attributes(child, context)
-          merged_attrs = ELEMENT_DEFAULTS.merge(inherited).merge(child_attrs)
-          el_html      = render_social_element(child, merged_attrs)
+        children_html = with_inherited_mj_class(context, node) do
+          elements.map.with_index do |child, idx|
+            child_attrs  = resolved_attributes(child, context)
+            merged_attrs = ELEMENT_DEFAULTS.merge(inherited).merge(child_attrs)
+            el_html      = render_social_element(child, merged_attrs)
 
-          outlook_td_open  = idx == 0 ? "<td>" : "</td><td>"
-          %(#{outlook_td_open}<![endif]--><table align="#{escape_attr(align)}" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;"><tbody>#{el_html}</tbody></table><!--[if mso | IE]>)
-        end.join
+            outlook_td_open  = idx == 0 ? "<td>" : "</td><td>"
+            %(#{outlook_td_open}<![endif]--><table align="#{escape_attr(align)}" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;"><tbody>#{el_html}</tbody></table><!--[if mso | IE]>)
+          end.join
+        end
 
         %(#{outlook_open}#{children_html}</td>#{outlook_close})
       end
@@ -155,11 +157,13 @@ module MjmlRb
         inherited = inherited_attrs(social_attrs)
         elements  = social_element_children(node)
 
-        children_html = elements.map do |child|
-          child_attrs  = resolved_attributes(child, context)
-          merged_attrs = ELEMENT_DEFAULTS.merge(inherited).merge(child_attrs)
-          render_social_element(child, merged_attrs)
-        end.join
+        children_html = with_inherited_mj_class(context, node) do
+          elements.map do |child|
+            child_attrs  = resolved_attributes(child, context)
+            merged_attrs = ELEMENT_DEFAULTS.merge(inherited).merge(child_attrs)
+            render_social_element(child, merged_attrs)
+          end.join
+        end
 
         %(<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin:0px;"><tbody>#{children_html}</tbody></table>)
       end

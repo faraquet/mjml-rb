@@ -164,14 +164,16 @@ module MjmlRb
       end
 
       def render_navbar_children(node, context)
-        node.element_children.map do |child|
-          case child.tag_name
-          when "mj-navbar-link", "mj-raw"
-            render_node(child, context, parent: "mj-navbar")
-          else
-            ""
-          end
-        end.join
+        with_inherited_mj_class(context, node) do
+          node.element_children.map do |child|
+            case child.tag_name
+            when "mj-navbar-link", "mj-raw"
+              render_node(child, context, parent: "mj-navbar")
+            else
+              ""
+            end
+          end.join
+        end
       end
 
       def render_navbar_link(node, context, attrs, parent:)

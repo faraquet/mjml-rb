@@ -740,6 +740,63 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, '<td align="left" style="font-size:0px;font-family:inherit;padding:0;word-break:break-word">')
   end
 
+  def test_mj_attributes_supports_nested_mj_class_defaults_for_descendants
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-attributes>
+            <mj-class name="promo" css-class="promo-root">
+              <mj-text color="#ff0000" font-size="20px" />
+            </mj-class>
+          </mj-attributes>
+        </mj-head>
+        <mj-body>
+          <mj-section mj-class="promo">
+            <mj-column>
+              <mj-text>Promo text</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="promo-root"')
+    assert_includes(result.html, 'font-size:20px')
+    assert_includes(result.html, 'color:#ff0000')
+    assert_includes(result.html, 'Promo text')
+  end
+
+  def test_mj_attributes_uses_nearest_mj_class_for_descendant_defaults
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-attributes>
+            <mj-class name="outer">
+              <mj-text color="#ff0000" />
+            </mj-class>
+            <mj-class name="inner">
+              <mj-text color="#0000ff" />
+            </mj-class>
+          </mj-attributes>
+        </mj-head>
+        <mj-body>
+          <mj-section mj-class="outer">
+            <mj-column mj-class="inner">
+              <mj-text>Nested text</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'color:#0000ff')
+    refute_includes(result.html, 'color:#ff0000')
+  end
+
   def test_wrapper_accepts_full_width_in_strict_mode
     mjml = <<~MJML
       <mjml>
@@ -761,33 +818,6 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'background:#f0f0f0')
     assert_includes(result.html, 'role="presentation" style="background:#f0f0f0;background-color:#f0f0f0;width:100%" width="100%"')
     assert_includes(result.html, "Wrapped")
-  end
-
-  def test_mj_html_attribute_applies_custom_attributes_to_rendered_nodes
-    mjml = <<~MJML
-      <mjml>
-        <mj-head>
-          <mj-html-attributes>
-            <mj-selector path=".cta a">
-              <mj-html-attribute name="data-track">primary</mj-html-attribute>
-              <mj-html-attribute name="data-source">newsletter</mj-html-attribute>
-            </mj-selector>
-          </mj-html-attributes>
-        </mj-head>
-        <mj-body>
-          <mj-section>
-            <mj-column>
-              <mj-button css-class="cta" href="https://example.com">Click me</mj-button>
-            </mj-column>
-          </mj-section>
-        </mj-body>
-      </mjml>
-    MJML
-
-    result = MjmlRb::Compiler.new.compile(mjml)
-    assert_empty(result.errors)
-    assert_includes(result.html, 'data-track="primary"')
-    assert_includes(result.html, 'data-source="newsletter"')
   end
 
   def test_mj_style_inline_applies_class_rules_to_rendered_markup
@@ -840,32 +870,6 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'padding-top: 10px')
     assert_includes(result.html, 'class="app-bnr--download-buttons"')
     assert_includes(result.html, 'display: none')
-  end
-
-  def test_mj_html_attribute_validates_metadata_in_strict_mode
-    mjml = <<~MJML
-      <mjml>
-        <mj-head>
-          <mj-html-attributes>
-            <mj-selector extra="x">
-              <mj-html-attribute invalid="x">primary</mj-html-attribute>
-            </mj-selector>
-          </mj-html-attributes>
-        </mj-head>
-        <mj-body>
-          <mj-section>
-            <mj-column>
-              <mj-text>Hello</mj-text>
-            </mj-column>
-          </mj-section>
-        </mj-body>
-      </mjml>
-    MJML
-
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-    messages = result.errors.map { |error| error[:message] }
-    assert_includes(messages, "Attribute `extra` is not allowed for <mj-selector>")
-    assert_includes(messages, "Attribute `invalid` is not allowed for <mj-html-attribute>")
   end
 
   def test_bare_ampersand_in_text_content

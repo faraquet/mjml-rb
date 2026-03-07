@@ -45,6 +45,10 @@ module MjmlRb
         renderer.send(:resolved_attributes, node, context)
       end
 
+      def with_inherited_mj_class(context, node, &block)
+        renderer.send(:with_inherited_mj_class, context, node, &block)
+      end
+
       def raw_inner(node)
         renderer.send(:raw_inner, node)
       end

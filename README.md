@@ -60,9 +60,9 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-navbar-link` | migrated | Implemented in `navbar.rb` as an ending-tag navbar child component. |
 | `mj-raw` | migrated | Implemented in `raw.rb`, including head insertion and top-level `position="file-start"` output before the doctype. |
 | `mj-head` | partial | Core tags such as `mj-title`, `mj-preview`, `mj-style`, `mj-font`, and `mj-attributes` are supported. |
-| `mj-attributes` | partial | `mj-all`, `mj-class`, and per-tag defaults are supported. |
+| `mj-attributes` | migrated | Implemented in `attributes.rb`, including npm-style `mj-class` descendant defaults. |
 | `mj-all` | partial | Supported through `mj-attributes`. |
-| `mj-class` | partial | Supported through `mj-attributes`. |
+| `mj-class` | migrated | Supported through `attributes.rb`, including nested per-tag descendant defaults. |
 | `mj-title` | partial | Supported through head context. |
 | `mj-preview` | partial | Supported through head context. |
 | `mj-style` | partial | Supported, including inline CSS application. |

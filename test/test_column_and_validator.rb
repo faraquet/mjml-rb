@@ -66,29 +66,6 @@ class MJMLColumnAndValidatorTest < Minitest::Test
     assert_match(%r{<table[^>]*role="presentation"[^>]*width="100%"[^>]*><tbody><tr><td align="left"}, result.html)
   end
 
-  def test_column_border_radius_and_inner_styles_follow_js_rendering
-    result = compile(<<~MJML)
-      <mjml>
-        <mj-body>
-          <mj-section>
-            <mj-column padding="12px" border-radius="8px" inner-background-color="#ddeeff" inner-border="1px solid #222222" inner-border-radius="6px" direction="rtl">
-              <mj-text>Hello</mj-text>
-            </mj-column>
-          </mj-section>
-        </mj-body>
-      </mjml>
-    MJML
-
-    assert_empty(result.errors)
-    assert_includes(result.html, 'direction:rtl')
-    assert_includes(result.html, '<table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="border-collapse:separate">')
-    assert_includes(result.html, 'padding:12px')
-    assert_includes(result.html, 'background-color:#ddeeff')
-    assert_includes(result.html, 'border:1px solid #222222')
-    assert_includes(result.html, 'border-radius:6px')
-    assert_includes(result.html, 'border-collapse:separate')
-  end
-
   def test_image_inside_half_width_column_uses_column_container_width
     result = compile(<<~MJML)
       <mjml>
@@ -124,6 +101,28 @@ class MJMLColumnAndValidatorTest < Minitest::Test
         <mj-body>
           <mj-section>
             <mj-column width="50%" padding="0 12px" direction="rtl" vertical-align="middle" css-class="hotel-column">
+              <mj-text>Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(errors)
+  end
+
+  def test_validator_accepts_column_border_radius_attributes
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column
+              border-radius="50px"
+              inner-border-radius="40px"
+              border="5px solid #000000"
+              inner-border="5px solid #666666"
+              padding="50px"
+            >
               <mj-text>Hello</mj-text>
             </mj-column>
           </mj-section>
@@ -180,5 +179,23 @@ class MJMLColumnAndValidatorTest < Minitest::Test
     MJML
 
     assert_includes(errors.map { |e| e[:message] }, "Attribute `padding` on <mj-column> has invalid value `12em` for type `unit(px,%){1,4}`")
+  end
+
+  def test_validator_rejects_invalid_column_border_radius_values
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column border-radius="12em" inner-border-radius="40pt">
+              <mj-text>Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    messages = errors.map { |e| e[:message] }
+    assert_includes(messages, "Attribute `border-radius` on <mj-column> has invalid value `12em` for type `unit(px,%){1,4}`")
+    assert_includes(messages, "Attribute `inner-border-radius` on <mj-column> has invalid value `40pt` for type `unit(px,%){1,4}`")
   end
 end

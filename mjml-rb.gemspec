@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"
 
-  spec.homepage = "https://github.com/faraquet/mjml-rails"
+  spec.homepage = "https://github.com/faraquet/mjml-rb"
   spec.files = Dir.chdir(__dir__) do
     Dir.glob("{bin,lib}/**/*") + ["Gemfile", "LICENSE", "mjml-rb.gemspec", "README.md"]
   end

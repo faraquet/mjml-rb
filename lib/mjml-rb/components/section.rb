@@ -224,22 +224,24 @@ module MjmlRb
         close_tr    = %(<!--[if mso | IE]></tr><![endif]-->)
         close_table = %(<!--[if mso | IE]></table><![endif]-->)
 
-        col_parts = columns.each_with_index.map do |col, i|
-          col_attrs = resolved_attributes(col, context)
-          v_align   = col_attrs["vertical-align"] || "top"
-          col_px    = (box_width.to_f * widths[i] / 100.0).round
+        col_parts = with_inherited_mj_class(context, node) do
+          columns.each_with_index.map do |col, i|
+            col_attrs = resolved_attributes(col, context)
+            v_align   = col_attrs["vertical-align"] || "top"
+            col_px    = (box_width.to_f * widths[i] / 100.0).round
 
-          td_open  = %(<!--[if mso | IE]><td class="" style="vertical-align:#{v_align};width:#{col_px}px;" ><![endif]-->)
-          td_close = %(<!--[if mso | IE]></td><![endif]-->)
+            td_open  = %(<!--[if mso | IE]><td class="" style="vertical-align:#{v_align};width:#{col_px}px;" ><![endif]-->)
+            td_close = %(<!--[if mso | IE]></td><![endif]-->)
 
-          col_html = if col.tag_name == "mj-group"
-                       renderer.send(:render_group, col, context, widths[i])
-                     else
-                       context[:_column_width_pct] = widths[i]
-                       render_node(col, context, parent: "mj-section")
-                     end
+            col_html = if col.tag_name == "mj-group"
+                         renderer.send(:render_group, col, context, widths[i])
+                       else
+                         context[:_column_width_pct] = widths[i]
+                         render_node(col, context, parent: "mj-section")
+                       end
 
-          "#{td_open}\n#{col_html}\n#{td_close}"
+            "#{td_open}\n#{col_html}\n#{td_close}"
+          end
         end
 
         ([open_table, open_tr] + col_parts + [close_tr, close_table]).join("\n")
@@ -317,11 +319,13 @@ module MjmlRb
         close_tr    = %(<!--[if mso | IE]></tr><![endif]-->)
         close_table = %(<!--[if mso | IE]></table><![endif]-->)
 
-        section_parts = children.map do |child|
-          td_open  = %(<!--[if mso | IE]><td class="" width="#{container_px}px" ><![endif]-->)
-          td_close = %(<!--[if mso | IE]></td><![endif]-->)
-          child_html = render_node(child, context, parent: "mj-wrapper")
-          "#{td_open}\n#{child_html}\n#{td_close}"
+        section_parts = with_inherited_mj_class(context, node) do
+          children.map do |child|
+            td_open  = %(<!--[if mso | IE]><td class="" width="#{container_px}px" ><![endif]-->)
+            td_close = %(<!--[if mso | IE]></td><![endif]-->)
+            child_html = render_node(child, context, parent: "mj-wrapper")
+            "#{td_open}\n#{child_html}\n#{td_close}"
+          end
         end
 
         ([open_table, open_tr] + section_parts + [close_tr, close_table]).join("\n")

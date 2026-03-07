@@ -20,6 +20,7 @@ module MjmlRb
     def parse(mjml, options = {})
       opts = normalize_options(options)
       xml = apply_preprocessors(mjml.to_s, opts[:preprocessors])
+      xml = wrap_raw_tags_in_cdata(xml)
       xml = normalize_html_void_tags(xml)
       xml = expand_includes(xml, opts) unless opts[:ignore_includes]
 
@@ -48,6 +49,7 @@ module MjmlRb
     end
 
     def expand_includes(xml, options)
+      xml = wrap_raw_tags_in_cdata(xml)
       xml = normalize_html_void_tags(xml)
       doc = Document.new(sanitize_bare_ampersands(xml))
       includes = XPath.match(doc, "//mj-include")
@@ -64,7 +66,7 @@ module MjmlRb
         replacement = if include_type == "html"
                         %(<mj-raw><![CDATA[#{escape_cdata(include_content)}]]></mj-raw>)
                       else
-                        normalize_html_void_tags(strip_xml_declaration(include_content))
+                        wrap_raw_tags_in_cdata(normalize_html_void_tags(strip_xml_declaration(include_content)))
                       end
 
         fragment = Document.new(sanitize_bare_ampersands("<include-root>#{replacement}</include-root>"))
@@ -98,6 +100,18 @@ module MjmlRb
       pattern = /<(#{HTML_VOID_TAGS.join("|")})(\s[^<>]*?)?>/i
       content.gsub(pattern) do |tag|
         tag.end_with?("/>") ? tag : tag.sub(/>$/, " />")
+      end
+    end
+
+    def wrap_raw_tags_in_cdata(content)
+      content.gsub(/<mj-raw(\s[^<>]*?)?>(.*?)<\/mj-raw>/mi) do
+        attrs = Regexp.last_match(1).to_s
+        inner = Regexp.last_match(2).to_s
+        if inner.include?("<![CDATA[")
+          "<mj-raw#{attrs}>#{inner}</mj-raw>"
+        else
+          "<mj-raw#{attrs}><![CDATA[#{escape_cdata(inner)}]]></mj-raw>"
+        end
       end
     end
 

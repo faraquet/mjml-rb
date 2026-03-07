@@ -94,16 +94,18 @@ module MjmlRb
           "border-bottom" => "none",
           "font-family" => accordion_attrs["font-family"]
         )
-        inner = node.element_children.map do |child|
-          case child.tag_name
-          when "mj-accordion-element"
-            render_accordion_element(child, context, accordion_attrs)
-          when "mj-raw"
-            raw_inner(child)
-          else
-            render_node(child, context, parent: "mj-accordion")
-          end
-        end.join
+        inner = with_inherited_mj_class(context, node) do
+          node.element_children.map do |child|
+            case child.tag_name
+            when "mj-accordion-element"
+              render_accordion_element(child, context, accordion_attrs)
+            when "mj-raw"
+              raw_inner(child)
+            else
+              render_node(child, context, parent: "mj-accordion")
+            end
+          end.join
+        end
 
         %(<tr><td style="#{outer_style}"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" class="mj-accordion" style="#{table_style}"><tbody>#{inner}</tbody></table></td></tr>)
       end
@@ -125,16 +127,18 @@ module MjmlRb
         content = []
         content << render_accordion_title(nil, attrs) unless has_title
 
-        children.each do |child|
-          case child.tag_name
-          when "mj-accordion-title"
-            child_attrs = attrs.merge(resolved_attributes(child, context))
-            content << render_accordion_title(child, child_attrs)
-          when "mj-accordion-text"
-            child_attrs = attrs.merge(resolved_attributes(child, context))
-            content << render_accordion_text(child, child_attrs)
-          when "mj-raw"
-            content << raw_inner(child)
+        with_inherited_mj_class(context, node) do
+          children.each do |child|
+            case child.tag_name
+            when "mj-accordion-title"
+              child_attrs = attrs.merge(resolved_attributes(child, context))
+              content << render_accordion_title(child, child_attrs)
+            when "mj-accordion-text"
+              child_attrs = attrs.merge(resolved_attributes(child, context))
+              content << render_accordion_text(child, child_attrs)
+            when "mj-raw"
+              content << raw_inner(child)
+            end
           end
         end
         content << render_accordion_text(nil, attrs) unless has_text

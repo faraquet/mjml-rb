@@ -1,6 +1,7 @@
 require "cgi"
 require "nokogiri"
 require_relative "components/accordion"
+require_relative "components/attributes"
 require_relative "components/body"
 require_relative "components/breakpoint"
 require_relative "components/button"
@@ -62,7 +63,9 @@ module MjmlRb
         fonts: DEFAULT_FONTS.merge(hash_or_empty(options[:fonts])),
         global_defaults: {},
         tag_defaults: {},
-        classes: {}
+        classes: {},
+        classes_default: {},
+        inherited_mj_class: ""
       }
 
       return context unless head
@@ -84,7 +87,11 @@ module MjmlRb
           width = node.attributes["width"].to_s.strip
           context[:breakpoint] = width unless width.empty?
         when "mj-attributes"
-          absorb_attribute_node(node, context)
+          if (component = component_for(node.tag_name)) && component.respond_to?(:handle_head)
+            component.handle_head(node, context)
+          else
+            absorb_attribute_node(node, context)
+          end
         when "mj-html-attributes"
           absorb_html_attributes_node(node, context)
         when "mj-raw"
@@ -173,7 +180,9 @@ module MjmlRb
     end
 
     def render_children(node, context, parent:)
-      node.children.map { |child| render_node(child, context, parent: parent) }.join("\n")
+      with_inherited_mj_class(context, node) do
+        node.children.map { |child| render_node(child, context, parent: parent) }.join("\n")
+      end
     end
 
     def render_node(node, context, parent:)
@@ -196,10 +205,12 @@ module MjmlRb
     def render_group(node, context, width_pct = 100)
       items = node.element_children.select { |e| e.tag_name == "mj-column" }
       widths = compute_column_widths(items, context)
-      items.each_with_index.map do |item, i|
-        context[:_column_width_pct] = widths[i]
-        render_node(item, context, parent: "mj-group")
-      end.join("\n")
+      with_inherited_mj_class(context, node) do
+        items.each_with_index.map do |item, i|
+          context[:_column_width_pct] = widths[i]
+          render_node(item, context, parent: "mj-group")
+        end.join("\n")
+      end
     end
 
     def compute_column_widths(columns, context)
@@ -391,6 +402,7 @@ module MjmlRb
         registry = {}
         # Register component classes here as they are implemented.
         register_component(registry, Components::Body.new(self))
+        register_component(registry, Components::Attributes.new(self))
         register_component(registry, Components::Breakpoint.new(self))
         register_component(registry, Components::Accordion.new(self))
         register_component(registry, Components::Button.new(self))
@@ -419,8 +431,18 @@ module MjmlRb
       attrs.merge!(context[:tag_defaults][node.tag_name] || {})
 
       node_classes = node.attributes["mj-class"].to_s.split(/\s+/).reject(&:empty?)
-      node_classes.each do |klass|
-        attrs.merge!(context[:classes][klass] || {})
+      class_attrs = node_classes.each_with_object({}) do |klass, memo|
+        mj_class_attrs = (context[:classes] || {})[klass] || {}
+        if memo["css-class"] && mj_class_attrs["css-class"]
+          memo["css-class"] = "#{memo["css-class"]} #{mj_class_attrs["css-class"]}"
+        end
+        memo.merge!(mj_class_attrs)
+      end
+      attrs.merge!(class_attrs)
+
+      inherited_classes = context[:inherited_mj_class].to_s.split(/\s+/).reject(&:empty?)
+      inherited_classes.each do |klass|
+        attrs.merge!(((context[:classes_default] || {})[klass] || {})[node.tag_name] || {})
       end
 
       attrs.merge!(node.attributes)
@@ -480,6 +502,15 @@ module MjmlRb
 
     def find_child(node, tag_name)
       node.element_children.find { |child| child.tag_name == tag_name }
+    end
+
+    def with_inherited_mj_class(context, node)
+      previous = context[:inherited_mj_class]
+      current = node.attributes["mj-class"]
+      context[:inherited_mj_class] = (current && !current.empty?) ? current : previous
+      yield
+    ensure
+      context[:inherited_mj_class] = previous
     end
 
     def root_file_start_raw(document)
