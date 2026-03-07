@@ -30,7 +30,6 @@ class ColumnTest < Minitest::Test
     assert_equal(["50px", "40px"], border_radius)
     assert_equal(["separate", "separate"], border_collapse)
   end
-
   private
 
   def extract_style_value(style, property)

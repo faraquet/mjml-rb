@@ -91,4 +91,29 @@ class HtmlAttributesTest < Minitest::Test
     assert_includes(messages, "Attribute `extra` is not allowed for <mj-selector>")
     assert_includes(messages, "Attribute `invalid` is not allowed for <mj-html-attribute>")
   end
+
+  def test_applies_html_attributes_for_lang_pseudo_selector
+    result = compile(<<~MJML)
+      <mjml lang="ar">
+        <mj-head>
+          <mj-html-attributes>
+            <mj-selector path=".caps:lang(ar)">
+              <mj-html-attribute name="data-lang-match">yes</mj-html-attribute>
+            </mj-selector>
+          </mj-html-attributes>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="caps">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    document = Nokogiri::HTML(result.html)
+    assert_equal(["yes"], document.css(".caps").map { |node| node["data-lang-match"] })
+  end
 end

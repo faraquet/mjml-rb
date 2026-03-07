@@ -271,14 +271,10 @@ module MjmlRb
       rules.each do |selector, attrs|
         next if selector.empty? || attrs.empty?
 
-        begin
-          document.css(selector).each do |node|
-            attrs.each do |name, value|
-              node[name] = value.to_s
-            end
+        select_nodes(document, selector).each do |node|
+          attrs.each do |name, value|
+            node[name] = value.to_s
           end
-        rescue Nokogiri::CSS::SyntaxError
-          next
         end
       end
 
@@ -293,16 +289,51 @@ module MjmlRb
       parse_inline_css_rules(css_blocks.join("\n")).each do |selector, declarations|
         next if selector.empty? || declarations.empty?
 
-        begin
-          document.css(selector).each do |node|
-            merge_inline_style!(node, declarations)
-          end
-        rescue Nokogiri::CSS::SyntaxError
-          next
+        select_nodes(document, selector).each do |node|
+          merge_inline_style!(node, declarations)
         end
       end
 
       document.to_html
+    end
+
+    def select_nodes(document, selector)
+      document.css(selector)
+    rescue Nokogiri::CSS::SyntaxError, Nokogiri::XML::XPath::SyntaxError
+      fallback_select_nodes(document, selector)
+    end
+
+    def fallback_select_nodes(document, selector)
+      return [] unless selector.include?(":lang(")
+
+      lang_values = selector.scan(/:lang\(([^)]+)\)/).flatten.map do |value|
+        value.to_s.strip.gsub(/\A['"]|['"]\z/, "").downcase
+      end.reject(&:empty?)
+      return [] if lang_values.empty?
+
+      base_selector = selector.gsub(/:lang\(([^)]+)\)/, "").strip
+      base_selector = "*" if base_selector.empty?
+
+      document.css(base_selector).select do |node|
+        lang_values.all? { |lang| lang_matches?(node, lang) }
+      end
+    rescue Nokogiri::CSS::SyntaxError, Nokogiri::XML::XPath::SyntaxError
+      []
+    end
+
+    def lang_matches?(node, lang)
+      current = node
+
+      while current
+        value = current["lang"]
+        if value && !value.empty?
+          normalized = value.downcase
+          return normalized == lang || normalized.start_with?("#{lang}-")
+        end
+        current = current.parent
+      end
+
+      false
     end
 
     def parse_inline_css_rules(css)

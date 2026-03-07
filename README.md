@@ -8,6 +8,8 @@
 > and not all components or attributes are fully implemented yet.
 > **Do not use in production without thorough testing of every template against
 > the official npm renderer.** API and output format may change without notice.
+> This is a **fully open source project**, and help is welcome:
+> feedback, bug reports, test cases, optimizations, proposals, and pull requests.
 > No warranty of any kind is provided.
 
 This directory contains a Ruby-first implementation of the main MJML user-facing tooling:

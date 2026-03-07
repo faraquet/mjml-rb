@@ -872,6 +872,33 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, 'display: none')
   end
 
+  def test_mj_style_inline_supports_lang_pseudo_selector
+    mjml = <<~MJML
+      <mjml lang="ar">
+        <mj-head>
+          <mj-style inline="inline">
+            .caps:lang(ar) { text-transform: uppercase; letter-spacing: 2px; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="caps">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    styles = document.css(".caps").map { |node| node["style"].to_s }
+    assert(styles.any? { |style| style.include?("text-transform: uppercase") })
+    assert(styles.any? { |style| style.include?("letter-spacing: 2px") })
+  end
+
   def test_bare_ampersand_in_text_content
     mjml = <<~MJML
       <mjml>
