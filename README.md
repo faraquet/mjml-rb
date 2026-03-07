@@ -56,8 +56,8 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-accordion-text` | migrated | Implemented in `accordion.rb`. |
 | `mj-spacer` | migrated | Implemented in `spacer.rb`. |
 | `mj-hero` | partial | Rendered directly by the renderer with simplified behavior. |
-| `mj-navbar` | partial | Rendered directly by the renderer with simplified behavior. |
-| `mj-navbar-link` | partial | Rendered directly by the renderer with simplified behavior. |
+| `mj-navbar` | migrated | Implemented in `navbar.rb`, including `base-url` propagation and breakpoint-aware hamburger CSS. |
+| `mj-navbar-link` | migrated | Implemented in `navbar.rb` as an ending-tag navbar child component. |
 | `mj-raw` | partial | Supported as passthrough content, but not as a dedicated migrated component. |
 | `mj-head` | partial | Core tags such as `mj-title`, `mj-preview`, `mj-style`, `mj-font`, and `mj-attributes` are supported. |
 | `mj-attributes` | partial | `mj-all`, `mj-class`, and per-tag defaults are supported. |

@@ -5,6 +5,7 @@ require_relative "components/body"
 require_relative "components/breakpoint"
 require_relative "components/button"
 require_relative "components/image"
+require_relative "components/navbar"
 require_relative "components/text"
 require_relative "components/divider"
 require_relative "components/html_attributes"
@@ -183,10 +184,6 @@ module MjmlRb
         raw_inner(node)
       when "mj-hero"
         render_hero(node, context, attrs)
-      when "mj-navbar"
-        render_navbar(node, context, attrs)
-      when "mj-navbar-link"
-        render_navbar_link(node, attrs, parent: parent)
       else
         render_children(node, context, parent: node.tag_name)
       end
@@ -233,28 +230,6 @@ module MjmlRb
       background = attrs["background-url"] ? "background-image:url('#{escape_attr(attrs["background-url"])}');background-size:cover;" : ""
       section = %(<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"><tbody>#{render_children(node, context, parent: "mj-hero")}</tbody></table>)
       %(<tr><td style="padding:#{escape_attr(attrs["padding"] || "0")};#{background}">#{section}</td></tr>)
-    end
-
-    def render_navbar(node, context, attrs)
-      align = attrs["align"] || "center"
-      links = node.element_children.select { |child| child.tag_name == "mj-navbar-link" }
-      content = links.map { |child| render_node(child, context, parent: "mj-navbar") }.join
-      %(<tr><td style="padding:#{escape_attr(attrs["padding"] || "10px 25px")};text-align:#{escape_attr(align)};"><table role="presentation" cellspacing="0" cellpadding="0" border="0"><tbody><tr>#{content}</tr></tbody></table></td></tr>)
-    end
-
-    def render_navbar_link(node, attrs, parent:)
-      href = escape_attr(attrs["href"] || "#")
-      label = node.text_content.strip
-      style = style_join(
-        "color" => attrs["color"] || "#000000",
-        "font-family" => attrs["font-family"] || "Arial, sans-serif",
-        "text-decoration" => "none",
-        "padding" => attrs["padding"] || "0 10px"
-      )
-      content = %(<a href="#{href}" style="#{style}">#{escape_html(label)}</a>)
-      return %(<td>#{content}</td>) if parent == "mj-navbar"
-
-      content
     end
 
     def append_column_width_styles(context)
@@ -391,7 +366,11 @@ module MjmlRb
       component_registry.each_value.uniq.each do |component|
         next unless component.respond_to?(:head_style)
 
-        style = component.head_style
+        style = if component.method(:head_style).arity == 1
+                  component.head_style(context[:breakpoint])
+                else
+                  component.head_style
+                end
         next if style.nil? || style.empty?
 
         tags = if component.respond_to?(:head_style_tags)
@@ -418,6 +397,7 @@ module MjmlRb
         register_component(registry, Components::Accordion.new(self))
         register_component(registry, Components::Button.new(self))
         register_component(registry, Components::Image.new(self))
+        register_component(registry, Components::Navbar.new(self))
         register_component(registry, Components::Text.new(self))
         register_component(registry, Components::Divider.new(self))
         register_component(registry, Components::Table.new(self))

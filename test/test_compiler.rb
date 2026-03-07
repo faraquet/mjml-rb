@@ -508,6 +508,72 @@ class MJMLCompilerTest < Minitest::Test
     refute_includes(result.html, "@media only screen and (min-width:480px)")
   end
 
+  def test_navbar_component_renders_links_with_base_url_and_outlook_markup
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-navbar base-url="https://example.com" align="left">
+                <mj-navbar-link href="/docs" css-class="nav-link">Docs</mj-navbar-link>
+                <mj-navbar-link href="/pricing">Pricing</mj-navbar-link>
+              </mj-navbar>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="mj-inline-links"')
+    assert_includes(result.html, 'align="left"')
+    assert_includes(result.html, 'href="https://example.com/docs"')
+    assert_includes(result.html, 'href="https://example.com/pricing"')
+    assert_includes(result.html, 'class="mj-link nav-link"')
+    assert_includes(result.html, 'class="nav-link-outlook"')
+    assert_includes(result.html, 'text-transform:uppercase')
+  end
+
+  def test_navbar_component_renders_hamburger_markup_and_uses_breakpoint_for_head_style
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-breakpoint width="320px" />
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-navbar
+                hamburger="hamburger"
+                ico-color="#ffffff"
+                ico-padding="20px"
+                ico-padding-top="50px"
+                ico-padding-right="40px"
+                ico-padding-bottom="20px"
+                ico-padding-left="30px"
+              >
+                <mj-navbar-link href="/docs">Docs</mj-navbar-link>
+              </mj-navbar>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, '@media only screen and (max-width:319px)')
+    assert_includes(result.html, 'class="mj-menu-checkbox"')
+    assert_includes(result.html, 'class="mj-menu-trigger"')
+    assert_includes(result.html, 'class="mj-menu-label"')
+    assert_includes(result.html, 'color:#ffffff')
+    assert_includes(result.html, 'padding-top:50px')
+    assert_includes(result.html, 'padding-right:40px')
+    assert_includes(result.html, 'padding-bottom:20px')
+    assert_includes(result.html, 'padding-left:30px')
+  end
+
   def test_document_defaults_match_mjml_baseline_more_closely
     mjml = <<~MJML
       <mjml>
