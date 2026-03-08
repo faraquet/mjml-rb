@@ -344,25 +344,32 @@ module MjmlRb
         property, value = entry.split(":", 2).map { |part| part&.strip }
         next if property.nil? || property.empty? || value.nil? || value.empty?
 
-        memo[property] = value.sub(/\s*!important\s*\z/, "").strip
+        important = value.match?(/\s*!important\s*\z/)
+        memo[property] = {
+          value: value.sub(/\s*!important\s*\z/, "").strip,
+          important: important
+        }
       end
     end
 
     def merge_inline_style!(node, declarations)
       existing = parse_css_declarations(node["style"].to_s)
       declarations.each do |property, value|
-        existing[property] = value
+        existing[property] = merge_css_declaration(existing[property], value)
       end
       normalize_background_fallbacks!(node, existing)
-      node["style"] = existing.map { |property, value| "#{property}: #{value}" }.join("; ")
+      node["style"] = serialize_css_declarations(existing)
     end
 
     def normalize_background_fallbacks!(node, declarations)
-      background_color = declarations["background-color"]
+      background_color = declaration_value(declarations["background-color"])
       return if background_color.nil? || background_color.empty?
 
-      if syncable_background?(declarations["background"])
-        declarations["background"] = background_color
+      if syncable_background?(declaration_value(declarations["background"]))
+        declarations["background"] = {
+          value: background_color,
+          important: declarations.fetch("background-color", {}).fetch(:important, false)
+        }
       end
 
       return unless node.name == "td"
@@ -388,6 +395,25 @@ module MjmlRb
         !normalized.include?(" bottom") &&
         !normalized.include?(" left") &&
         !normalized.include?(" right")
+    end
+
+    def merge_css_declaration(existing, incoming)
+      return incoming if existing.nil?
+      return existing if existing[:important] && !incoming[:important]
+
+      incoming
+    end
+
+    def declaration_value(declaration)
+      declaration && declaration[:value]
+    end
+
+    def serialize_css_declarations(declarations)
+      declarations.map do |property, declaration|
+        value = declaration[:value]
+        value = "#{value} !important" if declaration[:important]
+        "#{property}: #{value}"
+      end.join("; ")
     end
 
     def append_component_head_styles(document, context)

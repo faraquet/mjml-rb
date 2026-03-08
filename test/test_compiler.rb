@@ -959,6 +959,38 @@ class MJMLCompilerTest < Minitest::Test
     assert(styles.any? { |style| style.include?("letter-spacing: 2px") })
   end
 
+  def test_mj_style_inline_preserves_important_declarations
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            p a { display: inline !important; color: #00ada5 !important; }
+            .card--header--content a { display: block; width: 100%; color: #00ada5; text-decoration: none; line-height: 1.3; font-size: 16px; font-weight: 600; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="card--header--content">
+                <p>Your account has successfully been activated. You can now <a href="https://example.test/sign-in">sign in</a>.</p>
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    style = document.at_css(".card--header--content a")["style"].to_s
+
+    assert_includes(style, "display: inline !important")
+    assert_includes(style, "width: 100%")
+    refute_includes(style, "display: block")
+  end
+
   def test_bare_ampersand_in_text_content
     mjml = <<~MJML
       <mjml>
