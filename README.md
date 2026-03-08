@@ -44,7 +44,7 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-section` | migrated | Implemented in `section.rb`. |
 | `mj-wrapper` | migrated | Implemented via `section.rb`. |
 | `mj-column` | migrated | Implemented in `column.rb`. |
-| `mj-group` | migrated | Rendered directly by the renderer. |
+| `mj-group` | migrated | Implemented in `group.rb`, including width-aware child rendering and Outlook table wrappers. |
 | `mj-text` | migrated | Implemented in `text.rb`. |
 | `mj-image` | migrated | Implemented in `image.rb`. |
 | `mj-button` | migrated | Implemented in `button.rb`. |

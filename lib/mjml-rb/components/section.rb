@@ -233,12 +233,8 @@ module MjmlRb
             td_open  = %(<!--[if mso | IE]><td class="" style="vertical-align:#{v_align};width:#{col_px}px;" ><![endif]-->)
             td_close = %(<!--[if mso | IE]></td><![endif]-->)
 
-            col_html = if col.tag_name == "mj-group"
-                         renderer.send(:render_group, col, context, widths[i])
-                       else
-                         context[:_column_width_pct] = widths[i]
-                         render_node(col, context, parent: "mj-section")
-                       end
+            context[:_column_width_pct] = widths[i]
+            col_html = render_node(col, context, parent: "mj-section")
 
             "#{td_open}\n#{col_html}\n#{td_close}"
           end

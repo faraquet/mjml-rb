@@ -7,6 +7,7 @@ require_relative "components/breakpoint"
 require_relative "components/button"
 require_relative "components/carousel"
 require_relative "components/carousel_image"
+require_relative "components/group"
 require_relative "components/head"
 require_relative "components/hero"
 require_relative "components/image"
@@ -163,24 +164,7 @@ module MjmlRb
       if (component = component_for(node.tag_name))
         return component.render(tag_name: node.tag_name, node: node, context: context, attrs: attrs, parent: parent)
       end
-
-      case node.tag_name
-      when "mj-group"
-        render_group(node, context)
-      else
-        render_children(node, context, parent: node.tag_name)
-      end
-    end
-
-    def render_group(node, context, width_pct = 100)
-      items = node.element_children.select { |e| e.tag_name == "mj-column" }
-      widths = compute_column_widths(items, context)
-      with_inherited_mj_class(context, node) do
-        items.each_with_index.map do |item, i|
-          context[:_column_width_pct] = widths[i]
-          render_node(item, context, parent: "mj-group")
-        end.join("\n")
-      end
+      render_children(node, context, parent: node.tag_name)
     end
 
     def compute_column_widths(columns, context)
@@ -444,6 +428,7 @@ module MjmlRb
         register_component(registry, Components::Button.new(self))
         register_component(registry, Components::Carousel.new(self))
         register_component(registry, Components::CarouselImage.new(self))
+        register_component(registry, Components::Group.new(self))
         register_component(registry, Components::Hero.new(self))
         register_component(registry, Components::Image.new(self))
         register_component(registry, Components::Navbar.new(self))

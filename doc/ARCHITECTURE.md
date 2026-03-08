@@ -230,11 +230,9 @@ Currently implemented as component classes:
 - `mj-table`
 - `mj-social`, `mj-social-element`
 - `mj-section`, `mj-wrapper`
+- `mj-group`
 - `mj-column`
 - `mj-spacer`
-
-`mj-group` is currently a renderer-level special case rather than a dedicated
-component class.
 
 ### Component responsibilities
 
