@@ -1,0 +1,125 @@
+require "minitest/autorun"
+require "nokogiri"
+
+require_relative "../lib/mjml-rb"
+
+class TableTest < Minitest::Test
+  def compile(mjml, validation_level: "strict")
+    MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
+  end
+
+  def test_table_preserves_cellspacing_and_uses_separate_border_collapse
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table border="1px solid #000" width="auto" cellpadding="20" cellspacing="10" css-class="my-table">
+                <tr style="border-bottom:1px solid #000;text-align:left;">
+                  <th style="background:#ddd;">Year</th>
+                  <th style="background:#ddd;">Language</th>
+                  <th style="background:#ddd;">Inspired from</th>
+                </tr>
+                <tr>
+                  <td style="background:#ddd;">1995</td>
+                  <td style="background:#ddd;">PHP</td>
+                  <td style="background:#ddd;">C, Shell Unix</td>
+                </tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    table = document.at_css("td.my-table > table")
+
+    refute_nil(table)
+    assert_equal("10", table["cellspacing"])
+    assert_equal("separate", extract_style_value(table["style"], "border-collapse"))
+  end
+
+  def test_table_width_matches_upstream_cases
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper>
+            <mj-section>
+              <mj-column>
+                <mj-table css-class="table">
+                  <tr><th>Default Width</th><td>100%</td></tr>
+                </mj-table>
+              </mj-column>
+            </mj-section>
+            <mj-section>
+              <mj-column>
+                <mj-table width="500px" css-class="table">
+                  <tr><th>Pixel Width</th><td>500px</td></tr>
+                </mj-table>
+              </mj-column>
+            </mj-section>
+            <mj-section>
+              <mj-column>
+                <mj-table width="80%" css-class="table">
+                  <tr><th>Percentage Width</th><td>80%</td></tr>
+                </mj-table>
+              </mj-column>
+            </mj-section>
+            <mj-section>
+              <mj-column>
+                <mj-table width="auto" css-class="table">
+                  <tr><th>Auto Width</th><td>Auto</td></tr>
+                </mj-table>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    tables = document.css("td.table > table")
+
+    assert_equal(%w[100% 500 80% auto], tables.map { |table| table["width"] })
+    assert_equal(%w[100% 500px 80% auto], tables.map { |table| extract_style_value(table["style"], "width") })
+  end
+
+  def test_table_supports_font_weight_in_strict_mode
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="report-table" font-weight="700" table-layout="fixed">
+                <tr>
+                  <td>Cell</td>
+                </tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    table = document.at_css("td.report-table > table")
+
+    refute_nil(table)
+    assert_includes(table["style"].to_s, "font-weight:700")
+    assert_includes(table["style"].to_s, "table-layout:fixed")
+  end
+
+  private
+
+  def extract_style_value(style, property)
+    entry = style.to_s.split(";").map(&:strip).find { |item| item.start_with?("#{property}:") }
+    entry&.split(":", 2)&.last&.strip
+  end
+end

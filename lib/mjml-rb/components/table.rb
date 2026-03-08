@@ -5,6 +5,28 @@ module MjmlRb
     class Table < Base
       TAGS = ["mj-table"].freeze
 
+      ALLOWED_ATTRIBUTES = {
+        "align" => "enum(left,right,center)",
+        "border" => "string",
+        "cellpadding" => "string",
+        "cellspacing" => "string",
+        "color" => "color",
+        "container-background-color" => "color",
+        "font-family" => "string",
+        "font-size" => "string",
+        "font-weight" => "string",
+        "line-height" => "string",
+        "padding" => "unit(px,%){1,4}",
+        "padding-top" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "role" => "string",
+        "table-layout" => "enum(auto,fixed)",
+        "vertical-align" => "enum(top,bottom,middle)",
+        "width" => "string"
+      }.freeze
+
       DEFAULTS = {
         "align"        => "left",
         "border"       => "none",
@@ -49,6 +71,7 @@ module MjmlRb
           "color"           => a["color"],
           "font-family"     => a["font-family"],
           "font-size"       => a["font-size"],
+          "font-weight"     => a["font-weight"],
           "line-height"     => a["line-height"],
           "table-layout"    => a["table-layout"],
           "width"           => a["width"],

@@ -12,7 +12,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 
 ## P0: Remaining npm parity blockers
 
-- [ ] Add `ALLOWED_ATTRIBUTES` and validator type coverage for components that currently render without npm-style validation metadata: `lib/mjml-rb/components/accordion.rb`, `lib/mjml-rb/components/button.rb`, `lib/mjml-rb/components/divider.rb`, `lib/mjml-rb/components/image.rb`, `lib/mjml-rb/components/social.rb`, and `lib/mjml-rb/components/table.rb`.
+- [ ] Add `ALLOWED_ATTRIBUTES` and validator type coverage for components that currently render without npm-style validation metadata: `lib/mjml-rb/components/accordion.rb`, `lib/mjml-rb/components/button.rb`, `lib/mjml-rb/components/divider.rb`, `lib/mjml-rb/components/image.rb`, and `lib/mjml-rb/components/social.rb`.
 
 ## P1: Core runtime parity gaps
 
@@ -52,6 +52,8 @@ The dedicated component-level tests currently cover:
 - `carousel-validation`
 - `html-attributes`
 - `navbar-ico-padding`
+- `table-cellspacing`
+- `tableWidth`
 
 Still worth porting from `upstream/packages/mjml/test`:
 
@@ -62,8 +64,6 @@ Still worth porting from `upstream/packages/mjml/test`:
 - [ ] `lazy-head-style`
 - [ ] `social-align`
 - [ ] `social-icon-height`
-- [ ] `table-cellspacing`
-- [ ] `tableWidth`
 - [ ] `wrapper-border-radius`
 - [ ] `wrapper-gap`
 - [ ] `carousel-hoverSupported`
@@ -87,7 +87,6 @@ Detailed comparison of Ruby component attributes, defaults, and rendering logic 
 - [ ] **`mj-section` border-radius rendering.** npm adds `border-collapse: separate` on the inner table and `overflow: hidden` + `border-radius` on the outer div when `border-radius` is set. Ruby does not apply any of these.
 - [ ] **`mj-section` `border-radius` type mismatch.** npm declares `border-radius: 'string'` (accepts any CSS value including elliptical like `50%/10%`). Ruby declares `border-radius: 'unit(px,%){1,4}'` which is stricter and would reject valid CSS border-radius values.
 - [ ] **`mj-section` missing `text-padding`.** npm section has `text-padding: 'unit(px,%){1,4}'` with default `'4px 4px 4px 0'`. Ruby section does not have this attribute.
-- [ ] **`mj-table` missing `font-weight`.** npm table has `'font-weight': 'string'` as an allowed attribute. Ruby table does not list it.
 - [ ] **`mj-social` missing `table-layout`.** npm social has `'table-layout': 'enum(auto,fixed)'` as an allowed attribute. Ruby social does not have it.
 - [ ] **`mj-image` extra `full-width` attribute.** Ruby image supports a `full-width` attribute that npm image does **not** have. This should be verified — it may be an accidental addition not present upstream.
 

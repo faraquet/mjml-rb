@@ -56,24 +56,20 @@ Ruby wrapper has `full-width` which is correct. NPM wrapper also has `full-width
 
 NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
 
-## 5. `mj-table` — Missing `font-weight`
-
-NPM has `font-weight: 'string'` as an allowed attribute. Ruby's table component doesn't list it.
-
-## 6. `mj-social` — Missing `table-layout`
+## 5. `mj-social` — Missing `table-layout`
 
 NPM has `table-layout: 'enum(auto,fixed)'`. Ruby doesn't have it.
 
-## 7. `mj-image` — Extra `full-width` Attribute
+## 6. `mj-image` — Extra `full-width` Attribute
 
 Ruby's `mj-image` supports a `full-width` attribute that NPM's `mj-image` does **not** have. May be an accidental addition.
 
-## 8. `mj-section` — `border-radius` Type Mismatch
+## 7. `mj-section` — `border-radius` Type Mismatch
 
 - NPM: `border-radius: 'string'` (accepts any CSS value including elliptical like `50%/10%`)
 - Ruby: `border-radius: 'unit(px,%){1,4}'` (stricter — rejects valid CSS border-radius values)
 
-## 9. Skeleton / Document-Level Gaps
+## 8. Skeleton / Document-Level Gaps
 
 Already tracked in TODO P1:
 - Missing `xmlns` attributes on `<html>`
@@ -83,7 +79,7 @@ Already tracked in TODO P1:
 - Missing `word-spacing:normal` on `<body>`
 - Separate CSS style bucket ordering differs
 
-## 10. `mj-section` — Outlook `<table>` Style
+## 9. `mj-section` — Outlook `<table>` Style
 
 - NPM: renders `style` with `width` and optionally `padding-top` (for gap support) on the outlook wrapper table
 - Ruby: renders `style` as `"width:#{container_px}px;"` — no gap padding-top
@@ -102,10 +98,9 @@ Already tracked in TODO P1:
 ### Medium impact (validation/correctness)
 
 5. `mj-section` border-radius overflow/border-collapse handling
-6. `mj-table` missing `font-weight`
-7. `mj-social` missing `table-layout`
-8. `mj-section` border-radius type too strict
-9. `mj-image` extra `full-width` not in upstream
+6. `mj-social` missing `table-layout`
+7. `mj-section` border-radius type too strict
+8. `mj-image` extra `full-width` not in upstream
 
 ### Low impact (already tracked or minor)
 
