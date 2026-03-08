@@ -35,7 +35,7 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 | Gap | Detail |
 |---|---|
 | `gap` attribute | NPM wrapper inherits all section attrs and adds `gap: 'unit(px)'` |
-| `background-*` attributes | NPM wrapper inherits from section; Ruby wrapper missing all background-image attrs |
+| `background-*` rendering | Wrapper now inherits background-* attributes via `SECTION_ALLOWED_ATTRIBUTES`, but `render_wrapper` does not apply background styles, VML, or innerDiv |
 | `text-padding` | Inherited from section in NPM, absent in Ruby |
 
 Ruby wrapper has `full-width` which is correct. NPM wrapper also has `full-width` via inheritance.
