@@ -12,7 +12,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 
 ## P0: Remaining npm parity blockers
 
-- [ ] Implement `mj-carousel` and `mj-carousel-image` from `upstream/packages/mjml-carousel/src/Carousel.js` and `upstream/packages/mjml-carousel/src/CarouselImage.js`, then register them in `lib/mjml-rb/renderer.rb`.
+- [x] Implement `mj-carousel` and `mj-carousel-image` from `upstream/packages/mjml-carousel/src/Carousel.js` and `upstream/packages/mjml-carousel/src/CarouselImage.js`, then register them in `lib/mjml-rb/renderer.rb`.
 - [ ] Port `mj-group` into a real Ruby component. The current special case in `lib/mjml-rb/renderer.rb` only distributes widths and renders child columns, while the npm component in `upstream/packages/mjml-group/src/index.js` also owns attribute validation, default attributes, Outlook table wrappers, group background handling, and child context width calculation.
 - [ ] Add `ALLOWED_ATTRIBUTES` and validator type coverage for components that currently render without npm-style validation metadata: `lib/mjml-rb/components/accordion.rb`, `lib/mjml-rb/components/button.rb`, `lib/mjml-rb/components/divider.rb`, `lib/mjml-rb/components/image.rb`, `lib/mjml-rb/components/social.rb`, `lib/mjml-rb/components/table.rb`, and `lib/mjml-rb/components/text.rb`.
 
@@ -47,9 +47,11 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 
 ## P3: Upstream test backlog
 
-The dedicated npm-style test ports currently cover:
+The dedicated component-level tests currently cover:
 
 - `column-border-radius`
+- `carousel-rendering`
+- `carousel-validation`
 - `html-attributes`
 - `navbar-ico-padding`
 
@@ -66,7 +68,7 @@ Still worth porting from `upstream/packages/mjml/test`:
 - [ ] `tableWidth`
 - [ ] `wrapper-border-radius`
 - [ ] `wrapper-gap`
-- [ ] `carousel-hoverSupported` once `mj-carousel` exists
+- [ ] `carousel-hoverSupported`
 
 ## P4: Test structure cleanup
 

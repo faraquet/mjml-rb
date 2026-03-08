@@ -5,6 +5,8 @@ require_relative "components/attributes"
 require_relative "components/body"
 require_relative "components/breakpoint"
 require_relative "components/button"
+require_relative "components/carousel"
+require_relative "components/carousel_image"
 require_relative "components/head"
 require_relative "components/hero"
 require_relative "components/image"
@@ -440,6 +442,8 @@ module MjmlRb
         register_component(registry, Components::Breakpoint.new(self))
         register_component(registry, Components::Accordion.new(self))
         register_component(registry, Components::Button.new(self))
+        register_component(registry, Components::Carousel.new(self))
+        register_component(registry, Components::CarouselImage.new(self))
         register_component(registry, Components::Hero.new(self))
         register_component(registry, Components::Image.new(self))
         register_component(registry, Components::Navbar.new(self))

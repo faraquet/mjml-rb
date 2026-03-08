@@ -349,8 +349,9 @@ To add a new component safely, the usual steps are:
 7. Add tests that cover rendering and validation behavior.
 
 If a tag is allowed by dependency rules but has no renderer implementation, it
-may validate successfully but still not produce correct output. `mj-carousel`
-and `mj-carousel-image` are the clearest current examples of this gap.
+may validate successfully but still not produce correct output. That risk now
+applies mainly to future dependency-only tags rather than the current carousel
+implementation.
 
 ## Current Limitations
 

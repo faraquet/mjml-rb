@@ -69,8 +69,8 @@ The table below tracks current JS-to-Ruby migration status for MJML components i
 | `mj-preview` | migrated | Implemented in `head.rb`. |
 | `mj-style` | migrated | Implemented in `head.rb`, including inline-style registration. |
 | `mj-font` | migrated | Implemented in `head.rb`. |
-| `mj-carousel` | not migrated | Declared in dependency rules but no renderer implementation yet. |
-| `mj-carousel-image` | not migrated | Declared in dependency rules but no renderer implementation yet. |
+| `mj-carousel` | migrated | Implemented in `carousel.rb`, including per-instance radio/thumbnail CSS, Outlook fallback rendering, and thumbnail/control output. |
+| `mj-carousel-image` | migrated | Implemented in `carousel_image.rb`, including radio, thumbnail, and main image rendering helpers used by `mj-carousel`. |
 | `mj-breakpoint` | migrated | Supported in `mj-head` and used to control desktop column media-query widths. |
 | `mj-html-attributes` | migrated | Supported in `mj-head` and applied to the rendered HTML via CSS selectors. |
 | `mj-selector` | migrated | Supported as the selector container for `mj-html-attribute` rules. |
