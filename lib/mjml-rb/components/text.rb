@@ -5,6 +5,28 @@ module MjmlRb
     class Text < Base
       TAGS = ["mj-text"].freeze
 
+      ALLOWED_ATTRIBUTES = {
+        "align" => "enum(left,right,center,justify)",
+        "background-color" => "color",
+        "color" => "color",
+        "container-background-color" => "color",
+        "font-family" => "string",
+        "font-size" => "string",
+        "font-style" => "string",
+        "font-weight" => "string",
+        "height" => "string",
+        "letter-spacing" => "string",
+        "line-height" => "string",
+        "padding" => "unit(px,%){1,4}",
+        "padding-top" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "text-decoration" => "string",
+        "text-transform" => "string",
+        "vertical-align" => "enum(top,bottom,middle)"
+      }.freeze
+
       DEFAULTS = {
         "align" => "left",
         "color" => "#000000",
@@ -40,6 +62,7 @@ module MjmlRb
         }
 
         div_style = style_join(
+          "background-color" => a["background-color"],
           "font-family" => a["font-family"],
           "font-size" => a["font-size"],
           "font-style" => a["font-style"],

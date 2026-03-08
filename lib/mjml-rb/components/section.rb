@@ -29,6 +29,7 @@ module MjmlRb
       }.freeze
 
       WRAPPER_ALLOWED_ATTRIBUTES = SECTION_ALLOWED_ATTRIBUTES.merge(
+        "gap" => "unit(px)",
         "full-width" => "enum(full-width)"
       ).freeze
 
@@ -294,6 +295,7 @@ module MjmlRb
         bg_color     = a["background-color"]
         border_radius = a["border-radius"]
         bg_has       = has_background?(a)
+        wrapper_gap  = context[:_wrapper_child_gap]
 
         # Box width: container minus horizontal padding and borders
         border_left  = parse_border_width(a["border-left"] || a["border"])
@@ -311,7 +313,7 @@ module MjmlRb
           ["cellspacing", "0"],
           ["class",       outlook_class],
           ["role",        "presentation"],
-          ["style",       "width:#{container_px}px;"],
+          ["style",       style_join("width" => "#{container_px}px", "padding-top" => wrapper_gap) + ";"],
           ["width",       container_px.to_s]
         ]
         before_pairs << ["bgcolor", bg_color] if bg_color
@@ -334,6 +336,7 @@ module MjmlRb
             "background-repeat"   => bg_repeat,
             "background-size"     => bg_size,
             "margin"              => "0px auto",
+            "margin-top"          => wrapper_gap,
             "max-width"           => "#{container_px}px"
           )
           table_style = style_join(
@@ -365,6 +368,7 @@ module MjmlRb
             "background"       => bg_color,
             "background-color" => bg_color,
             "margin"           => "0px auto",
+            "margin-top"       => wrapper_gap,
             "max-width"        => "#{container_px}px"
           )
           table_style = style_join(
@@ -465,6 +469,7 @@ module MjmlRb
         css_class    = a["css-class"]
         bg_color     = a["background-color"]
         full_width   = a["full-width"] == "full-width"
+        wrapper_gap  = context[:_wrapper_child_gap]
 
         # renderBefore — same structure as section
         outlook_class = css_class ? "#{css_class}-outlook" : ""
@@ -475,7 +480,7 @@ module MjmlRb
           ["cellspacing", "0"],
           ["class",       outlook_class],
           ["role",        "presentation"],
-          ["style",       "width:#{container_px}px;"],
+          ["style",       style_join("width" => "#{container_px}px", "padding-top" => wrapper_gap) + ";"],
           ["width",       container_px.to_s]
         ]
         before_pairs << ["bgcolor", bg_color] if bg_color
@@ -486,6 +491,7 @@ module MjmlRb
           "background"       => bg_color,
           "background-color" => bg_color,
           "margin"           => "0px auto",
+          "margin-top"       => wrapper_gap,
           "max-width"        => (full_width ? nil : "#{container_px}px")
         )
 
@@ -507,7 +513,7 @@ module MjmlRb
         )
 
         div_attrs = {"class" => css_class, "style" => div_style}
-        inner = merge_outlook_conditionals(render_wrapped_children_wrapper(node, context, container_px))
+        inner = merge_outlook_conditionals(render_wrapped_children_wrapper(node, context, container_px, a["gap"]))
 
         wrapper_html =
           %(<div#{html_attrs(div_attrs)}>) +
@@ -520,7 +526,7 @@ module MjmlRb
       end
 
       # Wrap each child mj-section/mj-wrapper in an Outlook conditional <td>.
-      def render_wrapped_children_wrapper(node, context, container_px)
+      def render_wrapped_children_wrapper(node, context, container_px, gap)
         children = node.element_children.select { |e| %w[mj-section mj-wrapper].include?(e.tag_name) }
         return render_children(node, context, parent: "mj-wrapper") if children.empty?
 
@@ -530,15 +536,25 @@ module MjmlRb
         close_table = %(<!--[if mso | IE]></table><![endif]-->)
 
         section_parts = with_inherited_mj_class(context, node) do
-          children.map do |child|
+          children.each_with_index.map do |child, index|
             td_open  = %(<!--[if mso | IE]><td class="" width="#{container_px}px" ><![endif]-->)
             td_close = %(<!--[if mso | IE]></td><![endif]-->)
-            child_html = render_node(child, context, parent: "mj-wrapper")
+            child_html = with_wrapper_child_gap(context, index.zero? ? nil : gap) do
+              render_node(child, context, parent: "mj-wrapper")
+            end
             "#{td_open}\n#{child_html}\n#{td_close}"
           end
         end
 
         ([open_table, open_tr] + section_parts + [close_tr, close_table]).join("\n")
+      end
+
+      def with_wrapper_child_gap(context, gap)
+        previous = context[:_wrapper_child_gap]
+        context[:_wrapper_child_gap] = gap
+        yield
+      ensure
+        context[:_wrapper_child_gap] = previous
       end
     end
   end

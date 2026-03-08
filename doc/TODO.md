@@ -12,7 +12,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 
 ## P0: Remaining npm parity blockers
 
-- [ ] Add `ALLOWED_ATTRIBUTES` and validator type coverage for components that currently render without npm-style validation metadata: `lib/mjml-rb/components/accordion.rb`, `lib/mjml-rb/components/button.rb`, `lib/mjml-rb/components/divider.rb`, `lib/mjml-rb/components/image.rb`, `lib/mjml-rb/components/social.rb`, `lib/mjml-rb/components/table.rb`, and `lib/mjml-rb/components/text.rb`.
+- [ ] Add `ALLOWED_ATTRIBUTES` and validator type coverage for components that currently render without npm-style validation metadata: `lib/mjml-rb/components/accordion.rb`, `lib/mjml-rb/components/button.rb`, `lib/mjml-rb/components/divider.rb`, `lib/mjml-rb/components/image.rb`, `lib/mjml-rb/components/social.rb`, and `lib/mjml-rb/components/table.rb`.
 
 ## P1: Core runtime parity gaps
 
@@ -81,10 +81,7 @@ Detailed comparison of Ruby component attributes, defaults, and rendering logic 
 
 - [x] **`mj-section` background image support.** npm supports `background-url`, `background-repeat` (default `'repeat'`), `background-size` (default `'auto'`), `background-position` (default `'top center'`), `background-position-x`, and `background-position-y`. Ruby has none of these. npm also renders VML `<v:rect>/<v:fill>` for Outlook background images and wraps content in an extra `<div style="line-height:0;font-size:0">` when a background URL is set. All of this is completely absent in the Ruby section renderer.
 - [ ] **`mj-section` full-width mode.** npm section supports `full-width="full-width"` with a dedicated `renderFullWidth()` path that wraps the section in an outer `<table>` with full-width background handling. Ruby only exposes `full-width` on `mj-wrapper`, not on `mj-section`.
-- [ ] **`mj-wrapper` gap attribute.** npm wrapper extends section and adds `gap: 'unit(px)'`. The gap value is propagated via child context and applied as `margin-top` on non-first child sections and as `padding-top` on the Outlook wrapper `<table>`. Ruby wrapper has no `gap` support.
 - [ ] **`mj-wrapper` missing background rendering and `text-padding`.** The wrapper now inherits background-* attributes from `SECTION_ALLOWED_ATTRIBUTES`, but `render_wrapper` does not use them (no background styles, no VML, no innerDiv). Also still missing `text-padding`.
-- [ ] **`mj-text` missing `background-color`.** npm text has `'background-color': 'color'` as an allowed attribute. Ruby text does not support it.
-
 ### Medium impact — validation and correctness
 
 - [ ] **`mj-section` border-radius rendering.** npm adds `border-collapse: separate` on the inner table and `overflow: hidden` + `border-radius` on the outer div when `border-radius` is set. Ruby does not apply any of these.
@@ -92,7 +89,6 @@ Detailed comparison of Ruby component attributes, defaults, and rendering logic 
 - [ ] **`mj-section` missing `text-padding`.** npm section has `text-padding: 'unit(px,%){1,4}'` with default `'4px 4px 4px 0'`. Ruby section does not have this attribute.
 - [ ] **`mj-table` missing `font-weight`.** npm table has `'font-weight': 'string'` as an allowed attribute. Ruby table does not list it.
 - [ ] **`mj-social` missing `table-layout`.** npm social has `'table-layout': 'enum(auto,fixed)'` as an allowed attribute. Ruby social does not have it.
-- [ ] **`mj-text` `align` enum incomplete.** npm text allows `enum(left,right,center,justify)`. Ruby text has no formal `ALLOWED_ATTRIBUTES` constraint and only defaults to `'left'`, missing `justify` validation.
 - [ ] **`mj-image` extra `full-width` attribute.** Ruby image supports a `full-width` attribute that npm image does **not** have. This should be verified — it may be an accidental addition not present upstream.
 
 ### Low impact — dependency rule divergences

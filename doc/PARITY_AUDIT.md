@@ -34,17 +34,16 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 
 | Gap | Detail |
 |---|---|
-| `gap` attribute | NPM wrapper inherits all section attrs and adds `gap: 'unit(px)'` |
 | `background-*` rendering | Wrapper now inherits background-* attributes via `SECTION_ALLOWED_ATTRIBUTES`, but `render_wrapper` does not apply background styles, VML, or innerDiv |
 | `text-padding` | Inherited from section in NPM, absent in Ruby |
 
 Ruby wrapper has `full-width` which is correct. NPM wrapper also has `full-width` via inheritance.
 
-## 3. `mj-text` — Missing Formal Validation + `background-color`
+## 3. `mj-text` — Remaining Validation Gaps
 
-- NPM has `background-color: 'color'` as an allowed attribute — Ruby doesn't support it
-- NPM `align` allows `justify` — Ruby only has `left/right/center` (no formal enum constraint)
-- Ruby has no `ALLOWED_ATTRIBUTES` constant (tracked in TODO P0)
+- NPM `align` allows `justify` — Ruby now matches this in validation metadata
+- Ruby now supports `background-color` and has an `ALLOWED_ATTRIBUTES` map
+- Any remaining `mj-text` parity work is mostly around ending-tag semantics, not the basic attribute contract
 
 ## 4. Dependency Rules Differences
 
@@ -97,8 +96,8 @@ Already tracked in TODO P1:
 
 1. ~~`mj-section` background image support (background-url + VML) — completely missing~~ (fixed)
 2. `mj-section` full-width mode — missing
-3. `mj-wrapper` gap attribute — missing
-4. `mj-text` background-color — missing
+3. `mj-wrapper` background rendering and `text-padding` — missing
+4. `mj-section` missing `text-padding`
 
 ### Medium impact (validation/correctness)
 
