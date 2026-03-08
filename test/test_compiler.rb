@@ -23,6 +23,23 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result[:html], "Hello Ruby")
   end
 
+  def test_document_shell_includes_mjml_scaffold_helpers
+    result = MjmlRb.mjml2html(SAMPLE)
+    html = result[:html]
+
+    assert_empty(result[:errors])
+    assert_includes(html, 'xmlns="http://www.w3.org/1999/xhtml"')
+    assert_includes(html, 'xmlns:v="urn:schemas-microsoft-com:vml"')
+    assert_includes(html, 'xmlns:o="urn:schemas-microsoft-com:office:office"')
+    assert_includes(html, '<meta http-equiv="X-UA-Compatible" content="IE=edge">')
+    assert_includes(html, '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">')
+    assert_includes(html, "<o:PixelsPerInch>96</o:PixelsPerInch>")
+    assert_includes(html, ".mj-outlook-group-fix { width:100% !important; }")
+    assert_includes(html, 'style="word-spacing:normal"')
+    assert_includes(html, ".moz-text-html .mj-column-per-100")
+    assert_includes(html, "[owa] .mj-column-per-100")
+  end
+
   def test_strict_validation_rejects_invalid_document
     compiler = MjmlRb::Compiler.new(validation_level: "strict")
     result = compiler.compile("<html><body>invalid</body></html>")
@@ -530,12 +547,13 @@ class MJMLCompilerTest < Minitest::Test
 
     result = MjmlRb::Compiler.new.compile(body)
     assert_empty(result.errors)
-    assert_includes(result.html, '<html lang="ar" dir="rtl">')
-    assert_includes(result.html, '<body style="margin:0;padding:0;background:#f5f5f5">')
+    assert_includes(result.html, '<html lang="ar" dir="rtl" xmlns="http://www.w3.org/1999/xhtml"')
+    assert_includes(result.html, '<body style="word-spacing:normal">')
     assert_includes(result.html, 'aria-label="Body Title"')
     assert_includes(result.html, 'aria-roledescription="email"')
     assert_includes(result.html, 'class="body-class"')
     assert_includes(result.html, 'role="article"')
+    assert_includes(result.html, 'style="background-color:#f5f5f5"')
     assert_includes(result.html, 'max-width:700px')
   end
 
@@ -750,7 +768,7 @@ class MJMLCompilerTest < Minitest::Test
 
     result = MjmlRb::Compiler.new.compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, '<html lang="und" dir="auto">')
+    assert_includes(result.html, '<html lang="und" dir="auto" xmlns="http://www.w3.org/1999/xhtml"')
     assert_includes(result.html, "<title></title>")
     assert_includes(result.html, 'table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt; }')
     refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700')

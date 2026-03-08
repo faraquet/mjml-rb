@@ -36,6 +36,27 @@ module MjmlRb
       p { display:block;margin:13px 0; }
     CSS
 
+    OUTLOOK_DOCUMENT_SETTINGS = <<~HTML.chomp.freeze
+      <!--[if mso]>
+      <noscript>
+      <xml>
+      <o:OfficeDocumentSettings>
+        <o:AllowPNG/>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+      </xml>
+      </noscript>
+      <![endif]-->
+    HTML
+
+    OUTLOOK_GROUP_FIX = <<~HTML.chomp.freeze
+      <!--[if lte mso 11]>
+      <style type="text/css">
+        .mj-outlook-group-fix { width:100% !important; }
+      </style>
+      <![endif]-->
+    HTML
+
     def render(document, options = {})
       head = find_child(document, "mj-head")
       body = find_child(document, "mj-body")
@@ -90,20 +111,28 @@ module MjmlRb
       before_doctype = context[:before_doctype].to_s
       font_tags = build_font_tags(content, context[:inline_styles], context[:fonts])
       preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
-      html_attributes = { "lang" => context[:lang], "dir" => context[:dir] }
-      body_style = style_join(
-        "margin" => "0",
-        "padding" => "0",
-        "background" => context[:background_color] || "#ffffff"
-      )
+      html_attributes = {
+        "lang" => context[:lang],
+        "dir" => context[:dir],
+        "xmlns" => "http://www.w3.org/1999/xhtml",
+        "xmlns:v" => "urn:schemas-microsoft-com:vml",
+        "xmlns:o" => "urn:schemas-microsoft-com:office:office"
+      }
+      body_style = style_join("word-spacing" => "normal")
 
       html = <<~HTML
         <!doctype html>
         <html#{html_attrs(html_attributes)}>
           <head>
+            <title>#{escape_html(title)}</title>
+            <!--[if !mso]><!-->
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <!--<![endif]-->
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>#{escape_html(title)}</title>
+            #{OUTLOOK_DOCUMENT_SETTINGS}
+            #{OUTLOOK_GROUP_FIX}
             #{font_tags}
             <style type="text/css">#{head_styles}</style>
             #{head_raw}
@@ -202,12 +231,21 @@ module MjmlRb
       css = widths.map do |suffix, pct|
         ".mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
       end.join("\n")
+      moz_css = widths.map do |suffix, pct|
+        ".moz-text-html .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
+      end.join("\n")
+      owa_css = widths.map do |suffix, pct|
+        "[owa] .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
+      end.join("\n")
       breakpoint = context[:breakpoint].to_s.strip
       if breakpoint.empty?
         context[:head_styles] << css
+        context[:head_styles] << moz_css
       else
         context[:head_styles] << "@media only screen and (min-width:#{breakpoint}) {\n#{css}\n}"
+        context[:head_styles] << "@media screen and (min-width:#{breakpoint}) {\n#{moz_css}\n}"
       end
+      context[:head_styles] << owa_css
     end
 
     def merge_outlook_conditionals(html)
