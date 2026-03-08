@@ -54,6 +54,8 @@ The dedicated component-level tests currently cover:
 - `navbar-ico-padding`
 - `table-cellspacing`
 - `tableWidth`
+- `wrapper-border-radius`
+- `wrapper-gap`
 
 Still worth porting from `upstream/packages/mjml/test`:
 
@@ -64,8 +66,6 @@ Still worth porting from `upstream/packages/mjml/test`:
 - [ ] `lazy-head-style`
 - [ ] `social-align`
 - [ ] `social-icon-height`
-- [ ] `wrapper-border-radius`
-- [ ] `wrapper-gap`
 - [ ] `carousel-hoverSupported`
 
 ## P4: Test structure cleanup
@@ -79,14 +79,9 @@ Detailed comparison of Ruby component attributes, defaults, and rendering logic 
 
 ### High impact — feature gaps users will hit
 
-- [x] **`mj-section` background image support.** npm supports `background-url`, `background-repeat` (default `'repeat'`), `background-size` (default `'auto'`), `background-position` (default `'top center'`), `background-position-x`, and `background-position-y`. Ruby has none of these. npm also renders VML `<v:rect>/<v:fill>` for Outlook background images and wraps content in an extra `<div style="line-height:0;font-size:0">` when a background URL is set. All of this is completely absent in the Ruby section renderer.
-- [ ] **`mj-section` full-width mode.** npm section supports `full-width="full-width"` with a dedicated `renderFullWidth()` path that wraps the section in an outer `<table>` with full-width background handling. Ruby only exposes `full-width` on `mj-wrapper`, not on `mj-section`.
 - [ ] **`mj-wrapper` missing background rendering and `text-padding`.** The wrapper now inherits background-* attributes from `SECTION_ALLOWED_ATTRIBUTES`, but `render_wrapper` does not use them (no background styles, no VML, no innerDiv). Also still missing `text-padding`.
 ### Medium impact — validation and correctness
 
-- [ ] **`mj-section` border-radius rendering.** npm adds `border-collapse: separate` on the inner table and `overflow: hidden` + `border-radius` on the outer div when `border-radius` is set. Ruby does not apply any of these.
-- [ ] **`mj-section` `border-radius` type mismatch.** npm declares `border-radius: 'string'` (accepts any CSS value including elliptical like `50%/10%`). Ruby declares `border-radius: 'unit(px,%){1,4}'` which is stricter and would reject valid CSS border-radius values.
-- [ ] **`mj-section` missing `text-padding`.** npm section has `text-padding: 'unit(px,%){1,4}'` with default `'4px 4px 4px 0'`. Ruby section does not have this attribute.
 - [ ] **`mj-social` missing `table-layout`.** npm social has `'table-layout': 'enum(auto,fixed)'` as an allowed attribute. Ruby social does not have it.
 - [ ] **`mj-image` extra `full-width` attribute.** Ruby image supports a `full-width` attribute that npm image does **not** have. This should be verified — it may be an accidental addition not present upstream.
 

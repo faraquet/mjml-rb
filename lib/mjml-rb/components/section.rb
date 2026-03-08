@@ -16,27 +16,29 @@ module MjmlRb
         "border" => "string",
         "border-bottom" => "string",
         "border-left" => "string",
-        "border-radius" => "unit(px,%){1,4}",
+        "border-radius" => "string",
         "border-right" => "string",
         "border-top" => "string",
         "direction" => "enum(ltr,rtl)",
+        "full-width" => "enum(full-width,false,)",
         "padding" => "unit(px,%){1,4}",
         "padding-bottom" => "unit(px,%)",
         "padding-left" => "unit(px,%)",
         "padding-right" => "unit(px,%)",
         "padding-top" => "unit(px,%)",
-        "text-align" => "enum(left,center,right)"
+        "text-align" => "enum(left,center,right)",
+        "text-padding" => "unit(px,%){1,4}"
       }.freeze
 
       WRAPPER_ALLOWED_ATTRIBUTES = SECTION_ALLOWED_ATTRIBUTES.merge(
         "gap" => "unit(px)",
-        "full-width" => "enum(full-width)"
       ).freeze
 
       DEFAULT_ATTRIBUTES = {
         "direction"           => "ltr",
         "padding"             => "20px 0",
         "text-align"          => "center",
+        "text-padding"        => "4px 4px 4px 0",
         "background-repeat"   => "repeat",
         "background-size"     => "auto",
         "background-position" => "top center"
@@ -61,7 +63,12 @@ module MjmlRb
         when "mj-wrapper"
           render_wrapper(node, context, attrs)
         else
-          render_section(node, context, attrs)
+          a = self.class.default_attributes.merge(attrs)
+          if a["full-width"] == "full-width"
+            render_full_width_section(node, context, a)
+          else
+            render_section(node, context, a)
+          end
         end
       end
 
@@ -110,6 +117,10 @@ module MjmlRb
         else
           0
         end
+      end
+
+      def has_border_radius?(value)
+        value && !value.to_s.strip.empty?
       end
 
       # Merge adjacent Outlook conditional comments.  Applied locally within
@@ -205,7 +216,7 @@ module MjmlRb
         "right" => "100%", "bottom" => "100%"
       }.freeze
 
-      def render_with_background(section_html, a, container_px)
+      def render_with_background(section_html, a, container_px, full_width: false)
         bg_url    = a["background-url"]
         bg_color  = a["background-color"]
         bg_repeat = a["background-repeat"] || "repeat"
@@ -247,7 +258,9 @@ module MjmlRb
         fill_pairs << ["aspect", v_size_attrs[:aspect]] if v_size_attrs[:aspect]
         fill_str = fill_pairs.map { |(k, v)| %(#{k}="#{escape_attr(v.to_s)}") }.join(" ")
 
-        %(<!--[if mso | IE]><v:rect style="mso-width-percent:1000;" xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"><v:fill #{fill_str} /><v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0"><![endif]-->) +
+        rect_style = full_width ? "mso-width-percent:1000;" : "width:#{container_px}px;"
+
+        %(<!--[if mso | IE]><v:rect style="#{rect_style}" xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false"><v:fill #{fill_str} /><v:textbox style="mso-fit-shape-to-text:true" inset="0,0,0,0"><![endif]-->) +
         section_html +
         %(<!--[if mso | IE]></v:textbox></v:rect><![endif]-->)
       end
@@ -288,8 +301,7 @@ module MjmlRb
 
       # ── mj-section ─────────────────────────────────────────────────────────
 
-      def render_section(node, context, attrs)
-        a            = self.class.default_attributes.merge(attrs)
+      def render_section(node, context, a)
         container_px = parse_px(context[:container_width] || "600px")
         css_class    = a["css-class"]
         bg_color     = a["background-color"]
@@ -304,7 +316,78 @@ module MjmlRb
         pad_right    = parse_padding_side(a, "right")
         box_width    = container_px - pad_left - pad_right - border_left - border_right
 
-        # renderBefore — Outlook outer wrapper table
+        render_before = render_section_before(css_class, container_px, bg_color, wrapper_gap)
+
+        section_html = build_section_html(
+          node,
+          context,
+          a,
+          container_px: container_px,
+          box_width: box_width,
+          css_class: css_class,
+          bg_color: bg_color,
+          border_radius: border_radius,
+          bg_has: bg_has,
+          wrapper_gap: wrapper_gap,
+          full_width: false
+        )
+
+        render_after = %(<!--[if mso | IE]></td></tr></table><![endif]-->)
+
+        body = bg_has ? render_with_background(section_html, a, container_px) : section_html
+
+        "#{render_before}\n#{body}\n#{render_after}"
+      end
+
+      def render_full_width_section(node, context, a)
+        container_px = parse_px(context[:container_width] || "600px")
+        css_class = a["css-class"]
+        bg_color = a["background-color"]
+        border_radius = a["border-radius"]
+        bg_has = has_background?(a)
+        wrapper_gap = context[:_wrapper_child_gap]
+
+        border_left  = parse_border_width(a["border-left"] || a["border"])
+        border_right = parse_border_width(a["border-right"] || a["border"])
+        pad_left     = parse_padding_side(a, "left")
+        pad_right    = parse_padding_side(a, "right")
+        box_width    = container_px - pad_left - pad_right - border_left - border_right
+
+        render_before = render_section_before(css_class, container_px, bg_color, wrapper_gap)
+        section_html = build_section_html(
+          node,
+          context,
+          a,
+          container_px: container_px,
+          box_width: box_width,
+          css_class: nil,
+          bg_color: bg_color,
+          border_radius: border_radius,
+          bg_has: bg_has,
+          wrapper_gap: wrapper_gap,
+          full_width: true
+        )
+        render_after = %(<!--[if mso | IE]></td></tr></table><![endif]-->)
+
+        inner = "#{render_before}\n#{section_html}\n#{render_after}"
+        body = bg_has ? render_with_background(inner, a, container_px, full_width: true) : inner
+
+        outer_style = full_width_table_style(a)
+        outer_attrs = {
+          "align" => "center",
+          "class" => css_class,
+          "background" => bg_has ? a["background-url"] : nil,
+          "border" => "0",
+          "cellpadding" => "0",
+          "cellspacing" => "0",
+          "role" => "presentation",
+          "style" => outer_style
+        }
+
+        %(<table#{html_attrs(outer_attrs)}><tbody><tr><td>#{body}</td></tr></tbody></table>)
+      end
+
+      def render_section_before(css_class, container_px, bg_color, wrapper_gap)
         outlook_class = css_class ? "#{css_class}-outlook" : ""
         before_pairs = [
           ["align",       "center"],
@@ -318,89 +401,68 @@ module MjmlRb
         ]
         before_pairs << ["bgcolor", bg_color] if bg_color
 
-        render_before = %(<!--[if mso | IE]><table#{outlook_attrs(before_pairs)}><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->)
+        %(<!--[if mso | IE]><table#{outlook_attrs(before_pairs)}><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->)
+      end
 
-        # Section div, table, td — styles differ based on background-url presence
+      def build_section_html(node, context, a, container_px:, box_width:, css_class:, bg_color:, border_radius:, bg_has:, wrapper_gap:, full_width:)
         border_val = a["border"]
         border_val = nil if border_val.nil? || border_val.to_s.strip.empty? || border_val.to_s.strip == "none"
+        has_border_radius = has_border_radius?(border_radius)
 
-        if bg_has
-          bg_value  = get_background(a)
-          bg_string = get_background_string(a)
-          bg_repeat = a["background-repeat"]
-          bg_size   = a["background-size"]
+        background_styles = if bg_has
+                              bg_value = get_background(a)
+                              {
+                                "background" => bg_value,
+                                "background-position" => get_background_string(a),
+                                "background-repeat" => a["background-repeat"],
+                                "background-size" => a["background-size"]
+                              }
+                            else
+                              {
+                                "background" => bg_color,
+                                "background-color" => bg_color
+                              }
+                            end
 
-          div_style = style_join(
-            "background"          => bg_value,
-            "background-position" => bg_string,
-            "background-repeat"   => bg_repeat,
-            "background-size"     => bg_size,
-            "margin"              => "0px auto",
-            "margin-top"          => wrapper_gap,
-            "max-width"           => "#{container_px}px"
-          )
-          table_style = style_join(
-            "background"          => bg_value,
-            "background-position" => bg_string,
-            "background-repeat"   => bg_repeat,
-            "background-size"     => bg_size,
-            "border-radius"       => border_radius,
-            "width"               => "100%"
-          )
-          td_style = style_join(
-            "border"         => border_val,
-            "border-top"     => a["border-top"],
-            "border-right"   => a["border-right"],
-            "border-bottom"  => a["border-bottom"],
-            "border-left"    => a["border-left"],
-            "border-radius"  => border_radius,
-            "direction"      => a["direction"],
-            "font-size"      => "0px",
-            "padding"        => a["padding"],
-            "padding-top"    => a["padding-top"],
-            "padding-right"  => a["padding-right"],
-            "padding-bottom" => a["padding-bottom"],
-            "padding-left"   => a["padding-left"],
-            "text-align"     => a["text-align"]
-          )
-        else
-          div_style = style_join(
-            "background"       => bg_color,
-            "background-color" => bg_color,
-            "margin"           => "0px auto",
-            "margin-top"       => wrapper_gap,
-            "max-width"        => "#{container_px}px"
-          )
-          table_style = style_join(
-            "background"       => bg_color,
-            "background-color" => bg_color,
-            "border-radius"    => border_radius,
-            "width"            => "100%"
-          )
-          td_style = style_join(
-            "border"         => border_val,
-            "border-top"     => a["border-top"],
-            "border-right"   => a["border-right"],
-            "border-bottom"  => a["border-bottom"],
-            "border-left"    => a["border-left"],
-            "border-radius"  => border_radius,
-            "background"     => bg_color,
-            "background-color" => bg_color,
-            "direction"      => a["direction"],
-            "font-size"      => "0px",
-            "padding"        => a["padding"],
-            "padding-top"    => a["padding-top"],
-            "padding-right"  => a["padding-right"],
-            "padding-bottom" => a["padding-bottom"],
-            "padding-left"   => a["padding-left"],
-            "text-align"     => a["text-align"]
-          )
-        end
+        div_style = style_join(
+          {
+            "border-radius" => border_radius,
+            "overflow" => (has_border_radius ? "hidden" : nil),
+            "margin" => "0px auto",
+            "margin-top" => wrapper_gap,
+            "max-width" => "#{container_px}px"
+          }.merge(full_width ? {} : background_styles)
+        )
+        table_style = style_join(
+          {
+            "border-radius" => border_radius,
+            "border-collapse" => (has_border_radius ? "separate" : nil),
+            "width" => "100%"
+          }.merge(full_width ? {} : background_styles)
+        )
+        td_style = style_join(
+          "border" => border_val,
+          "border-top" => a["border-top"],
+          "border-right" => a["border-right"],
+          "border-bottom" => a["border-bottom"],
+          "border-left" => a["border-left"],
+          "border-radius" => border_radius,
+          "background" => (full_width ? nil : bg_color),
+          "background-color" => (full_width ? nil : bg_color),
+          "direction" => a["direction"],
+          "font-size" => "0px",
+          "padding" => a["padding"],
+          "padding-top" => a["padding-top"],
+          "padding-right" => a["padding-right"],
+          "padding-bottom" => a["padding-bottom"],
+          "padding-left" => a["padding-left"],
+          "text-align" => a["text-align"]
+        )
 
         div_attrs = {"class" => css_class, "style" => div_style}
         table_attrs = {
           "align" => "center",
-          "background" => bg_has ? a["background-url"] : nil,
+          "background" => (bg_has && !full_width ? a["background-url"] : nil),
           "border" => "0",
           "cellpadding" => "0",
           "cellspacing" => "0",
@@ -414,20 +476,29 @@ module MjmlRb
           "style" => td_style
         }
         inner = merge_outlook_conditionals(render_section_columns(node, context, box_width))
-
-        # Wrap in innerDiv when background image is present (prevents Yahoo whitespace gaps)
         inner_content = bg_has ? %(<div style="line-height:0;font-size:0">#{inner}</div>) : inner
 
-        section_html =
-          %(<div#{html_attrs(div_attrs)}>) +
-          %(<table#{html_attrs(table_attrs)}>) +
-          %(<tbody><tr><td#{html_attrs(td_attrs)}>#{inner_content}</td></tr></tbody></table></div>)
+        %(<div#{html_attrs(div_attrs)}><table#{html_attrs(table_attrs)}><tbody><tr><td#{html_attrs(td_attrs)}>#{inner_content}</td></tr></tbody></table></div>)
+      end
 
-        render_after = %(<!--[if mso | IE]></td></tr></table><![endif]-->)
+      def full_width_table_style(a)
+        style = {"width" => "100%"}
 
-        body = bg_has ? render_with_background(section_html, a, container_px) : section_html
+        if has_background?(a)
+          style.merge!(
+            "background" => get_background(a),
+            "background-position" => get_background_string(a),
+            "background-repeat" => a["background-repeat"],
+            "background-size" => a["background-size"]
+          )
+        else
+          style.merge!(
+            "background" => a["background-color"],
+            "background-color" => a["background-color"]
+          )
+        end
 
-        "#{render_before}\n#{body}\n#{render_after}"
+        style_join(style)
       end
 
       # Generate Outlook IE conditional wrappers around each column/group.
@@ -468,8 +539,10 @@ module MjmlRb
         container_px = parse_px(context[:container_width] || "600px")
         css_class    = a["css-class"]
         bg_color     = a["background-color"]
+        border_radius = a["border-radius"]
         full_width   = a["full-width"] == "full-width"
         wrapper_gap  = context[:_wrapper_child_gap]
+        has_border_radius = has_border_radius?(border_radius)
 
         # renderBefore — same structure as section
         outlook_class = css_class ? "#{css_class}-outlook" : ""
@@ -490,6 +563,8 @@ module MjmlRb
         div_style = style_join(
           "background"       => bg_color,
           "background-color" => bg_color,
+          "border-radius"    => border_radius,
+          "overflow"         => (has_border_radius ? "hidden" : nil),
           "margin"           => "0px auto",
           "margin-top"       => wrapper_gap,
           "max-width"        => (full_width ? nil : "#{container_px}px")
@@ -498,10 +573,13 @@ module MjmlRb
         table_style = style_join(
           "background"       => bg_color,
           "background-color" => bg_color,
+          "border-radius"    => border_radius,
+          "border-collapse"  => (has_border_radius ? "separate" : nil),
           "width"            => "100%"
         )
 
         td_style = style_join(
+          "border-radius" => border_radius,
           "direction"      => a["direction"],
           "font-size"      => "0px",
           "padding"        => a["padding"],
