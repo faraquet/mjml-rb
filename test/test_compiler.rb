@@ -1116,6 +1116,157 @@ class MJMLCompilerTest < Minitest::Test
     end
   end
 
+  # ── mj-section background image tests ────────────────────────────────
+
+  def test_section_background_image_sets_css_shorthand_and_table_attribute
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section
+            background-url="https://example.com/bg.jpg"
+            background-color="#223344"
+            background-size="cover"
+            background-repeat="no-repeat"
+            background-position="top center"
+          >
+            <mj-column><mj-text>Hello</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "url(&#39;https://example.com/bg.jpg&#39;)")
+    assert_includes(result.html, "background-size:cover")
+    assert_includes(result.html, "background-repeat:no-repeat")
+    assert_includes(result.html, 'background="https://example.com/bg.jpg"')
+    assert_includes(result.html, 'style="line-height:0;font-size:0"')
+  end
+
+  def test_section_background_image_renders_vml_rect_and_fill
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section
+            background-url="https://example.com/bg.jpg"
+            background-color="#112233"
+            background-size="cover"
+            background-repeat="no-repeat"
+          >
+            <mj-column><mj-text>VML test</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "<v:rect")
+    assert_includes(result.html, "<v:fill")
+    assert_includes(result.html, 'src="https://example.com/bg.jpg"')
+    assert_includes(result.html, 'type="frame"')
+    assert_includes(result.html, "</v:textbox>")
+    assert_includes(result.html, "</v:rect>")
+    assert_includes(result.html, 'aspect="atleast"')
+  end
+
+  def test_section_without_background_url_preserves_original_output
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section background-color="#ff0000">
+            <mj-column><mj-text>Plain</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    refute_includes(result.html, "<v:rect")
+    refute_includes(result.html, "<v:fill")
+    refute_includes(result.html, 'style="line-height:0;font-size:0"')
+    assert_includes(result.html, "background:#ff0000")
+    assert_includes(result.html, "background-color:#ff0000")
+  end
+
+  def test_section_background_position_xy_override
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section
+            background-url="https://example.com/bg.jpg"
+            background-position="top center"
+            background-position-x="right"
+            background-position-y="bottom"
+          >
+            <mj-column><mj-text>Override</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "background-position:right bottom")
+  end
+
+  def test_section_background_repeat_produces_tile_type_in_vml
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section
+            background-url="https://example.com/tile.jpg"
+            background-repeat="repeat"
+            background-size="cover"
+          >
+            <mj-column><mj-text>Tile</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'type="tile"')
+  end
+
+  def test_section_background_auto_size_forces_tile
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section
+            background-url="https://example.com/bg.jpg"
+            background-repeat="no-repeat"
+            background-size="auto"
+          >
+            <mj-column><mj-text>Auto</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, 'type="tile"')
+  end
+
+  def test_section_background_attributes_pass_strict_validation
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section
+            background-url="https://example.com/bg.jpg"
+            background-repeat="no-repeat"
+            background-size="100%"
+            background-position="center center"
+            background-position-x="left"
+            background-position-y="top"
+          >
+            <mj-column><mj-text>Valid</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+  end
+
   def test_cli_validate_reports_error
     Dir.mktmpdir do |dir|
       input = File.join(dir, "invalid.mjml")

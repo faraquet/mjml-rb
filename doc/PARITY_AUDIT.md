@@ -1,0 +1,115 @@
+# Inconsistencies: Ruby (mjml-rb v0.2.15) vs NPM (MJML v4.18.0)
+
+Detailed comparison of attributes, defaults, rendering logic, and dependency rules. NPM source located in `.mjml-src/packages/`.
+
+---
+
+## 1. `mj-section` — Major Gaps
+
+### Missing attributes (Ruby has none of these)
+
+| Attribute | NPM Type | NPM Default |
+|---|---|---|
+| ~~`background-url`~~ | ~~string~~ | ~~—~~ |
+| ~~`background-repeat`~~ | ~~enum(repeat,no-repeat)~~ | ~~`'repeat'`~~ |
+| ~~`background-size`~~ | ~~string~~ | ~~`'auto'`~~ |
+| ~~`background-position`~~ | ~~string~~ | ~~`'top center'`~~ |
+| ~~`background-position-x`~~ | ~~string~~ | ~~—~~ |
+| ~~`background-position-y`~~ | ~~string~~ | ~~—~~ |
+| `full-width` | enum(full-width,false,) | — |
+| `text-padding` | unit(px,%){1,4} | `'4px 4px 4px 0'` |
+
+> Background image attributes (`background-url`, `background-repeat`, `background-size`, `background-position`, `background-position-x/y`) and VML rendering were implemented. The remaining gaps are `full-width` mode and `text-padding`.
+
+### Missing rendering behavior
+
+- ~~NPM renders VML `<v:rect>/<v:fill>` for Outlook background images — Ruby had no background image support at all~~ (fixed)
+- ~~NPM wraps content in an extra `<div style="line-height:0;font-size:0">` when `background-url` is set~~ (fixed)
+- NPM has two render paths: `renderSimple()` and `renderFullWidth()` — Ruby only has `renderSimple`-equivalent
+- NPM adds `border-collapse: separate` and `overflow: hidden` on the div when `border-radius` is set — Ruby doesn't
+- NPM applies `margin-top` from context `gap` on non-first sections — Ruby doesn't
+- NPM includes `border-radius` in the div style — Ruby doesn't
+
+## 2. `mj-wrapper` — Missing Features
+
+| Gap | Detail |
+|---|---|
+| `gap` attribute | NPM wrapper inherits all section attrs and adds `gap: 'unit(px)'` |
+| `background-*` attributes | NPM wrapper inherits from section; Ruby wrapper missing all background-image attrs |
+| `text-padding` | Inherited from section in NPM, absent in Ruby |
+
+Ruby wrapper has `full-width` which is correct. NPM wrapper also has `full-width` via inheritance.
+
+## 3. `mj-text` — Missing Formal Validation + `background-color`
+
+- NPM has `background-color: 'color'` as an allowed attribute — Ruby doesn't support it
+- NPM `align` allows `justify` — Ruby only has `left/right/center` (no formal enum constraint)
+- Ruby has no `ALLOWED_ATTRIBUTES` constant (tracked in TODO P0)
+
+## 4. Dependency Rules Differences
+
+| Tag | NPM | Ruby | Issue |
+|---|---|---|---|
+| `mj-raw` | `[]` (ending tag, no children) | `[/^(?!mj-).+/]` | Ruby allows non-mj children; NPM treats as raw text |
+| `mj-table` | `[]` (ending tag) | `[/^(?!mj-).+/]` | Same divergence |
+| `mj-text` | `[]` (ending tag) | `[/^(?!mj-).+/]` | Same divergence |
+| `mj-attributes` | `[/^.*^/]` | `[/.*/]` | NPM regex is broken (literal `^`). Ruby is more correct |
+
+NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
+
+## 5. `mj-table` — Missing `font-weight`
+
+NPM has `font-weight: 'string'` as an allowed attribute. Ruby's table component doesn't list it.
+
+## 6. `mj-social` — Missing `table-layout`
+
+NPM has `table-layout: 'enum(auto,fixed)'`. Ruby doesn't have it.
+
+## 7. `mj-image` — Extra `full-width` Attribute
+
+Ruby's `mj-image` supports a `full-width` attribute that NPM's `mj-image` does **not** have. May be an accidental addition.
+
+## 8. `mj-section` — `border-radius` Type Mismatch
+
+- NPM: `border-radius: 'string'` (accepts any CSS value including elliptical like `50%/10%`)
+- Ruby: `border-radius: 'unit(px,%){1,4}'` (stricter — rejects valid CSS border-radius values)
+
+## 9. Skeleton / Document-Level Gaps
+
+Already tracked in TODO P1:
+- Missing `xmlns` attributes on `<html>`
+- Missing `X-UA-Compatible` meta block
+- Missing Outlook `OfficeDocumentSettings`
+- Missing `mso-line-height-rule` / `.mj-outlook-group-fix` styles
+- Missing `word-spacing:normal` on `<body>`
+- Separate CSS style bucket ordering differs
+
+## 10. `mj-section` — Outlook `<table>` Style
+
+- NPM: renders `style` with `width` and optionally `padding-top` (for gap support) on the outlook wrapper table
+- Ruby: renders `style` as `"width:#{container_px}px;"` — no gap padding-top
+
+---
+
+## Summary by Priority
+
+### High impact (feature gaps users will hit)
+
+1. ~~`mj-section` background image support (background-url + VML) — completely missing~~ (fixed)
+2. `mj-section` full-width mode — missing
+3. `mj-wrapper` gap attribute — missing
+4. `mj-text` background-color — missing
+
+### Medium impact (validation/correctness)
+
+5. `mj-section` border-radius overflow/border-collapse handling
+6. `mj-table` missing `font-weight`
+7. `mj-social` missing `table-layout`
+8. `mj-section` border-radius type too strict
+9. `mj-image` extra `full-width` not in upstream
+
+### Low impact (already tracked or minor)
+
+10. Dependency rule differences for ending-tag components
+11. Missing ALLOWED_ATTRIBUTES constants (TODO P0)
+12. Skeleton markup differences (TODO P1)

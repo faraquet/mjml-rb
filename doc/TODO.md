@@ -72,3 +72,30 @@ Still worth porting from `upstream/packages/mjml/test`:
 
 - [ ] Keep moving behavior-specific assertions out of `test/test_compiler.rb` into focused files that mirror upstream npm test names where possible.
 - [ ] Add validator-specific tests whenever a component gains a new `ALLOWED_ATTRIBUTES` map, so render parity and validator parity stay coupled.
+
+## P5: Attribute and rendering inconsistencies (npm 4.18.0 audit)
+
+Detailed comparison of Ruby component attributes, defaults, and rendering logic against `upstream/packages/` (npm 4.18.0). Grouped by impact.
+
+### High impact — feature gaps users will hit
+
+- [x] **`mj-section` background image support.** npm supports `background-url`, `background-repeat` (default `'repeat'`), `background-size` (default `'auto'`), `background-position` (default `'top center'`), `background-position-x`, and `background-position-y`. Ruby has none of these. npm also renders VML `<v:rect>/<v:fill>` for Outlook background images and wraps content in an extra `<div style="line-height:0;font-size:0">` when a background URL is set. All of this is completely absent in the Ruby section renderer.
+- [ ] **`mj-section` full-width mode.** npm section supports `full-width="full-width"` with a dedicated `renderFullWidth()` path that wraps the section in an outer `<table>` with full-width background handling. Ruby only exposes `full-width` on `mj-wrapper`, not on `mj-section`.
+- [ ] **`mj-wrapper` gap attribute.** npm wrapper extends section and adds `gap: 'unit(px)'`. The gap value is propagated via child context and applied as `margin-top` on non-first child sections and as `padding-top` on the Outlook wrapper `<table>`. Ruby wrapper has no `gap` support.
+- [ ] **`mj-wrapper` missing background attributes.** npm wrapper inherits all section attributes (including `background-url`, `background-repeat`, `background-size`, `background-position`, `background-position-x`, `background-position-y`, `text-padding`). Ruby wrapper only adds `full-width` on top of the section attribute set and is missing all background-image and text-padding attributes.
+- [ ] **`mj-text` missing `background-color`.** npm text has `'background-color': 'color'` as an allowed attribute. Ruby text does not support it.
+
+### Medium impact — validation and correctness
+
+- [ ] **`mj-section` border-radius rendering.** npm adds `border-collapse: separate` on the inner table and `overflow: hidden` + `border-radius` on the outer div when `border-radius` is set. Ruby does not apply any of these.
+- [ ] **`mj-section` `border-radius` type mismatch.** npm declares `border-radius: 'string'` (accepts any CSS value including elliptical like `50%/10%`). Ruby declares `border-radius: 'unit(px,%){1,4}'` which is stricter and would reject valid CSS border-radius values.
+- [ ] **`mj-section` missing `text-padding`.** npm section has `text-padding: 'unit(px,%){1,4}'` with default `'4px 4px 4px 0'`. Ruby section does not have this attribute.
+- [ ] **`mj-table` missing `font-weight`.** npm table has `'font-weight': 'string'` as an allowed attribute. Ruby table does not list it.
+- [ ] **`mj-social` missing `table-layout`.** npm social has `'table-layout': 'enum(auto,fixed)'` as an allowed attribute. Ruby social does not have it.
+- [ ] **`mj-text` `align` enum incomplete.** npm text allows `enum(left,right,center,justify)`. Ruby text has no formal `ALLOWED_ATTRIBUTES` constraint and only defaults to `'left'`, missing `justify` validation.
+- [ ] **`mj-image` extra `full-width` attribute.** Ruby image supports a `full-width` attribute that npm image does **not** have. This should be verified — it may be an accidental addition not present upstream.
+
+### Low impact — dependency rule divergences
+
+- [ ] **`mj-raw` / `mj-table` / `mj-text` child validation.** npm declares these as ending-tag components with empty child arrays (`[]`). Ruby declares `[/^(?!mj-).+/]` allowing any non-`mj-` children. This is a design-level divergence: npm treats their content as raw text (no child validation), while Ruby structurally parses and validates children.
+- [ ] **`mj-attributes` wildcard regex.** npm uses `/^.*^/` which is a broken regex (second `^` is a literal character, not an anchor — it would only match strings containing a literal `^`). Ruby uses `/.*/` which correctly matches everything. Ruby is more correct here, but worth noting the upstream bug.
