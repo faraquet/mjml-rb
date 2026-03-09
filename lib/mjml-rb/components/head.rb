@@ -49,7 +49,7 @@ module MjmlRb
           if node.attributes["inline"] == "inline"
             context[:inline_styles] << css
           else
-            context[:head_styles] << css
+            context[:user_styles] << css
           end
         when "mj-font"
           name = node.attributes["name"]

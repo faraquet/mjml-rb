@@ -5,7 +5,6 @@ This checklist is based on a direct comparison between the current Ruby code in 
 Even when a template looks visually the same in email clients, the generated HTML and CSS can still differ noticeably from the npm renderer. The main remaining sources of output differences are:
 
 - skeleton markup: the outer HTML document still differs from npm in some head and Outlook-specific scaffolding
-- style bucket ordering: npm keeps several CSS buckets separate, while the Ruby renderer still flattens parts of head CSS differently
 - post-processing behavior: the Ruby renderer still relies on `Nokogiri`-based HTML post-processing for some features such as `mj-html-attributes` and inline style application
 
 So output size, CSS ordering, and exact markup can still differ even when the rendered email appears functionally equivalent.
@@ -19,7 +18,6 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - preserve file and line metadata
   - collect include errors instead of failing immediately
 - [ ] Rework ending-tag parsing to match npm semantics. The npm parser preserves raw `content` for ending-tag components such as `mj-text`, `mj-button`, `mj-table`, `mj-raw`, `mj-style`, and `mj-preview`; the current REXML path parses nested markup structurally, which can diverge for HTML-ish or template-heavy content.
-- [ ] Keep separate head style buckets like npm instead of flattening everything into one `<style>` tag in `lib/mjml-rb/renderer.rb`.
 - [ ] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. Bucket routing now matches npm more closely, but the current CSS parser still strips `@` rules and applies a simplified declaration merge instead of npm's richer cascade-aware inlining path.
 - [ ] Fix button/table fallback attribute mismatches against npm. Recent log comparison showed cases where Ruby emitted `bgcolor="#414141"` while the effective button background was white, which is risky for Outlook-style fallback rendering.
 - [ ] Replace or further constrain the `Nokogiri` post-processing path used by `mj-html-attributes` and inline style injection. It works for the current cases, but it is still a behavior fork from npm and already needed selector fallbacks such as `:lang(...)`.

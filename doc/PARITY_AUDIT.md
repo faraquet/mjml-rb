@@ -15,6 +15,3 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 
 NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
 
-## 2. Remaining Skeleton Gap
-
-- Head CSS is still flattened into a single `<style>` tag. NPM keeps several CSS buckets separate. Already tracked in TODO P1.

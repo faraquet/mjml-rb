@@ -50,7 +50,7 @@ module MjmlRb
         return "" if children.empty?
 
         carousel_id = SecureRandom.hex(8)
-        context[:head_styles] << component_head_style(carousel_id, children.length, a)
+        context[:component_head_styles] << component_head_style(carousel_id, children.length, a)
 
         outer_td_attrs = {
           "align" => a["align"],

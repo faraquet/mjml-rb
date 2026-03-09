@@ -71,7 +71,6 @@ module MjmlRb
       context[:column_widths] = {}
       append_component_head_styles(document, context)
       content = render_node(body, context, parent: "mjml")
-      append_column_width_styles(context)
       build_html_document(content, context)
     end
 
@@ -84,7 +83,8 @@ module MjmlRb
         breakpoint: "480px",
         before_doctype: "",
         head_raw: [],
-        head_styles: [],
+        component_head_styles: [],
+        user_styles: [],
         inline_styles: [],
         html_attributes: {},
         fonts: DEFAULT_FONTS.merge(hash_or_empty(options[:fonts])),
@@ -108,10 +108,12 @@ module MjmlRb
     def build_html_document(content, context)
       title = context[:title].to_s
       preview = context[:preview]
-      head_styles = ([DOCUMENT_RESET_CSS] + unique_strings(context[:head_styles])).join("\n")
       head_raw = Array(context[:head_raw]).join("\n")
       before_doctype = context[:before_doctype].to_s
       font_tags = build_font_tags(content, context[:inline_styles], context[:fonts])
+      media_queries_tags = build_media_queries_tags(context[:breakpoint], context[:column_widths])
+      component_styles_tag = build_style_tag(unique_strings(context[:component_head_styles]))
+      user_styles_tag = build_style_tag(unique_strings(context[:user_styles]))
       preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
       html_attributes = {
         "lang" => context[:lang],
@@ -133,10 +135,13 @@ module MjmlRb
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style type="text/css">#{DOCUMENT_RESET_CSS}</style>
             #{OUTLOOK_DOCUMENT_SETTINGS}
             #{OUTLOOK_GROUP_FIX}
             #{font_tags}
-            <style type="text/css">#{head_styles}</style>
+            #{media_queries_tags}
+            #{component_styles_tag}
+            #{user_styles_tag}
             #{head_raw}
           </head>
           <body style="#{body_style}">
@@ -226,28 +231,39 @@ module MjmlRb
       end
     end
 
-    def append_column_width_styles(context)
-      widths = context[:column_widths] || {}
-      return if widths.empty?
+    def build_media_queries_tags(breakpoint, column_widths)
+      widths = column_widths || {}
+      return "" if widths.empty?
 
-      css = widths.map do |suffix, pct|
+      base_rules = widths.map do |suffix, pct|
         ".mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
-      end.join("\n")
-      moz_css = widths.map do |suffix, pct|
-        ".moz-text-html .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
-      end.join("\n")
-      owa_css = widths.map do |suffix, pct|
-        "[owa] .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
-      end.join("\n")
-      breakpoint = context[:breakpoint].to_s.strip
-      if breakpoint.empty?
-        context[:head_styles] << css
-        context[:head_styles] << moz_css
-      else
-        context[:head_styles] << "@media only screen and (min-width:#{breakpoint}) {\n#{css}\n}"
-        context[:head_styles] << "@media screen and (min-width:#{breakpoint}) {\n#{moz_css}\n}"
       end
-      context[:head_styles] << owa_css
+      moz_rules = widths.map do |suffix, pct|
+        ".moz-text-html .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
+      end
+      owa_rules = widths.map do |suffix, pct|
+        "[owa] .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
+      end
+
+      bp = breakpoint.to_s.strip
+      parts = []
+
+      if bp.empty?
+        parts << "<style type=\"text/css\">\n#{base_rules.join("\n")}\n</style>"
+        parts << "<style type=\"text/css\">\n#{moz_rules.join("\n")}\n</style>"
+      else
+        parts << "<style type=\"text/css\">\n@media only screen and (min-width:#{bp}) {\n#{base_rules.join("\n")}\n}\n</style>"
+        parts << "<style media=\"screen and (min-width:#{bp})\">\n#{moz_rules.join("\n")}\n</style>"
+      end
+
+      parts << "<style type=\"text/css\">\n#{owa_rules.join("\n")}\n</style>"
+      parts.join("\n")
+    end
+
+    def build_style_tag(styles)
+      return "" if styles.empty?
+
+      "<style type=\"text/css\">#{styles.join("\n")}</style>"
     end
 
     def merge_outlook_conditionals(html)
@@ -482,7 +498,7 @@ module MjmlRb
                end
         next unless Array(tags).any? { |tag| contains_tag?(document, tag) }
 
-        context[:head_styles] << style
+        context[:component_head_styles] << style
       end
     end
 
