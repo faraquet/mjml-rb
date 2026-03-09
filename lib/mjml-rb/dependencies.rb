@@ -1,5 +1,21 @@
+require "set"
+
 module MjmlRb
   module Dependencies
+    # Components whose content is treated as raw HTML in NPM (endingTag = true).
+    # The parser preserves their inner markup as-is; the validator skips child
+    # element checks because REXML structurally parses what NPM treats as text.
+    ENDING_TAGS = Set.new(%w[
+      mj-accordion-text
+      mj-accordion-title
+      mj-button
+      mj-carousel-image
+      mj-navbar-link
+      mj-raw
+      mj-table
+      mj-text
+    ]).freeze
+
     RULES = {
       "mjml" => ["mj-body", "mj-head", "mj-raw"],
       "mj-accordion" => ["mj-accordion-element", "mj-raw"],
@@ -53,14 +69,14 @@ module MjmlRb
       ],
       "mj-image" => [],
       "mj-navbar" => ["mj-navbar-link", "mj-raw"],
-      "mj-raw" => [/^(?!mj-).+/],
+      "mj-raw" => [],
       "mj-section" => ["mj-column", "mj-group", "mj-raw"],
       "mj-selector" => ["mj-html-attribute"],
       "mj-social" => ["mj-social-element", "mj-raw"],
       "mj-social-element" => [],
       "mj-spacer" => [],
-      "mj-table" => [/^(?!mj-).+/],
-      "mj-text" => [/^(?!mj-).+/],
+      "mj-table" => [],
+      "mj-text" => [],
       "mj-wrapper" => ["mj-hero", "mj-raw", "mj-section"]
     }.freeze
   end

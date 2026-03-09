@@ -63,5 +63,4 @@ Detailed comparison of Ruby component attributes, defaults, and rendering logic 
 
 ### Low impact — dependency rule divergences
 
-- [ ] **`mj-raw` / `mj-table` / `mj-text` child validation.** npm declares these as ending-tag components with empty child arrays (`[]`). Ruby declares `[/^(?!mj-).+/]` allowing any non-`mj-` children. This is a design-level divergence: npm treats their content as raw text (no child validation), while Ruby structurally parses and validates children.
 - [ ] **`mj-attributes` wildcard regex.** npm uses `/^.*^/` which is a broken regex (second `^` is a literal character, not an anchor — it would only match strings containing a literal `^`). Ruby uses `/.*/` which correctly matches everything. Ruby is more correct here, but worth noting the upstream bug.

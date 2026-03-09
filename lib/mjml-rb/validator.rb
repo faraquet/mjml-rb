@@ -52,6 +52,10 @@ module MjmlRb
     end
 
     def validate_allowed_children(node, errors)
+      # Ending-tag components treat content as raw HTML; REXML still parses
+      # children structurally, so skip child validation for those tags.
+      return if Dependencies::ENDING_TAGS.include?(node.tag_name)
+
       allowed = Dependencies::RULES[node.tag_name]
       return unless allowed
 

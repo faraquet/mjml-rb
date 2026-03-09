@@ -8,10 +8,6 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 
 | Tag | NPM | Ruby | Issue |
 |---|---|---|---|
-| `mj-raw` | `[]` (ending tag, no children) | `[/^(?!mj-).+/]` | Ruby allows non-mj children; NPM treats as raw text |
-| `mj-table` | `[]` (ending tag) | `[/^(?!mj-).+/]` | Same divergence |
-| `mj-text` | `[]` (ending tag) | `[/^(?!mj-).+/]` | Same divergence |
 | `mj-attributes` | `[/^.*^/]` | `[/.*/]` | NPM regex is broken (literal `^`). Ruby is more correct |
 
-NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
-
+All ending-tag dependency rules (`mj-raw`, `mj-table`, `mj-text`) are now aligned with NPM (`[]`). The validator skips child checks for ending-tag components via `Dependencies::ENDING_TAGS`.
