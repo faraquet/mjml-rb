@@ -24,6 +24,8 @@ require_relative "components/spacer"
 
 module MjmlRb
   class Renderer
+    HTML_VOID_TAGS = %w[area base br col embed hr img input link meta param source track wbr].freeze
+
     DEFAULT_FONTS = {
       "Roboto" => "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700"
     }.freeze
@@ -571,10 +573,15 @@ module MjmlRb
 
     def serialize_node(node)
       attrs = node.attributes.map { |k, v| %( #{k}="#{escape_attr(v)}") }.join
-      return "<#{node.tag_name}#{attrs} />" if node.children.empty?
+      return "<#{node.tag_name}#{attrs} />" if node.children.empty? && html_void_tag?(node.tag_name)
+      return "<#{node.tag_name}#{attrs}></#{node.tag_name}>" if node.children.empty?
 
       inner = node.children.map { |child| child.text? ? child.content.to_s : serialize_node(child) }.join
       "<#{node.tag_name}#{attrs}>#{inner}</#{node.tag_name}>"
+    end
+
+    def html_void_tag?(tag_name)
+      HTML_VOID_TAGS.include?(tag_name.to_s.downcase)
     end
 
     def style_join(hash)

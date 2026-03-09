@@ -1091,6 +1091,25 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, "Line 2")
   end
 
+  def test_empty_non_void_html_tags_are_not_self_closed_in_mj_text
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text><p></p><p>A</p><p>B</p><p></p></mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "<p></p><p>A</p><p>B</p><p></p>")
+    refute_includes(result.html, "<p />")
+  end
+
   def test_closing_void_tags_in_included_partial
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")
