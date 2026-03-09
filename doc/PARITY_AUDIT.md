@@ -45,8 +45,7 @@ Already tracked in TODO P1:
 
 ### Medium impact (validation/correctness)
 
-1. `mj-social` missing `table-layout`
-2. `mj-image` extra `full-width` not in upstream
+1. `mj-image` extra `full-width` not in upstream
 
 ### Low impact (already tracked or minor)
 

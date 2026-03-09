@@ -32,6 +32,75 @@ module MjmlRb
         end
       end.freeze
 
+      SOCIAL_ALLOWED_ATTRIBUTES = {
+        "align" => "enum(left,right,center)",
+        "border-radius" => "unit(px,%)",
+        "container-background-color" => "color",
+        "color" => "color",
+        "font-family" => "string",
+        "font-size" => "unit(px)",
+        "font-style" => "string",
+        "font-weight" => "string",
+        "icon-size" => "unit(px,%)",
+        "icon-height" => "unit(px,%)",
+        "icon-padding" => "unit(px,%){1,4}",
+        "inner-padding" => "unit(px,%){1,4}",
+        "line-height" => "unit(px,%,)",
+        "mode" => "enum(horizontal,vertical)",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "padding" => "unit(px,%){1,4}",
+        "table-layout" => "enum(auto,fixed)",
+        "text-padding" => "unit(px,%){1,4}",
+        "text-decoration" => "string",
+        "vertical-align" => "enum(top,bottom,middle)"
+      }.freeze
+
+      SOCIAL_ELEMENT_ALLOWED_ATTRIBUTES = {
+        "align" => "enum(left,center,right)",
+        "icon-position" => "enum(left,right)",
+        "background-color" => "color",
+        "color" => "color",
+        "border-radius" => "unit(px)",
+        "font-family" => "string",
+        "font-size" => "unit(px)",
+        "font-style" => "string",
+        "font-weight" => "string",
+        "href" => "string",
+        "icon-size" => "unit(px,%)",
+        "icon-height" => "unit(px,%)",
+        "icon-padding" => "unit(px,%){1,4}",
+        "line-height" => "unit(px,%,)",
+        "name" => "string",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "padding" => "unit(px,%){1,4}",
+        "text-padding" => "unit(px,%){1,4}",
+        "rel" => "string",
+        "src" => "string",
+        "srcset" => "string",
+        "sizes" => "string",
+        "alt" => "string",
+        "title" => "string",
+        "target" => "string",
+        "text-decoration" => "string",
+        "vertical-align" => "enum(top,middle,bottom)"
+      }.freeze
+
+      class << self
+        def allowed_attributes_for(tag_name)
+          tag_name == "mj-social-element" ? SOCIAL_ELEMENT_ALLOWED_ATTRIBUTES : SOCIAL_ALLOWED_ATTRIBUTES
+        end
+
+        def allowed_attributes
+          SOCIAL_ALLOWED_ATTRIBUTES
+        end
+      end
+
       # Attributes Social parent passes down to its mj-social-element children
       INHERITED_ATTRS = %w[
         border-radius color font-family font-size font-weight font-style

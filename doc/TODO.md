@@ -79,7 +79,6 @@ Detailed comparison of Ruby component attributes, defaults, and rendering logic 
 
 ### Medium impact — validation and correctness
 
-- [ ] **`mj-social` missing `table-layout`.** npm social has `'table-layout': 'enum(auto,fixed)'` as an allowed attribute. Ruby social does not have it.
 - [ ] **`mj-image` extra `full-width` attribute.** Ruby image supports a `full-width` attribute that npm image does **not** have. This should be verified — it may be an accidental addition not present upstream.
 
 ### Low impact — dependency rule divergences
