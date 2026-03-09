@@ -54,13 +54,5 @@ The dedicated component-level tests currently cover:
 
 ## P4: Test structure cleanup
 
-- [ ] Keep moving behavior-specific assertions out of `test/test_compiler.rb` into focused files that mirror upstream npm test names where possible.
+- [ ] Keep moving behavior-specific assertions out of `test/test_compiler.rb` into focused files that mirror upstream npm test names where possible. (`test/test_button.rb`, `test/test_spacer.rb` done.)
 - [ ] Add validator-specific tests whenever a component gains a new `ALLOWED_ATTRIBUTES` map, so render parity and validator parity stay coupled.
-
-## P5: Attribute and rendering inconsistencies (npm 4.18.0 audit)
-
-Detailed comparison of Ruby component attributes, defaults, and rendering logic against `upstream/packages/` (npm 4.18.0). Grouped by impact.
-
-### Low impact — dependency rule divergences
-
-- [ ] **`mj-attributes` wildcard regex.** npm uses `/^.*^/` which is a broken regex (second `^` is a literal character, not an anchor — it would only match strings containing a literal `^`). Ruby uses `/.*/` which correctly matches everything. Ruby is more correct here, but worth noting the upstream bug.
