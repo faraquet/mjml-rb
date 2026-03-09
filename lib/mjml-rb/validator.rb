@@ -132,6 +132,8 @@ module MjmlRb
         true
       when "boolean"
         %w[true false].include?(value)
+      when "integer"
+        value.match?(/\A-?\d+\z/)
       when "color"
         color?(value)
       when /\Aenum\((.+)\)\z/

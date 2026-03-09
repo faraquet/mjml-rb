@@ -130,6 +130,35 @@ class SocialTest < Minitest::Test
     assert_includes result.html, "display:inline-table"
   end
 
+  # Ported from upstream: social-align.test.js
+  def test_social_element_align_renders_text_align_in_style
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-social mode="vertical">
+                <mj-social-element name="facebook" href="https://mjml.io/" icon-position="right" align="right" css-class="my-social-element">
+                  Facebook
+                </mj-social-element>
+              </mj-social>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty result.errors
+    doc = Nokogiri::HTML(result.html)
+    tr = doc.at_css("tr.my-social-element")
+    refute_nil tr, "Expected a <tr> with class my-social-element"
+
+    # The text <td> should have text-align:right
+    text_td = tr.css("td").find { |td| td["style"]&.include?("text-align") }
+    refute_nil text_td, "Expected a <td> with text-align style"
+    assert_match(/text-align:\s*right/, text_td["style"])
+  end
+
   def test_social_vertical_rendering
     result = compile(<<~MJML)
       <mjml>

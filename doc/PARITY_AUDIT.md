@@ -21,11 +21,7 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 
 NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
 
-## 3. `mj-image` — Extra `full-width` Attribute
-
-Ruby's `mj-image` supports a `full-width` attribute that NPM's `mj-image` does **not** have. May be an accidental addition.
-
-## 4. Skeleton / Document-Level Gaps
+## 3. Skeleton / Document-Level Gaps
 
 Already tracked in TODO P1:
 - Missing `xmlns` attributes on `<html>`
@@ -38,10 +34,6 @@ Already tracked in TODO P1:
 ---
 
 ## Summary by Priority
-
-### Medium impact (validation/correctness)
-
-1. `mj-image` extra `full-width` not in upstream
 
 ### Low impact (already tracked or minor)
 

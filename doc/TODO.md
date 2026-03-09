@@ -19,7 +19,6 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - preserve file and line metadata
   - collect include errors instead of failing immediately
 - [ ] Rework ending-tag parsing to match npm semantics. The npm parser preserves raw `content` for ending-tag components such as `mj-text`, `mj-button`, `mj-table`, `mj-raw`, `mj-style`, and `mj-preview`; the current REXML path parses nested markup structurally, which can diverge for HTML-ish or template-heavy content.
-- [ ] Extend `lib/mjml-rb/validator.rb` to support the npm core type set from `upstream/packages/mjml-core/src/types`: `integer` is still missing.
 - [ ] Align the generated HTML skeleton in `lib/mjml-rb/renderer.rb` with `upstream/packages/mjml-core/src/helpers/skeleton.js`:
   - add `xmlns` attributes on `<html>`
   - add the `X-UA-Compatible` meta block
@@ -60,7 +59,6 @@ Still worth porting from `upstream/packages/mjml/test`:
 - [ ] `accordionTitle-fontWeight`
 - [ ] `html-comments`
 - [ ] `lazy-head-style`
-- [ ] `social-align`
 - [ ] `social-icon-height`
 - [ ] `carousel-hoverSupported`
 
@@ -72,10 +70,6 @@ Still worth porting from `upstream/packages/mjml/test`:
 ## P5: Attribute and rendering inconsistencies (npm 4.18.0 audit)
 
 Detailed comparison of Ruby component attributes, defaults, and rendering logic against `upstream/packages/` (npm 4.18.0). Grouped by impact.
-
-### Medium impact — validation and correctness
-
-- [ ] **`mj-image` extra `full-width` attribute.** Ruby image supports a `full-width` attribute that npm image does **not** have. This should be verified — it may be an accidental addition not present upstream.
 
 ### Low impact — dependency rule divergences
 

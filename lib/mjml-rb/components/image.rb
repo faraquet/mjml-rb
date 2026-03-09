@@ -23,6 +23,7 @@ module MjmlRb
         "border-radius" => "unit(px,%){1,4}",
         "container-background-color" => "color",
         "fluid-on-mobile" => "boolean",
+        "full-width" => "enum(full-width)",
         "padding" => "unit(px,%){1,4}",
         "padding-bottom" => "unit(px,%)",
         "padding-left" => "unit(px,%)",
