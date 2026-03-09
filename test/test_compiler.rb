@@ -1072,7 +1072,7 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, "©")
   end
 
-  def test_closing_void_tags_stripped
+  def test_malformed_closing_br_is_recovered_as_line_break
     mjml = <<~MJML
       <mjml>
         <mj-body>
@@ -1087,8 +1087,7 @@ class MJMLCompilerTest < Minitest::Test
 
     result = MjmlRb::Compiler.new.compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, "Line 1")
-    assert_includes(result.html, "Line 2")
+    assert_includes(result.html, "Line 1<br />Line 2")
   end
 
   def test_empty_non_void_html_tags_are_not_self_closed_in_mj_text
@@ -1132,7 +1131,7 @@ class MJMLCompilerTest < Minitest::Test
     assert_match(%r{<p class="padding--top--none--this"[^>]*></p><p[^>]*>One</p><p[^>]*>Two</p><p[^>]*></p>}m, result.html)
   end
 
-  def test_closing_void_tags_in_included_partial
+  def test_malformed_closing_br_in_included_partial_is_recovered
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")
       main = File.join(dir, "main.mjml")
@@ -1152,9 +1151,30 @@ class MJMLCompilerTest < Minitest::Test
       compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
-      assert_includes(result.html, "Terms")
-      assert_includes(result.html, "Conditions")
+      assert_includes(result.html, "Terms<br />Conditions")
     end
+  end
+
+  def test_malformed_closing_br_is_preserved_inside_mj_table_content
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table>
+                <tr>
+                  <td><span>A</span></br><span>B</span></td>
+                </tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, "<span>A</span><br /><span>B</span>")
   end
 
   def test_cli_compiles_file_to_output
