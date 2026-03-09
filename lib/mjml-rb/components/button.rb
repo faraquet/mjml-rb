@@ -5,6 +5,42 @@ module MjmlRb
     class Button < Base
       TAGS = ["mj-button"].freeze
 
+      ALLOWED_ATTRIBUTES = {
+        "align" => "enum(left,center,right)",
+        "background-color" => "color",
+        "border-bottom" => "string",
+        "border-left" => "string",
+        "border-radius" => "string",
+        "border-right" => "string",
+        "border-top" => "string",
+        "border" => "string",
+        "color" => "color",
+        "container-background-color" => "color",
+        "font-family" => "string",
+        "font-size" => "unit(px)",
+        "font-style" => "string",
+        "font-weight" => "string",
+        "height" => "unit(px,%)",
+        "href" => "string",
+        "name" => "string",
+        "title" => "string",
+        "inner-padding" => "unit(px,%){1,4}",
+        "letter-spacing" => "unit(px,em)",
+        "line-height" => "unit(px,%,)",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "padding" => "unit(px,%){1,4}",
+        "rel" => "string",
+        "target" => "string",
+        "text-decoration" => "string",
+        "text-transform" => "string",
+        "vertical-align" => "enum(top,bottom,middle)",
+        "text-align" => "enum(left,right,center)",
+        "width" => "unit(px,%)"
+      }.freeze
+
       DEFAULTS = {
         "align" => "center",
         "background-color" => "#414141",

@@ -5,6 +5,20 @@ module MjmlRb
     class Divider < Base
       TAGS = ["mj-divider"].freeze
 
+      ALLOWED_ATTRIBUTES = {
+        "border-color" => "color",
+        "border-style" => "string",
+        "border-width" => "unit(px)",
+        "container-background-color" => "color",
+        "padding" => "unit(px,%){1,4}",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "width" => "unit(px,%)",
+        "align" => "enum(left,center,right)"
+      }.freeze
+
       DEFAULTS = {
         "align" => "center",
         "border-color" => "#000000",

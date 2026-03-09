@@ -5,6 +5,37 @@ module MjmlRb
     class Image < Base
       TAGS = ["mj-image"].freeze
 
+      ALLOWED_ATTRIBUTES = {
+        "alt" => "string",
+        "href" => "string",
+        "name" => "string",
+        "src" => "string",
+        "srcset" => "string",
+        "sizes" => "string",
+        "title" => "string",
+        "rel" => "string",
+        "align" => "enum(left,center,right)",
+        "border" => "string",
+        "border-bottom" => "string",
+        "border-left" => "string",
+        "border-right" => "string",
+        "border-top" => "string",
+        "border-radius" => "unit(px,%){1,4}",
+        "container-background-color" => "color",
+        "fluid-on-mobile" => "boolean",
+        "padding" => "unit(px,%){1,4}",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "target" => "string",
+        "width" => "unit(px)",
+        "height" => "unit(px,auto)",
+        "max-height" => "unit(px,%)",
+        "font-size" => "unit(px)",
+        "usemap" => "string"
+      }.freeze
+
       DEFAULTS = {
         "alt" => "",
         "align" => "center",

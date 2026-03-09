@@ -10,6 +10,83 @@ module MjmlRb
         mj-accordion-text
       ].freeze
 
+      ACCORDION_ALLOWED_ATTRIBUTES = {
+        "container-background-color" => "color",
+        "border" => "string",
+        "font-family" => "string",
+        "icon-align" => "enum(top,middle,bottom)",
+        "icon-width" => "unit(px,%)",
+        "icon-height" => "unit(px,%)",
+        "icon-wrapped-url" => "string",
+        "icon-wrapped-alt" => "string",
+        "icon-unwrapped-url" => "string",
+        "icon-unwrapped-alt" => "string",
+        "icon-position" => "enum(left,right)",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "padding" => "unit(px,%){1,4}"
+      }.freeze
+
+      ACCORDION_ELEMENT_ALLOWED_ATTRIBUTES = {
+        "background-color" => "color",
+        "border" => "string",
+        "font-family" => "string",
+        "icon-align" => "enum(top,middle,bottom)",
+        "icon-width" => "unit(px,%)",
+        "icon-height" => "unit(px,%)",
+        "icon-wrapped-url" => "string",
+        "icon-wrapped-alt" => "string",
+        "icon-unwrapped-url" => "string",
+        "icon-unwrapped-alt" => "string",
+        "icon-position" => "enum(left,right)"
+      }.freeze
+
+      ACCORDION_TITLE_ALLOWED_ATTRIBUTES = {
+        "background-color" => "color",
+        "color" => "color",
+        "font-size" => "unit(px)",
+        "font-family" => "string",
+        "font-weight" => "string",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "padding" => "unit(px,%){1,4}"
+      }.freeze
+
+      ACCORDION_TEXT_ALLOWED_ATTRIBUTES = {
+        "background-color" => "color",
+        "font-size" => "unit(px)",
+        "font-family" => "string",
+        "font-weight" => "string",
+        "letter-spacing" => "unit(px,em)",
+        "line-height" => "unit(px,%,)",
+        "color" => "color",
+        "padding-bottom" => "unit(px,%)",
+        "padding-left" => "unit(px,%)",
+        "padding-right" => "unit(px,%)",
+        "padding-top" => "unit(px,%)",
+        "padding" => "unit(px,%){1,4}"
+      }.freeze
+
+      class << self
+        def allowed_attributes_for(tag_name)
+          case tag_name
+          when "mj-accordion"         then ACCORDION_ALLOWED_ATTRIBUTES
+          when "mj-accordion-element" then ACCORDION_ELEMENT_ALLOWED_ATTRIBUTES
+          when "mj-accordion-title"   then ACCORDION_TITLE_ALLOWED_ATTRIBUTES
+          when "mj-accordion-text"    then ACCORDION_TEXT_ALLOWED_ATTRIBUTES
+          else {}
+          end
+        end
+
+        def allowed_attributes
+          ACCORDION_ALLOWED_ATTRIBUTES
+        end
+      end
+
       HEAD_STYLE = <<~CSS.freeze
         noinput.mj-accordion-checkbox { display:block!important; }
         @media yahoo, only screen and (min-width:0) {

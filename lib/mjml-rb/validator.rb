@@ -130,6 +130,8 @@ module MjmlRb
       case expected_type
       when "string"
         true
+      when "boolean"
+        %w[true false].include?(value)
       when "color"
         color?(value)
       when /\Aenum\((.+)\)\z/
@@ -162,7 +164,7 @@ module MjmlRb
       return true if value.match?(/\A0(?:\.0+)?\z/)
 
       units.any? do |unit|
-        value.match?(/\A-?\d+(?:\.\d+)?#{Regexp.escape(unit)}\z/)
+        value == unit || value.match?(/\A-?\d+(?:\.\d+)?#{Regexp.escape(unit)}\z/)
       end
     end
 

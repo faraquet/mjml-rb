@@ -1,3 +1,3 @@
 module MjmlRb
-  VERSION = "0.2.26".freeze
+  VERSION = "0.2.27".freeze
 end

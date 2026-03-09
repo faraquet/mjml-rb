@@ -21,15 +21,11 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 
 NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
 
-## 3. `mj-social` — Missing `table-layout`
-
-NPM has `table-layout: 'enum(auto,fixed)'`. Ruby doesn't have it.
-
-## 4. `mj-image` — Extra `full-width` Attribute
+## 3. `mj-image` — Extra `full-width` Attribute
 
 Ruby's `mj-image` supports a `full-width` attribute that NPM's `mj-image` does **not** have. May be an accidental addition.
 
-## 5. Skeleton / Document-Level Gaps
+## 4. Skeleton / Document-Level Gaps
 
 Already tracked in TODO P1:
 - Missing `xmlns` attributes on `<html>`
@@ -50,5 +46,4 @@ Already tracked in TODO P1:
 ### Low impact (already tracked or minor)
 
 10. Dependency rule differences for ending-tag components
-11. Missing ALLOWED_ATTRIBUTES constants (TODO P0)
-12. Skeleton markup differences (TODO P1)
+11. Skeleton markup differences (TODO P1)

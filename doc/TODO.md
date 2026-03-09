@@ -10,10 +10,6 @@ Even when a template looks visually the same in email clients, the generated HTM
 
 So output size, CSS ordering, and exact markup can still differ even when the rendered email appears functionally equivalent.
 
-## P0: Remaining npm parity blockers
-
-- [ ] Add `ALLOWED_ATTRIBUTES` and validator type coverage for components that currently render without npm-style validation metadata: `lib/mjml-rb/components/accordion.rb`, `lib/mjml-rb/components/button.rb`, `lib/mjml-rb/components/divider.rb`, `lib/mjml-rb/components/image.rb`, and `lib/mjml-rb/components/social.rb`.
-
 ## P1: Core runtime parity gaps
 
 - [ ] Bring `lib/mjml-rb/parser.rb` in line with `upstream/packages/mjml-parser-xml/src/index.js` for `mj-include` handling:
@@ -23,7 +19,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - preserve file and line metadata
   - collect include errors instead of failing immediately
 - [ ] Rework ending-tag parsing to match npm semantics. The npm parser preserves raw `content` for ending-tag components such as `mj-text`, `mj-button`, `mj-table`, `mj-raw`, `mj-style`, and `mj-preview`; the current REXML path parses nested markup structurally, which can diverge for HTML-ish or template-heavy content.
-- [ ] Extend `lib/mjml-rb/validator.rb` to support the npm core type set from `upstream/packages/mjml-core/src/types`: `boolean` and `integer` are still missing.
+- [ ] Extend `lib/mjml-rb/validator.rb` to support the npm core type set from `upstream/packages/mjml-core/src/types`: `integer` is still missing.
 - [ ] Align the generated HTML skeleton in `lib/mjml-rb/renderer.rb` with `upstream/packages/mjml-core/src/helpers/skeleton.js`:
   - add `xmlns` attributes on `<html>`
   - add the `X-UA-Compatible` meta block
