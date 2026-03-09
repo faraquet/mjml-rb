@@ -279,7 +279,7 @@ module MjmlRb
       css_blocks = unique_strings(context[:inline_styles]).reject { |css| css.nil? || css.strip.empty? }
       return html if css_blocks.empty?
 
-      document = Nokogiri::HTML(html)
+      document = parse_html_document(html)
       parse_inline_css_rules(css_blocks.join("\n")).each do |selector, declarations|
         next if selector.empty? || declarations.empty?
 
@@ -289,6 +289,14 @@ module MjmlRb
       end
 
       document.to_html
+    end
+
+    def parse_html_document(html)
+      if defined?(Nokogiri::HTML5)
+        Nokogiri::HTML5(html)
+      else
+        Nokogiri::HTML(html)
+      end
     end
 
     def select_nodes(document, selector)

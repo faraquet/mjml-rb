@@ -1110,6 +1110,28 @@ class MJMLCompilerTest < Minitest::Test
     refute_includes(result.html, "<p />")
   end
 
+  def test_inline_style_postprocess_preserves_html5_paragraph_recovery
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">p { color: #333333; }</mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text><p class="padding--top--none--this"><p>One</p><p>Two</p></p></mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+    assert_empty(result.errors)
+    assert_includes(result.html, '<p class="padding--top--none--this"')
+    assert_match(%r{<p class="padding--top--none--this"[^>]*></p><p[^>]*>One</p><p[^>]*>Two</p><p[^>]*></p>}m, result.html)
+  end
+
   def test_closing_void_tags_in_included_partial
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")
