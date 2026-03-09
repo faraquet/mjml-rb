@@ -893,7 +893,8 @@ class MJMLCompilerTest < Minitest::Test
     assert_empty(result.errors)
     assert_includes(result.html, 'class="hero-wrap"')
     assert_includes(result.html, 'background:#f0f0f0')
-    assert_includes(result.html, 'role="presentation" style="background:#f0f0f0;background-color:#f0f0f0;width:100%" width="100%"')
+    # Full-width wrapper: background goes on the outer wrapping table
+    assert_includes(result.html, 'class="hero-wrap" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#f0f0f0;background-color:#f0f0f0"')
     assert_includes(result.html, "Wrapped")
   end
 

@@ -541,10 +541,27 @@ module MjmlRb
         bg_color     = a["background-color"]
         border_radius = a["border-radius"]
         full_width   = a["full-width"] == "full-width"
+        bg_has       = has_background?(a)
         wrapper_gap  = context[:_wrapper_child_gap]
         has_border_radius = has_border_radius?(border_radius)
 
-        # renderBefore — same structure as section
+        # Background styles: url-based or color-only
+        background_styles = if bg_has
+                              bg_value = get_background(a)
+                              {
+                                "background" => bg_value,
+                                "background-position" => get_background_string(a),
+                                "background-repeat" => a["background-repeat"],
+                                "background-size" => a["background-size"]
+                              }
+                            else
+                              {
+                                "background" => bg_color,
+                                "background-color" => bg_color
+                              }
+                            end
+
+        # renderBefore — Outlook conditional table wrapper
         outlook_class = css_class ? "#{css_class}-outlook" : ""
         before_pairs = [
           ["align",       "center"],
@@ -560,22 +577,23 @@ module MjmlRb
 
         render_before = %(<!--[if mso | IE]><table#{outlook_attrs(before_pairs)}><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->)
 
+        # div and table styles: include background only when not full-width
         div_style = style_join(
-          "background"       => bg_color,
-          "background-color" => bg_color,
-          "border-radius"    => border_radius,
-          "overflow"         => (has_border_radius ? "hidden" : nil),
-          "margin"           => "0px auto",
-          "margin-top"       => wrapper_gap,
-          "max-width"        => (full_width ? nil : "#{container_px}px")
+          {
+            "border-radius"    => border_radius,
+            "overflow"         => (has_border_radius ? "hidden" : nil),
+            "margin"           => "0px auto",
+            "margin-top"       => wrapper_gap,
+            "max-width"        => (full_width ? nil : "#{container_px}px")
+          }.merge(full_width ? {} : background_styles)
         )
 
         table_style = style_join(
-          "background"       => bg_color,
-          "background-color" => bg_color,
-          "border-radius"    => border_radius,
-          "border-collapse"  => (has_border_radius ? "separate" : nil),
-          "width"            => "100%"
+          {
+            "border-radius"    => border_radius,
+            "border-collapse"  => (has_border_radius ? "separate" : nil),
+            "width"            => "100%"
+          }.merge(full_width ? {} : background_styles)
         )
 
         td_style = style_join(
@@ -590,17 +608,49 @@ module MjmlRb
           "text-align"     => a["text-align"]
         )
 
-        div_attrs = {"class" => css_class, "style" => div_style}
+        div_attrs = {"class" => (full_width ? nil : css_class), "style" => div_style}
         inner = merge_outlook_conditionals(render_wrapped_children_wrapper(node, context, container_px, a["gap"]))
+        inner_content = bg_has ? %(<div style="line-height:0;font-size:0">#{inner}</div>) : inner
+
+        table_attrs = {
+          "align" => "center",
+          "background" => (bg_has && !full_width ? a["background-url"] : nil),
+          "border" => "0",
+          "cellpadding" => "0",
+          "cellspacing" => "0",
+          "role" => "presentation",
+          "style" => table_style,
+          "width" => "100%"
+        }
 
         wrapper_html =
           %(<div#{html_attrs(div_attrs)}>) +
-          %(<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="#{table_style}" width="100%">) +
-          %(<tbody><tr><td style="#{td_style}">#{inner}</td></tr></tbody></table></div>)
+          %(<table#{html_attrs(table_attrs)}>) +
+          %(<tbody><tr><td style="#{td_style}">#{inner_content}</td></tr></tbody></table></div>)
 
         render_after = %(<!--[if mso | IE]></td></tr></table><![endif]-->)
 
-        "#{render_before}\n#{wrapper_html}\n#{render_after}"
+        if full_width
+          inner_all = "#{render_before}\n#{wrapper_html}\n#{render_after}"
+          body = bg_has ? render_with_background(inner_all, a, container_px, full_width: true) : inner_all
+
+          outer_style = full_width_table_style(a)
+          outer_attrs = {
+            "align" => "center",
+            "class" => css_class,
+            "background" => bg_has ? a["background-url"] : nil,
+            "border" => "0",
+            "cellpadding" => "0",
+            "cellspacing" => "0",
+            "role" => "presentation",
+            "style" => outer_style
+          }
+
+          %(<table#{html_attrs(outer_attrs)}><tbody><tr><td>#{body}</td></tr></tbody></table>)
+        else
+          body = bg_has ? render_with_background(wrapper_html, a, container_px) : wrapper_html
+          "#{render_before}\n#{body}\n#{render_after}"
+        end
       end
 
       # Wrap each child mj-section/mj-wrapper in an Outlook conditional <td>.

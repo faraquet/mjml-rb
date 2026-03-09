@@ -38,7 +38,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 
 ## P2: Component audit follow-ups
 
-- [ ] Compare `lib/mjml-rb/components/section.rb` against `upstream/packages/mjml-section/src/index.js` and `upstream/packages/mjml-wrapper/src/index.js` for remaining wrapper-only behavior, especially around Outlook wrappers, background handling, and `gap`.
+- [ ] Compare `lib/mjml-rb/components/section.rb` against `upstream/packages/mjml-section/src/index.js` and `upstream/packages/mjml-wrapper/src/index.js` for remaining wrapper-only behavior, especially around Outlook wrappers and `gap`.
 - [ ] Compare `lib/mjml-rb/components/column.rb` against `upstream/packages/mjml-column/src/index.js` for the remaining width, gutter, and Outlook child wrapper edge cases after the already-ported border-radius work.
 - [ ] Compare `lib/mjml-rb/components/social.rb` against `upstream/packages/mjml-social/src/Social.js` and `upstream/packages/mjml-social/src/SocialElement.js` for network defaults, layout modes, and full validator metadata.
 - [ ] Compare `lib/mjml-rb/components/accordion.rb` against the four upstream accordion classes for any remaining title/text defaults and ending-tag behavior that is currently only covered by ad-hoc tests.
@@ -77,9 +77,6 @@ Still worth porting from `upstream/packages/mjml/test`:
 
 Detailed comparison of Ruby component attributes, defaults, and rendering logic against `upstream/packages/` (npm 4.18.0). Grouped by impact.
 
-### High impact — feature gaps users will hit
-
-- [ ] **`mj-wrapper` missing background rendering and `text-padding`.** The wrapper now inherits background-* attributes from `SECTION_ALLOWED_ATTRIBUTES`, but `render_wrapper` does not use them (no background styles, no VML, no innerDiv). Also still missing `text-padding`.
 ### Medium impact — validation and correctness
 
 - [ ] **`mj-social` missing `table-layout`.** npm social has `'table-layout': 'enum(auto,fixed)'` as an allowed attribute. Ruby social does not have it.

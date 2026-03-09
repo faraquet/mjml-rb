@@ -4,22 +4,13 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 
 ---
 
-## 1. `mj-wrapper` — Missing Features
-
-| Gap | Detail |
-|---|---|
-| `background-*` rendering | Wrapper now inherits background-* attributes via `SECTION_ALLOWED_ATTRIBUTES`, but `render_wrapper` does not apply background styles, VML, or innerDiv |
-| `text-padding` | Inherited from section in NPM, absent in Ruby |
-
-Ruby wrapper has `full-width` which is correct. NPM wrapper also has `full-width` via inheritance.
-
-## 2. `mj-text` — Remaining Validation Gaps
+## 1. `mj-text` — Remaining Validation Gaps
 
 - NPM `align` allows `justify` — Ruby now matches this in validation metadata
 - Ruby now supports `background-color` and has an `ALLOWED_ATTRIBUTES` map
 - Any remaining `mj-text` parity work is mostly around ending-tag semantics, not the basic attribute contract
 
-## 3. Dependency Rules Differences
+## 2. Dependency Rules Differences
 
 | Tag | NPM | Ruby | Issue |
 |---|---|---|---|
@@ -30,15 +21,15 @@ Ruby wrapper has `full-width` which is correct. NPM wrapper also has `full-width
 
 NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
 
-## 4. `mj-social` — Missing `table-layout`
+## 3. `mj-social` — Missing `table-layout`
 
 NPM has `table-layout: 'enum(auto,fixed)'`. Ruby doesn't have it.
 
-## 5. `mj-image` — Extra `full-width` Attribute
+## 4. `mj-image` — Extra `full-width` Attribute
 
 Ruby's `mj-image` supports a `full-width` attribute that NPM's `mj-image` does **not** have. May be an accidental addition.
 
-## 6. Skeleton / Document-Level Gaps
+## 5. Skeleton / Document-Level Gaps
 
 Already tracked in TODO P1:
 - Missing `xmlns` attributes on `<html>`
@@ -52,14 +43,10 @@ Already tracked in TODO P1:
 
 ## Summary by Priority
 
-### High impact (feature gaps users will hit)
-
-1. `mj-wrapper` background rendering and `text-padding` — missing
-
 ### Medium impact (validation/correctness)
 
-2. `mj-social` missing `table-layout`
-3. `mj-image` extra `full-width` not in upstream
+1. `mj-social` missing `table-layout`
+2. `mj-image` extra `full-width` not in upstream
 
 ### Low impact (already tracked or minor)
 
