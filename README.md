@@ -34,46 +34,16 @@ bundle exec bin/mjml --validate example.mjml
 bundle exec bin/mjml --migrate old.mjml -s
 ```
 
-## Migration status
+## Implementation idea
 
-The table below tracks current JS-to-Ruby migration status for MJML components in this repo.
+> **Zero-dependency pure-Ruby MJML renderer.**
+>
+> The npm `mjml` package requires Node.js at build time (or runtime via a child
+> process / FFI bridge). This project replaces that entire pipeline with a single
+> Ruby library: XML parsing, AST construction, attribute resolution, validation,
+> and HTML rendering — all in Ruby, with no native extensions and no Node.js
+> dependency. Drop it into a Rails, Sinatra, or plain Ruby project and render
+> MJML templates the same way you render ERB — no extra runtime, no
+> `package.json`, no `node_modules`.
 
-| Component | Status | Notes |
-| --- | --- | --- |
-| `mj-body` | migrated | Ruby component exists and matches the upstream `mj-body` behavior currently vendored in `lib/mjml-rb/components/mjml-body`. |
-| `mj-section` | migrated | Implemented in `section.rb`. |
-| `mj-wrapper` | migrated | Implemented via `section.rb`. |
-| `mj-column` | migrated | Implemented in `column.rb`. |
-| `mj-group` | migrated | Implemented in `group.rb`, including width-aware child rendering and Outlook table wrappers. |
-| `mj-text` | migrated | Implemented in `text.rb`. |
-| `mj-image` | migrated | Implemented in `image.rb`. |
-| `mj-button` | migrated | Implemented in `button.rb`. |
-| `mj-divider` | migrated | Implemented in `divider.rb`. |
-| `mj-table` | migrated | Implemented in `table.rb`. |
-| `mj-social` | migrated | Implemented in `social.rb`. |
-| `mj-social-element` | migrated | Implemented in `social.rb`. |
-| `mj-accordion` | migrated | Implemented in `accordion.rb`. |
-| `mj-accordion-element` | migrated | Implemented in `accordion.rb`. |
-| `mj-accordion-title` | migrated | Implemented in `accordion.rb`. |
-| `mj-accordion-text` | migrated | Implemented in `accordion.rb`. |
-| `mj-spacer` | migrated | Implemented in `spacer.rb`. |
-| `mj-hero` | migrated | Implemented in `hero.rb` with fixed/fluid modes, inner content wrapper, and Outlook VML background fallback. |
-| `mj-navbar` | migrated | Implemented in `navbar.rb`, including `base-url` propagation and breakpoint-aware hamburger CSS. |
-| `mj-navbar-link` | migrated | Implemented in `navbar.rb` as an ending-tag navbar child component. |
-| `mj-raw` | migrated | Implemented in `raw.rb`, including head insertion and top-level `position="file-start"` output before the doctype. |
-| `mj-head` | migrated | Implemented in `head.rb` and dispatches supported head children through component handlers. |
-| `mj-attributes` | migrated | Implemented in `attributes.rb`, including npm-style `mj-class` descendant defaults. |
-| `mj-all` | migrated | Implemented through `attributes.rb` with npm-style global default attribute precedence. |
-| `mj-class` | migrated | Supported through `attributes.rb`, including nested per-tag descendant defaults. |
-| `mj-title` | migrated | Implemented in `head.rb`. |
-| `mj-preview` | migrated | Implemented in `head.rb`. |
-| `mj-style` | migrated | Implemented in `head.rb`, including inline-style registration. |
-| `mj-font` | migrated | Implemented in `head.rb`. |
-| `mj-carousel` | migrated | Implemented in `carousel.rb`, including per-instance radio/thumbnail CSS, Outlook fallback rendering, and thumbnail/control output. |
-| `mj-carousel-image` | migrated | Implemented in `carousel_image.rb`, including radio, thumbnail, and main image rendering helpers used by `mj-carousel`. |
-| `mj-breakpoint` | migrated | Supported in `mj-head` and used to control desktop column media-query widths. |
-| `mj-html-attributes` | migrated | Supported in `mj-head` and applied to the rendered HTML via CSS selectors. |
-| `mj-selector` | migrated | Supported as the selector container for `mj-html-attribute` rules. |
-| `mj-html-attribute` | migrated | Supported for injecting custom HTML attributes into matched rendered nodes. |
-
-A more detailed parity backlog lives in [doc/TODO.md](/doc/TODO.md).
+Remaining parity work is tracked in [doc/TODO.md](/doc/TODO.md).

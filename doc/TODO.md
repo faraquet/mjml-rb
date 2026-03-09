@@ -19,13 +19,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - preserve file and line metadata
   - collect include errors instead of failing immediately
 - [ ] Rework ending-tag parsing to match npm semantics. The npm parser preserves raw `content` for ending-tag components such as `mj-text`, `mj-button`, `mj-table`, `mj-raw`, `mj-style`, and `mj-preview`; the current REXML path parses nested markup structurally, which can diverge for HTML-ish or template-heavy content.
-- [ ] Align the generated HTML skeleton in `lib/mjml-rb/renderer.rb` with `upstream/packages/mjml-core/src/helpers/skeleton.js`:
-  - add `xmlns` attributes on `<html>`
-  - add the `X-UA-Compatible` meta block
-  - add Outlook `OfficeDocumentSettings`
-  - add the `lte mso 11` `.mj-outlook-group-fix` style block
-  - restore `word-spacing:normal` on `<body>`
-  - keep separate head style buckets like npm instead of flattening everything into one style tag
+- [ ] Keep separate head style buckets like npm instead of flattening everything into one `<style>` tag in `lib/mjml-rb/renderer.rb`.
 - [ ] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. Bucket routing now matches npm more closely, but the current CSS parser still strips `@` rules and applies a simplified declaration merge instead of npm's richer cascade-aware inlining path.
 - [ ] Fix button/table fallback attribute mismatches against npm. Recent log comparison showed cases where Ruby emitted `bgcolor="#414141"` while the effective button background was white, which is risky for Outlook-style fallback rendering.
 - [ ] Replace or further constrain the `Nokogiri` post-processing path used by `mj-html-attributes` and inline style injection. It works for the current cases, but it is still a behavior fork from npm and already needed selector fallbacks such as `:lang(...)`.

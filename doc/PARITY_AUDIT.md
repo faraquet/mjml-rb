@@ -1,16 +1,10 @@
-# Inconsistencies: Ruby (mjml-rb v0.2.15) vs NPM (MJML v4.18.0)
+# Inconsistencies: Ruby (mjml-rb) vs NPM (MJML v4.18.0)
 
 Detailed comparison of attributes, defaults, rendering logic, and dependency rules. NPM source located in `.mjml-src/packages/`.
 
 ---
 
-## 1. `mj-text` — Remaining Validation Gaps
-
-- NPM `align` allows `justify` — Ruby now matches this in validation metadata
-- Ruby now supports `background-color` and has an `ALLOWED_ATTRIBUTES` map
-- Any remaining `mj-text` parity work is mostly around ending-tag semantics, not the basic attribute contract
-
-## 2. Dependency Rules Differences
+## 1. Dependency Rules Differences
 
 | Tag | NPM | Ruby | Issue |
 |---|---|---|---|
@@ -21,21 +15,6 @@ Detailed comparison of attributes, defaults, rendering logic, and dependency rul
 
 NPM uses "ending tag" semantics (raw content, no child validation), while Ruby structurally parses children. Not wrong, but differs from upstream.
 
-## 3. Skeleton / Document-Level Gaps
+## 2. Remaining Skeleton Gap
 
-Already tracked in TODO P1:
-- Missing `xmlns` attributes on `<html>`
-- Missing `X-UA-Compatible` meta block
-- Missing Outlook `OfficeDocumentSettings`
-- Missing `mso-line-height-rule` / `.mj-outlook-group-fix` styles
-- Missing `word-spacing:normal` on `<body>`
-- Separate CSS style bucket ordering differs
-
----
-
-## Summary by Priority
-
-### Low impact (already tracked or minor)
-
-10. Dependency rule differences for ending-tag components
-11. Skeleton markup differences (TODO P1)
+- Head CSS is still flattened into a single `<style>` tag. NPM keeps several CSS buckets separate. Already tracked in TODO P1.
