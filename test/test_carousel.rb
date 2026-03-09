@@ -1,4 +1,5 @@
 require "minitest/autorun"
+require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
@@ -73,6 +74,36 @@ class CarouselTest < Minitest::Test
     refute_includes(html, 'class="mj-carousel-thumbnail')
     assert_includes(html, 'href="https://example.com/first"')
     assert_includes(html, 'target="_self"')
+  end
+
+  # Ported from upstream: carousel-hoverSupported.test.js
+  def test_carousel_thumbnails_supported_renders_display_none
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-carousel thumbnails="supported">
+                <mj-carousel-image src="https://placehold.co/450x300/333/ccc/png" />
+                <mj-carousel-image src="https://placehold.co/450x300/ccc/000/png" />
+                <mj-carousel-image src="https://placehold.co/450x300/f45e43/fff/png" />
+              </mj-carousel>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty result.errors
+
+    doc = Nokogiri::HTML(result.html)
+    thumbnails = doc.css(".mj-carousel-thumbnail")
+    assert_equal 3, thumbnails.length, "Expected 3 thumbnail elements"
+
+    display_values = thumbnails.map do |el|
+      el["style"]&.match(/display:\s*([^;]+)/)&.captures&.first
+    end
+    assert_equal ["none", "none", "none"], display_values
   end
 
   def test_carousel_validates_component_attributes_in_strict_mode

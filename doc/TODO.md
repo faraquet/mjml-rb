@@ -42,25 +42,23 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 
 The dedicated component-level tests currently cover:
 
-- `column-border-radius`
+- `accordion-fontFamily`
+- `accordion-padding`
+- `accordionTitle-fontWeight`
+- `carousel-hoverSupported`
 - `carousel-rendering`
 - `carousel-validation`
+- `column-border-radius`
 - `html-attributes`
+- `html-comments`
+- `lazy-head-style`
 - `navbar-ico-padding`
+- `social-align`
+- `social-icon-height`
 - `table-cellspacing`
 - `tableWidth`
 - `wrapper-border-radius`
 - `wrapper-gap`
-
-Still worth porting from `upstream/packages/mjml/test`:
-
-- [ ] `accordion-fontFamily`
-- [ ] `accordion-padding`
-- [ ] `accordionTitle-fontWeight`
-- [ ] `html-comments`
-- [ ] `lazy-head-style`
-- [ ] `social-icon-height`
-- [ ] `carousel-hoverSupported`
 
 ## P4: Test structure cleanup
 

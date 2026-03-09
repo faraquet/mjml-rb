@@ -159,6 +159,34 @@ class SocialTest < Minitest::Test
     assert_match(/text-align:\s*right/, text_td["style"])
   end
 
+  # Ported from upstream: social-icon-height.test.js
+  def test_social_icon_height_renders_in_td_style
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-social icon-height="40px">
+                <mj-social-element name="facebook" href="https://mjml.io/" css-class="my-social-element">
+                  Facebook
+                </mj-social-element>
+              </mj-social>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty result.errors
+    doc = Nokogiri::HTML(result.html)
+    tr = doc.at_css("tr.my-social-element")
+    refute_nil tr, "Expected a <tr> with class my-social-element"
+
+    # The icon <td> should have height:40px in its style
+    icon_td = tr.css("td").find { |td| td["style"]&.match?(/height:\s*40px/) }
+    refute_nil icon_td, "Expected a <td> with height:40px style"
+  end
+
   def test_social_vertical_rendering
     result = compile(<<~MJML)
       <mjml>
