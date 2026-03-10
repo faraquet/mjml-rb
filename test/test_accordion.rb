@@ -21,6 +21,32 @@ class AccordionTest < Minitest::Test
 
   public
 
+  def test_accordion_component_renders
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-accordion>
+                <mj-accordion-element>
+                  <mj-accordion-title>Section title</mj-accordion-title>
+                  <mj-accordion-text>Section body</mj-accordion-text>
+                </mj-accordion-element>
+              </mj-accordion>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, "mj-accordion-title")
+    assert_includes(result.html, "mj-accordion-content")
+    assert_includes(result.html, "mj-accordion-checkbox")
+    assert_includes(result.html, "Section title")
+    assert_includes(result.html, "Section body")
+  end
+
   # Ported from upstream: accordion-fontFamily.test.js
   def test_accordion_font_family_inheritance
     result = compile(<<~MJML)

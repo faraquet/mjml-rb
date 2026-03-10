@@ -207,4 +207,27 @@ class WrapperTest < Minitest::Test
     # No innerDiv (line-height:0;font-size:0) when there's no background-url
     refute_includes(result.html, "line-height:0;font-size:0")
   end
+
+  def test_wrapper_accepts_full_width_in_strict_mode
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper full-width="full-width" background-color="#f0f0f0" css-class="hero-wrap">
+            <mj-section>
+              <mj-column>
+                <mj-text>Wrapped</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="hero-wrap"')
+    assert_includes(result.html, 'background:#f0f0f0')
+    # Full-width wrapper: background goes on the outer wrapping table
+    assert_includes(result.html, 'class="hero-wrap" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#f0f0f0;background-color:#f0f0f0"')
+    assert_includes(result.html, "Wrapped")
+  end
 end

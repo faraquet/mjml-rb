@@ -29,5 +29,4 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 
 ## P3: Test structure cleanup
 
-- [ ] Keep moving behavior-specific assertions out of `test/test_compiler.rb` into focused files that mirror upstream npm test names where possible. (`test/test_button.rb`, `test/test_spacer.rb` done.)
 - [ ] Add validator-specific tests whenever a component gains a new `ALLOWED_ATTRIBUTES` map, so render parity and validator parity stay coupled.

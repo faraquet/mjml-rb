@@ -116,6 +116,62 @@ class TableTest < Minitest::Test
     assert_includes(table["style"].to_s, "table-layout:fixed")
   end
 
+  def test_mj_table_allows_tr_children_in_strict_mode
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table>
+                <tr><td>A</td></tr>
+                <tr><td>B</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, "<tr><td style=\"font-family: inherit\">A</td></tr>")
+    assert_includes(result.html, "<tr><td style=\"font-family: inherit\">B</td></tr>")
+  end
+
+  def test_mj_table_normalizes_raw_html_table_children
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table padding="0" css-class="padding--none--this">
+                <tr>
+                  <td style="direction: ltr">
+                    <table>
+                      <tr>
+                        <td style="width: 60px; padding-right: 10px;">A</td>
+                        <td style="vertical-align: middle; font-size: 15px;">B</td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="text-align: right">C</td>
+                </tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="padding--none--this"')
+    assert_includes(result.html, 'font-family:inherit')
+    assert_includes(result.html, '<table width="100%"')
+    assert_includes(result.html, 'style="font-family: inherit; width: 100%"')
+    assert_includes(result.html, '<td style="width: 60px; padding-right: 10px; font-family: inherit" width="60">A</td>')
+    assert_includes(result.html, '<td style="vertical-align: middle; font-size: 15px; font-family: inherit" valign="middle">B</td>')
+    assert_includes(result.html, '<td style="text-align: right; font-family: inherit" align="right">C</td>')
+  end
+
   private
 
   def extract_style_value(style, property)
