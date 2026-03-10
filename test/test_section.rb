@@ -236,6 +236,22 @@ class SectionTest < Minitest::Test
     assert_includes(result.html, 'type="tile"')
   end
 
+  # Outlook before table should suffix each css-class word with -outlook.
+  def test_section_outlook_before_suffixes_each_css_class
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section css-class="hero banner">
+            <mj-column><mj-text>Hello</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="hero-outlook banner-outlook"')
+  end
+
   def test_section_background_attributes_pass_strict_validation
     result = compile(<<~MJML)
       <mjml>

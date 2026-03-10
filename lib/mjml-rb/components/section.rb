@@ -123,6 +123,12 @@ module MjmlRb
         value && !value.to_s.strip.empty?
       end
 
+      # Matches npm's suffixCssClasses: "foo bar" → "foo-outlook bar-outlook"
+      def suffix_css_classes(classes, suffix = "outlook")
+        return "" unless classes && !classes.strip.empty?
+        classes.split(" ").map { |c| "#{c}-#{suffix}" }.join(" ")
+      end
+
       # Merge adjacent Outlook conditional comments.  Applied locally within
       # each section/wrapper to avoid incorrectly merging across sibling sections.
       def merge_outlook_conditionals(html)
@@ -388,7 +394,8 @@ module MjmlRb
       end
 
       def render_section_before(css_class, container_px, bg_color, wrapper_gap)
-        outlook_class = css_class ? "#{css_class}-outlook" : ""
+        outlook_class = suffix_css_classes(css_class)
+        has_gap = wrapper_gap && !wrapper_gap.to_s.strip.empty?
         before_pairs = [
           ["align",       "center"],
           ["border",      "0"],
@@ -399,7 +406,7 @@ module MjmlRb
           ["style",       style_join("width" => "#{container_px}px", "padding-top" => wrapper_gap) + ";"],
           ["width",       container_px.to_s]
         ]
-        before_pairs << ["bgcolor", bg_color] if bg_color
+        before_pairs << ["bgcolor", bg_color] if bg_color && !has_gap
 
         %(<!--[if mso | IE]><table#{outlook_attrs(before_pairs)}><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->)
       end
@@ -576,7 +583,8 @@ module MjmlRb
                             end
 
         # renderBefore — Outlook conditional table wrapper
-        outlook_class = css_class ? "#{css_class}-outlook" : ""
+        outlook_class = suffix_css_classes(css_class)
+        has_gap = wrapper_gap && !wrapper_gap.to_s.strip.empty?
         before_pairs = [
           ["align",       "center"],
           ["border",      "0"],
@@ -587,7 +595,7 @@ module MjmlRb
           ["style",       style_join("width" => "#{container_px}px", "padding-top" => wrapper_gap) + ";"],
           ["width",       container_px.to_s]
         ]
-        before_pairs << ["bgcolor", bg_color] if bg_color
+        before_pairs << ["bgcolor", bg_color] if bg_color && !has_gap
 
         render_before = %(<!--[if mso | IE]><table#{outlook_attrs(before_pairs)}><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->)
 
@@ -621,6 +629,17 @@ module MjmlRb
           "padding-left"   => a["padding-left"],
           "text-align"     => a["text-align"]
         )
+
+        # Compute box width and update context for children, matching npm
+        # wrapper's getChildContext() which sets containerWidth to box width.
+        border_left  = parse_border_width(a["border-left"] || a["border"])
+        border_right = parse_border_width(a["border-right"] || a["border"])
+        pad_left     = parse_padding_side(a, "left")
+        pad_right    = parse_padding_side(a, "right")
+        box_width    = container_px - pad_left - pad_right - border_left - border_right
+
+        previous_container_width = context[:container_width]
+        context[:container_width] = "#{box_width}px"
 
         div_attrs = {"class" => (full_width ? nil : css_class), "style" => div_style}
         inner = merge_outlook_conditionals(render_wrapped_children_wrapper(node, context, container_px, a["gap"]))
@@ -665,22 +684,27 @@ module MjmlRb
           body = bg_has ? render_with_background(wrapper_html, a, container_px) : wrapper_html
           "#{render_before}\n#{body}\n#{render_after}"
         end
+      ensure
+        context[:container_width] = previous_container_width if previous_container_width
       end
 
-      # Wrap each child mj-section/mj-wrapper in an Outlook conditional <td>.
+      # Wrap each child mj-section/mj-wrapper in an Outlook conditional <tr><td>.
+      # npm wrapper renders each child in its own row, unlike section which
+      # places all columns in a single row.
       def render_wrapped_children_wrapper(node, context, container_px, gap)
         children = node.element_children.select { |e| %w[mj-section mj-wrapper].include?(e.tag_name) }
         return render_children(node, context, parent: "mj-wrapper") if children.empty?
 
         open_table  = %(<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><![endif]-->)
-        open_tr     = %(<!--[if mso | IE]><tr><![endif]-->)
-        close_tr    = %(<!--[if mso | IE]></tr><![endif]-->)
         close_table = %(<!--[if mso | IE]></table><![endif]-->)
 
         section_parts = with_inherited_mj_class(context, node) do
           children.each_with_index.map do |child, index|
-            td_open  = %(<!--[if mso | IE]><td class="" width="#{container_px}px" ><![endif]-->)
-            td_close = %(<!--[if mso | IE]></td><![endif]-->)
+            child_attrs = resolved_attributes(child, context)
+            child_css   = child_attrs["css-class"]
+            outlook_class = suffix_css_classes(child_css)
+            td_open  = %(<!--[if mso | IE]><tr><td class="#{escape_attr(outlook_class)}" width="#{container_px}px" ><![endif]-->)
+            td_close = %(<!--[if mso | IE]></td></tr><![endif]-->)
             child_html = with_wrapper_child_gap(context, index.zero? ? nil : gap) do
               render_node(child, context, parent: "mj-wrapper")
             end
@@ -688,7 +712,7 @@ module MjmlRb
           end
         end
 
-        ([open_table, open_tr] + section_parts + [close_tr, close_table]).join("\n")
+        ([open_table] + section_parts + [close_table]).join("\n")
       end
 
       def with_wrapper_child_gap(context, gap)

@@ -230,4 +230,66 @@ class WrapperTest < Minitest::Test
     assert_includes(result.html, 'class="hero-wrap" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#f0f0f0;background-color:#f0f0f0"')
     assert_includes(result.html, "Wrapped")
   end
+
+  # Each wrapper child section gets its own Outlook <tr><td>, not all in one <tr>.
+  def test_wrapper_children_each_get_own_outlook_tr
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper>
+            <mj-section><mj-column><mj-text>A</mj-text></mj-column></mj-section>
+            <mj-section><mj-column><mj-text>B</mj-text></mj-column></mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    # After conditional merging, children boundary shows </td></tr><tr><td>
+    assert_includes(result.html, "</td></tr><tr><td")
+  end
+
+  # Wrapper child Outlook td should carry suffixed css-class.
+  def test_wrapper_child_outlook_td_suffixes_css_class
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper>
+            <mj-section css-class="inner hero">
+              <mj-column><mj-text>Hello</mj-text></mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, 'class="inner-outlook hero-outlook"')
+  end
+
+  # Wrapper with gap should omit bgcolor from Outlook before table on child sections.
+  def test_wrapper_gap_omits_bgcolor_from_outlook_before
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper gap="20px">
+            <mj-section background-color="#ff0000">
+              <mj-column><mj-text>Red</mj-text></mj-column>
+            </mj-section>
+            <mj-section background-color="#00ff00">
+              <mj-column><mj-text>Green</mj-text></mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    # The second section's Outlook before should have padding-top but no bgcolor
+    assert_includes(result.html, "padding-top:20px")
+    # Second section's Outlook before table: has gap so no bgcolor after width
+    assert_includes(result.html, 'style="width:600px;padding-top:20px;" width="600" >')
+    # First section (no gap) still has bgcolor in its Outlook before
+    assert_includes(result.html, 'bgcolor="#ff0000" >')
+  end
 end
