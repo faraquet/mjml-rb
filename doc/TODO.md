@@ -25,5 +25,4 @@ So output size, CSS ordering, and exact markup can still differ even when the re
 ## P2: Component audit follow-ups
 
 - [ ] Compare `lib/mjml-rb/components/section.rb` against `upstream/packages/mjml-section/src/index.js` and `upstream/packages/mjml-wrapper/src/index.js` for remaining wrapper-only behavior, especially around Outlook wrappers and `gap`.
-- [ ] Compare `lib/mjml-rb/components/column.rb` against `upstream/packages/mjml-column/src/index.js` for the remaining width, gutter, and Outlook child wrapper edge cases after the already-ported border-radius work.
 

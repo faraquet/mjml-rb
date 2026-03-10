@@ -235,14 +235,14 @@ module MjmlRb
       widths = column_widths || {}
       return "" if widths.empty?
 
-      base_rules = widths.map do |suffix, pct|
-        ".mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
+      base_rules = widths.map do |class_name, width_str|
+        ".#{class_name} { width:#{width_str} !important; max-width: #{width_str}; }"
       end
-      moz_rules = widths.map do |suffix, pct|
-        ".moz-text-html .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
+      moz_rules = widths.map do |class_name, width_str|
+        ".moz-text-html .#{class_name} { width:#{width_str} !important; max-width: #{width_str}; }"
       end
-      owa_rules = widths.map do |suffix, pct|
-        "[owa] .mj-column-per-#{suffix} { width:#{pct}% !important; max-width: #{pct}%; }"
+      owa_rules = widths.map do |class_name, width_str|
+        "[owa] .#{class_name} { width:#{width_str} !important; max-width: #{width_str}; }"
       end
 
       bp = breakpoint.to_s.strip

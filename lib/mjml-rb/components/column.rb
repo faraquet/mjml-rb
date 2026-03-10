@@ -42,11 +42,18 @@ module MjmlRb
         css_class = attrs["css-class"]
         a = self.class.default_attributes.merge(attrs)
 
-        pct_str          = width_pct.to_f.to_s.sub(/\.?0+$/, "")
-        col_class_suffix = pct_str.gsub(".", "-")
-        context[:column_widths][col_class_suffix] = pct_str if context[:column_widths]
+        explicit_width = a["width"]
+        if explicit_width && explicit_width.strip.end_with?("px")
+          px_val = explicit_width.to_f.to_s.sub(/\.?0+$/, "")
+          col_class_name = "mj-column-px-#{px_val.gsub('.', '-')}"
+          context[:column_widths][col_class_name] = "#{px_val}px" if context[:column_widths]
+        else
+          pct_str = width_pct.to_f.to_s.sub(/\.?0+$/, "")
+          col_class_name = "mj-column-per-#{pct_str.gsub('.', '-')}"
+          context[:column_widths][col_class_name] = "#{pct_str}%" if context[:column_widths]
+        end
 
-        col_class = "mj-column-per-#{col_class_suffix} mj-outlook-group-fix"
+        col_class = "#{col_class_name} mj-outlook-group-fix"
         col_class = "#{col_class} #{css_class}" if css_class && !css_class.empty?
 
         vertical_align = a["vertical-align"]

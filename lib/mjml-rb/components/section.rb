@@ -502,7 +502,12 @@ module MjmlRb
       end
 
       # Generate Outlook IE conditional wrappers around each column/group.
+      # Mirrors npm section's getChildContext() by setting containerWidth to
+      # the section's box width so that column children compute correct widths.
       def render_section_columns(node, context, box_width)
+        previous_container_width = context[:container_width]
+        context[:container_width] = "#{box_width}px"
+
         columns = node.element_children.select { |e| %w[mj-column mj-group].include?(e.tag_name) }
         return render_children(node, context, parent: "mj-section") if columns.empty?
 
@@ -517,9 +522,16 @@ module MjmlRb
           columns.each_with_index.map do |col, i|
             col_attrs = resolved_attributes(col, context)
             v_align   = col_attrs["vertical-align"] || "top"
-            col_px    = (box_width.to_f * widths[i] / 100.0).round
+            col_css   = col_attrs["css-class"]
+            outlook_class = col_css ? col_css.split(" ").map { |c| "#{c}-outlook" }.join(" ") : ""
+            col_width_attr = col_attrs["width"]
+            col_px = if col_width_attr && col_width_attr.strip.end_with?("px")
+                       col_width_attr.to_f.round
+                     else
+                       (box_width.to_f * widths[i] / 100.0).round
+                     end
 
-            td_open  = %(<!--[if mso | IE]><td class="" style="vertical-align:#{v_align};width:#{col_px}px;" ><![endif]-->)
+            td_open  = %(<!--[if mso | IE]><td class="#{escape_attr(outlook_class)}" style="vertical-align:#{v_align};width:#{col_px}px;" ><![endif]-->)
             td_close = %(<!--[if mso | IE]></td><![endif]-->)
 
             context[:_column_width_pct] = widths[i]
@@ -530,6 +542,8 @@ module MjmlRb
         end
 
         ([open_table, open_tr] + col_parts + [close_tr, close_table]).join("\n")
+      ensure
+        context[:container_width] = previous_container_width
       end
 
       # ── mj-wrapper ─────────────────────────────────────────────────────────

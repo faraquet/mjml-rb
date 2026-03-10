@@ -26,10 +26,10 @@ module MjmlRb
         css_class = a["css-class"]
 
         pct_str = width_pct.to_f.to_s.sub(/\.?0+$/, "")
-        class_suffix = pct_str.gsub(".", "-")
-        context[:column_widths][class_suffix] = pct_str if context[:column_widths]
+        col_class_name = "mj-column-per-#{pct_str.gsub('.', '-')}"
+        context[:column_widths][col_class_name] = "#{pct_str}%" if context[:column_widths]
 
-        group_class = "mj-column-per-#{class_suffix} mj-outlook-group-fix"
+        group_class = "#{col_class_name} mj-outlook-group-fix"
         group_class = "#{group_class} #{css_class}" if css_class && !css_class.empty?
 
         group_width = group_container_width(context, a, width_pct)
