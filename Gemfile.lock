@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mjml-rb (0.2.32)
+    mjml-rb (0.2.33)
       nokogiri
       rexml
 
@@ -20,7 +20,7 @@ DEPENDENCIES
   mjml-rb!
 
 CHECKSUMS
-  mjml-rb (0.2.32)
+  mjml-rb (0.2.33)
   nokogiri (1.19.1-arm64-darwin) sha256=dfe2d337e6700eac47290407c289d56bcf85805d128c1b5a6434ddb79731cb9e
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
