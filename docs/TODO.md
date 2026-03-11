@@ -18,7 +18,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - [ ] preserve file and line metadata
   - [x] collect include errors instead of failing immediately
 - [x] Rework ending-tag parsing to match npm semantics. The parser now wraps inner content of ending-tag components (`mj-text`, `mj-button`, `mj-accordion-text`, `mj-accordion-title`, `mj-navbar-link`, `mj-raw`) in CDATA before REXML parsing, preserving raw HTML as `node.content` on the AST. Components use the preserved content directly. `mj-table` is excluded because its component needs structural access for attribute normalization.
-- [ ] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. Bucket routing now matches npm more closely, but the current CSS parser still strips `@` rules and applies a simplified declaration merge instead of npm's richer cascade-aware inlining path.
+- [x] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. The CSS inliner now preserves `@`-rules (`@media`, `@font-face`, etc.) by extracting them and injecting them as a `<style>` block instead of stripping them. Rules are sorted by CSS specificity before application, so higher-specificity selectors correctly override lower ones regardless of source order.
 - [ ] Replace or further constrain the `Nokogiri` post-processing path used by `mj-html-attributes` and inline style injection. It works for the current cases, but it is still a behavior fork from npm and already needed selector fallbacks such as `:lang(...)`.
 - [ ] Rewrite `mj-html-attributes` so it does not depend on `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections, if we want to keep the runtime dependency surface minimal.
 

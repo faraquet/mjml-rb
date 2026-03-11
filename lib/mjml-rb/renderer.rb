@@ -296,13 +296,20 @@ module MjmlRb
       return html if css_blocks.empty?
 
       document = parse_html_document(html)
-      parse_inline_css_rules(css_blocks.join("\n")).each do |selector, declarations|
+      rules, at_rules_css = parse_inline_css_rules(css_blocks.join("\n"))
+
+      rules.each do |selector, declarations|
         next if selector.empty? || declarations.empty?
 
         select_nodes(document, selector).each do |node|
           merge_inline_style!(node, declarations)
         end
       end
+
+      # Inject preserved @-rules (@media, @font-face, etc.) as a <style> block.
+      # These rules cannot be inlined into style attributes but should be kept
+      # in the document for runtime application by email clients.
+      inject_preserved_at_rules(document, at_rules_css)
 
       document.to_html
     end
@@ -313,6 +320,18 @@ module MjmlRb
       else
         Nokogiri::HTML(html)
       end
+    end
+
+    def inject_preserved_at_rules(document, at_rules_css)
+      return if at_rules_css.nil? || at_rules_css.strip.empty?
+
+      head = document.at_css("head")
+      return unless head
+
+      style = Nokogiri::XML::Node.new("style", document)
+      style["type"] = "text/css"
+      style.content = at_rules_css.strip
+      head.add_child(style)
     end
 
     def select_nodes(document, selector)
@@ -356,21 +375,34 @@ module MjmlRb
 
     def parse_inline_css_rules(css)
       stripped_css = strip_css_comments(css.to_s)
-      plain_css = strip_css_at_rules(stripped_css)
+      plain_css, at_rules_css = extract_css_at_rules(stripped_css)
 
-      plain_css.scan(/([^{}]+)\{([^{}]+)\}/m).flat_map do |selector_group, declarations|
+      rules = plain_css.scan(/([^{}]+)\{([^{}]+)\}/m).flat_map do |selector_group, declarations|
         selectors = selector_group.split(",").map(&:strip).reject(&:empty?)
         declaration_map = parse_css_declarations(declarations)
         selectors.map { |selector| [selector, declaration_map] }
       end
+
+      # Sort rules by specificity (ascending). With the "last wins" merge
+      # strategy, higher-specificity rules applied later correctly override
+      # lower-specificity ones — matching CSS cascade behavior.
+      sorted = rules.each_with_index
+                    .sort_by { |(selector, _), idx| [css_specificity(selector), idx] }
+                    .map(&:first)
+
+      [sorted, at_rules_css]
     end
 
     def strip_css_comments(css)
       css.gsub(%r{/\*.*?\*/}m, "")
     end
 
-    def strip_css_at_rules(css)
-      result = +""
+    # Separates @-rules (@media, @font-face, etc.) from plain CSS selectors.
+    # Returns [plain_css, at_rules_css]. The at_rules_css can be injected as a
+    # <style> block since @-rules cannot be inlined into style attributes.
+    def extract_css_at_rules(css)
+      plain = +""
+      at_rules = +""
       index = 0
 
       while index < css.length
@@ -378,11 +410,14 @@ module MjmlRb
           brace_index = css.index("{", index)
           semicolon_index = css.index(";", index)
 
+          # Simple @-rules like @import or @charset end with semicolon
           if semicolon_index && (brace_index.nil? || semicolon_index < brace_index)
+            at_rules << css[index..semicolon_index] << "\n"
             index = semicolon_index + 1
             next
           end
 
+          # Block @-rules like @media, @font-face have nested braces
           if brace_index
             depth = 1
             cursor = brace_index + 1
@@ -391,16 +426,49 @@ module MjmlRb
               depth -= 1 if css[cursor] == "}"
               cursor += 1
             end
+            at_rules << css[index...cursor] << "\n"
             index = cursor
             next
           end
         end
 
-        result << css[index]
+        plain << css[index]
         index += 1
       end
 
-      result
+      [plain, at_rules]
+    end
+
+    # Calculates CSS specificity as a comparable [a, b, c] tuple:
+    #   a = number of ID selectors (#id)
+    #   b = number of class selectors (.class), attribute selectors ([attr]),
+    #       and pseudo-classes (:hover, :lang())
+    #   c = number of type selectors (div, p) and pseudo-elements (::before)
+    def css_specificity(selector)
+      s = selector.to_s
+
+      # a: ID selectors
+      a = s.scan(/#[\w-]+/).length
+
+      # b: class selectors + attribute selectors + pseudo-classes
+      b = s.scan(/\.[\w-]+/).length +
+          s.scan(/\[[^\]]*\]/).length +
+          s.scan(/:(?!:)[\w-]+/).length
+
+      # c: type selectors + pseudo-elements
+      # Strip everything except element names and combinators
+      cleaned = s
+        .gsub(/#[\w-]+/, "")                           # remove IDs
+        .gsub(/\.[\w-]+/, "")                           # remove classes
+        .gsub(/\[[^\]]*\]/, "")                         # remove attribute selectors
+        .gsub(/:[\w-]+(?:\([^)]*\))?/, "")              # remove pseudo-classes
+        .gsub(/::[\w-]+/, "")                           # remove pseudo-elements (counted separately)
+        .gsub(/[>+~]/, " ")                             # combinators → spaces
+        .gsub(/\*/, "")                                 # universal selector has no specificity
+      c = cleaned.split.reject(&:empty?).length +
+          s.scan(/::[\w-]+/).length
+
+      [a, b, c]
     end
 
     def parse_css_declarations(declarations)

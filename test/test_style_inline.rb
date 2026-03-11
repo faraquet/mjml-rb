@@ -115,4 +115,104 @@ class MJMLStyleInlineTest < Minitest::Test
     assert_includes(style, "width: 100%")
     refute_includes(style, "display: block")
   end
+
+  def test_mj_style_inline_preserves_at_media_rules
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            @media (max-width: 600px) {
+              .mobile-hide { display: none !important; }
+            }
+            .highlight { color: red; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="highlight">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    # The @media rule should be preserved as a <style> block in the document
+    assert_includes(result.html, "@media (max-width: 600px)")
+    assert_includes(result.html, ".mobile-hide")
+    assert_includes(result.html, "display: none !important")
+
+    # The regular rule should still be inlined
+    assert_includes(result.html, "color: red")
+  end
+
+  def test_mj_style_inline_preserves_at_font_face_rules
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            @font-face {
+              font-family: 'CustomFont';
+              src: url('https://example.com/custom.woff2') format('woff2');
+            }
+            .custom { font-family: 'CustomFont', sans-serif; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="custom">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    # @font-face should be preserved in a <style> block
+    assert_includes(result.html, "@font-face")
+    assert_includes(result.html, "CustomFont")
+    assert_includes(result.html, "woff2")
+
+    # The class rule should still be inlined
+    document = Nokogiri::HTML(result.html)
+    styles = document.css(".custom").map { |node| node["style"].to_s }
+    assert(styles.any? { |style| style.include?("font-family: 'CustomFont', sans-serif") })
+  end
+
+  def test_mj_style_inline_higher_specificity_wins
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .container .item { color: red; }
+            .item { color: blue; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section css-class="container">
+            <mj-column>
+              <mj-text css-class="item">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    # .container .item (specificity 0,2,0) should beat .item (specificity 0,1,0)
+    # even though .item appears later in the CSS source
+    document = Nokogiri::HTML(result.html)
+    item_nodes = document.css(".item")
+    styles = item_nodes.map { |n| n["style"].to_s }
+    assert(styles.any? { |style| style.include?("color: red") },
+           "Expected .container .item (higher specificity) to win over .item")
+  end
 end
