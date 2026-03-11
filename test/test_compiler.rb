@@ -263,8 +263,10 @@ class MJMLCompilerTest < Minitest::Test
     assert_empty(result.errors)
     assert_includes(result.html, "&amp;")
     refute_includes(result.html, "&amp;amp;")
-    # &#169; is decoded by XML parser to © — that's correct
-    assert_includes(result.html, "©")
+    # &#169; is preserved as-is in CDATA-wrapped ending-tag content,
+    # matching npm behavior (decodeEntities: false). Both &#169; and ©
+    # render identically in browsers.
+    assert_includes(result.html, "&#169;")
   end
 
   def test_malformed_closing_br_is_recovered_as_line_break

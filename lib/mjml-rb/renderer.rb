@@ -580,6 +580,9 @@ module MjmlRb
     end
 
     def raw_inner(node)
+      # For ending-tag nodes whose content was preserved as raw HTML by the parser
+      return node.content if node.element? && node.content
+
       if node.respond_to?(:children)
         node.children.map do |child|
           if child.text?

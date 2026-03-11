@@ -8,6 +8,15 @@ module MjmlRb
     include REXML
     HTML_VOID_TAGS = %w[area base br col embed hr img input link meta param source track wbr].freeze
 
+    # Ending-tag components whose inner HTML is preserved as raw content via CDATA
+    # wrapping, matching upstream npm's endingTag behavior. mj-table is excluded
+    # because its component needs structural AST access for attribute normalization.
+    # mj-carousel-image is excluded because it has no meaningful inner content.
+    ENDING_TAGS_FOR_CDATA = %w[
+      mj-accordion-text mj-accordion-title mj-button
+      mj-navbar-link mj-raw mj-text
+    ].freeze
+
     class ParseError < StandardError
       attr_reader :line
 
@@ -20,7 +29,7 @@ module MjmlRb
     def parse(mjml, options = {})
       opts = normalize_options(options)
       xml = apply_preprocessors(mjml.to_s, opts[:preprocessors])
-      xml = wrap_raw_tags_in_cdata(xml)
+      xml = wrap_ending_tags_in_cdata(xml)
       xml = normalize_html_void_tags(xml)
       xml = expand_includes(xml, opts) unless opts[:ignore_includes]
 
@@ -49,7 +58,7 @@ module MjmlRb
     end
 
     def expand_includes(xml, options, included_in = [])
-      xml = wrap_raw_tags_in_cdata(xml)
+      xml = wrap_ending_tags_in_cdata(xml)
       xml = normalize_html_void_tags(xml)
       doc = Document.new(sanitize_bare_ampersands(xml))
       includes = XPath.match(doc, "//mj-include")
@@ -99,7 +108,7 @@ module MjmlRb
         replacement = if include_type == "html"
                         %(<mj-raw><![CDATA[#{escape_cdata(include_content)}]]></mj-raw>)
                       else
-                        prepared = wrap_raw_tags_in_cdata(normalize_html_void_tags(strip_xml_declaration(include_content)))
+                        prepared = wrap_ending_tags_in_cdata(normalize_html_void_tags(strip_xml_declaration(include_content)))
                         # Recursively expand includes in the included content
                         expand_includes(prepared, options.merge(
                           actual_path: resolved_path,
@@ -173,14 +182,20 @@ module MjmlRb
       end
     end
 
-    def wrap_raw_tags_in_cdata(content)
-      content.gsub(/<mj-raw(\s[^<>]*?)?>(.*?)<\/mj-raw>/mi) do
-        attrs = Regexp.last_match(1).to_s
-        inner = Regexp.last_match(2).to_s
+    def wrap_ending_tags_in_cdata(content)
+      tag_pattern = ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")
+      # Negative lookbehind (?<!\/) ensures self-closing tags like <mj-text ... /> are skipped
+      content.gsub(/<(#{tag_pattern})(\s[^<>]*?)?(?<!\/)>(.*?)<\/\1>/mi) do
+        tag = Regexp.last_match(1)
+        attrs = Regexp.last_match(2).to_s
+        inner = Regexp.last_match(3).to_s
         if inner.include?("<![CDATA[")
-          "<mj-raw#{attrs}>#{inner}</mj-raw>"
+          "<#{tag}#{attrs}>#{inner}</#{tag}>"
         else
-          "<mj-raw#{attrs}><![CDATA[#{escape_cdata(inner)}]]></mj-raw>"
+          # Pre-process content: normalize void tags and sanitize bare ampersands
+          # before wrapping in CDATA, so the raw HTML is well-formed for output.
+          prepared = sanitize_bare_ampersands(normalize_html_void_tags(inner))
+          "<#{tag}#{attrs}><![CDATA[#{escape_cdata(prepared)}]]></#{tag}>"
         end
       end
     end
@@ -229,6 +244,19 @@ module MjmlRb
 
     def element_to_ast(element, keep_comments:)
       raise ParseError, "Missing XML root element" unless element
+
+      # For ending-tag elements whose content was wrapped in CDATA, store
+      # the raw HTML directly as content instead of parsing structurally.
+      if ENDING_TAGS_FOR_CDATA.include?(element.name)
+        raw_content = element.children.select { |c| c.is_a?(Text) }.map(&:value).join
+        return AstNode.new(
+          tag_name: element.name,
+          attributes: element.attributes.each_with_object({}) { |(name, val), h| h[name] = val },
+          children: [],
+          content: raw_content.empty? ? nil : raw_content,
+          line: nil
+        )
+      end
 
       children = element.children.each_with_object([]) do |child, memo|
         case child

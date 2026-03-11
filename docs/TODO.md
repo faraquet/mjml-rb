@@ -17,7 +17,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - [x] track circular includes
   - [ ] preserve file and line metadata
   - [x] collect include errors instead of failing immediately
-- [ ] Rework ending-tag parsing to match npm semantics. The npm parser preserves raw `content` for ending-tag components such as `mj-text`, `mj-button`, `mj-table`, `mj-raw`, `mj-style`, and `mj-preview`; the current REXML path parses nested markup structurally, which can diverge for HTML-ish or template-heavy content.
+- [x] Rework ending-tag parsing to match npm semantics. The parser now wraps inner content of ending-tag components (`mj-text`, `mj-button`, `mj-accordion-text`, `mj-accordion-title`, `mj-navbar-link`, `mj-raw`) in CDATA before REXML parsing, preserving raw HTML as `node.content` on the AST. Components use the preserved content directly. `mj-table` is excluded because its component needs structural access for attribute normalization.
 - [ ] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. Bucket routing now matches npm more closely, but the current CSS parser still strips `@` rules and applies a simplified declaration merge instead of npm's richer cascade-aware inlining path.
 - [ ] Replace or further constrain the `Nokogiri` post-processing path used by `mj-html-attributes` and inline style injection. It works for the current cases, but it is still a behavior fork from npm and already needed selector fallbacks such as `:lang(...)`.
 - [ ] Rewrite `mj-html-attributes` so it does not depend on `Nokogiri` to parse rendered HTML and apply CSS-selector-based attribute injections, if we want to keep the runtime dependency surface minimal.
