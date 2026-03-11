@@ -48,29 +48,66 @@ module MjmlRb
       end
     end
 
-    def expand_includes(xml, options)
+    def expand_includes(xml, options, included_in = [])
       xml = wrap_raw_tags_in_cdata(xml)
       xml = normalize_html_void_tags(xml)
       doc = Document.new(sanitize_bare_ampersands(xml))
       includes = XPath.match(doc, "//mj-include")
       return xml if includes.empty?
 
+      css_includes = []
+
       includes.reverse_each do |include_node|
         path_attr = include_node.attributes["path"]
         raise ParseError, "mj-include path is required" if path_attr.to_s.empty?
 
         include_type = include_node.attributes["type"].to_s
-        resolved_path = resolve_include_path(path_attr, options[:actual_path], options[:file_path])
-        include_content = File.read(resolved_path)
+        parent = include_node.parent
+
+        resolved_path = begin
+          resolve_include_path(path_attr, options[:actual_path], options[:file_path])
+        rescue Errno::ENOENT
+          nil
+        end
+
+        include_content = resolved_path ? File.read(resolved_path) : nil
+
+        if include_content.nil?
+          # Collect error as an mj-raw comment node instead of raising
+          display_path = resolved_path || File.expand_path(path_attr, options[:file_path].to_s)
+          error_comment = "<!-- mj-include fails to read file : #{path_attr} at #{display_path} -->"
+          error_node = Element.new("mj-raw")
+          error_node.add(CData.new(error_comment))
+          parent.insert_before(include_node, error_node)
+          parent.delete(include_node)
+          next
+        end
+
+        # Circular include detection
+        if included_in.include?(resolved_path)
+          raise ParseError, "Circular inclusion detected on file : #{resolved_path}"
+        end
+
+        if include_type == "css"
+          # CSS includes get collected and added to mj-head later
+          css_inline = include_node.attributes["css-inline"].to_s
+          css_includes << { content: include_content, inline: css_inline == "inline" }
+          parent.delete(include_node)
+          next
+        end
 
         replacement = if include_type == "html"
                         %(<mj-raw><![CDATA[#{escape_cdata(include_content)}]]></mj-raw>)
                       else
-                        wrap_raw_tags_in_cdata(normalize_html_void_tags(strip_xml_declaration(include_content)))
+                        prepared = wrap_raw_tags_in_cdata(normalize_html_void_tags(strip_xml_declaration(include_content)))
+                        # Recursively expand includes in the included content
+                        expand_includes(prepared, options.merge(
+                          actual_path: resolved_path,
+                          file_path: File.dirname(resolved_path)
+                        ), included_in + [resolved_path])
                       end
 
         fragment = Document.new(sanitize_bare_ampersands("<include-root>#{replacement}</include-root>"))
-        parent = include_node.parent
         insert_before = include_node
         fragment.root.children.each do |child|
           parent.insert_before(insert_before, deep_clone(child))
@@ -78,13 +115,42 @@ module MjmlRb
         parent.delete(include_node)
       end
 
+      # Inject CSS includes into mj-head
+      unless css_includes.empty?
+        inject_css_includes(doc, css_includes)
+      end
+
       output = +""
       doc.write(output)
       output
-    rescue Errno::ENOENT => e
-      raise ParseError, "Cannot read included file: #{e.message}"
     rescue ParseException => e
       raise ParseError, "Failed to parse included content: #{e.message}"
+    end
+
+    def inject_css_includes(doc, css_includes)
+      mjml_root = doc.root
+      return unless mjml_root
+
+      # Find or create mj-head
+      head = XPath.first(mjml_root, "mj-head")
+      unless head
+        head = Element.new("mj-head")
+        # Insert mj-head before mj-body if possible
+        body = XPath.first(mjml_root, "mj-body")
+        if body
+          mjml_root.insert_before(body, head)
+        else
+          mjml_root.add(head)
+        end
+      end
+
+      # Add each CSS include as an mj-style element
+      css_includes.each do |css_include|
+        style_node = Element.new("mj-style")
+        style_node.add_attribute("inline", "inline") if css_include[:inline]
+        style_node.add(CData.new(css_include[:content]))
+        head.add(style_node)
+      end
     end
 
     def strip_xml_declaration(content)

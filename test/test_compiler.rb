@@ -326,6 +326,157 @@ class MJMLCompilerTest < Minitest::Test
     assert_match(%r{<p class="padding--top--none--this"[^>]*></p><p[^>]*>One</p><p[^>]*>Two</p><p[^>]*></p>}m, result.html)
   end
 
+  def test_include_type_css_adds_style_to_head
+    Dir.mktmpdir do |dir|
+      css_file = File.join(dir, "style.css")
+      main = File.join(dir, "main.mjml")
+      File.write(css_file, ".custom { color: red; }")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-head></mj-head>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./style.css" type="css" />
+                <mj-text css-class="custom">Styled</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, ".custom { color: red; }")
+      assert_includes(result.html, "Styled")
+    end
+  end
+
+  def test_include_type_css_inline_applies_inline_styles
+    Dir.mktmpdir do |dir|
+      css_file = File.join(dir, "inline.css")
+      main = File.join(dir, "main.mjml")
+      File.write(css_file, "p { color: #ff0000; }")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-head></mj-head>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./inline.css" type="css" css-inline="inline" />
+                <mj-text><p>Inline styled</p></mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_match(/color:\s*#ff0000/, result.html)
+    end
+  end
+
+  def test_include_type_css_creates_head_if_missing
+    Dir.mktmpdir do |dir|
+      css_file = File.join(dir, "style.css")
+      main = File.join(dir, "main.mjml")
+      File.write(css_file, ".custom { font-size: 16px; }")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./style.css" type="css" />
+                <mj-text css-class="custom">No head</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_empty(result.errors)
+      assert_includes(result.html, ".custom { font-size: 16px; }")
+    end
+  end
+
+  def test_circular_include_detected
+    Dir.mktmpdir do |dir|
+      file_a = File.join(dir, "a.mjml")
+      file_b = File.join(dir, "b.mjml")
+      main = File.join(dir, "main.mjml")
+      # a includes b, b includes a — indirect circular reference
+      File.write(file_a, '<mj-wrapper><mj-include path="./b.mjml" /></mj-wrapper>')
+      File.write(file_b, '<mj-wrapper><mj-include path="./a.mjml" /></mj-wrapper>')
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./a.mjml" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      refute_empty(result.errors)
+      assert_match(/Circular inclusion detected/, result.errors.first[:message])
+    end
+  end
+
+  def test_missing_include_file_produces_error_comment
+    Dir.mktmpdir do |dir|
+      main = File.join(dir, "main.mjml")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./nonexistent.mjml" />
+                <mj-text>Still here</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_includes(result.html, "mj-include fails to read file")
+      assert_includes(result.html, "Still here")
+    end
+  end
+
+  def test_missing_css_include_file_produces_error_comment
+    Dir.mktmpdir do |dir|
+      main = File.join(dir, "main.mjml")
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./nonexistent.css" type="css" />
+                <mj-text>Still here</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+      assert_includes(result.html, "mj-include fails to read file")
+      assert_includes(result.html, "Still here")
+    end
+  end
+
   def test_malformed_closing_br_in_included_partial_is_recovered
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")
