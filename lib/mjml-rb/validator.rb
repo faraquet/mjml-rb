@@ -64,7 +64,7 @@ module MjmlRb
 
         errors << error(
           "Element <#{child.tag_name}> is not allowed inside <#{node.tag_name}>",
-          tag_name: child.tag_name
+          tag_name: child.tag_name, line: child.line, file: child.file
         )
       end
     end
@@ -74,7 +74,8 @@ module MjmlRb
       required.each do |attr|
         next if node.attributes.key?(attr)
 
-        errors << error("Attribute `#{attr}` is required for <#{node.tag_name}>", tag_name: node.tag_name)
+        errors << error("Attribute `#{attr}` is required for <#{node.tag_name}>",
+                        tag_name: node.tag_name, line: node.line, file: node.file)
       end
     end
 
@@ -86,7 +87,8 @@ module MjmlRb
         next if allowed_attributes.key?(attribute_name)
         next if GLOBAL_ALLOWED_ATTRIBUTES.include?(attribute_name)
 
-        errors << error("Attribute `#{attribute_name}` is not allowed for <#{node.tag_name}>", tag_name: node.tag_name)
+        errors << error("Attribute `#{attribute_name}` is not allowed for <#{node.tag_name}>",
+                        tag_name: node.tag_name, line: node.line, file: node.file)
       end
     end
 
@@ -103,7 +105,7 @@ module MjmlRb
 
         errors << error(
           "Attribute `#{attribute_name}` on <#{node.tag_name}> has invalid value `#{attribute_value}` for type `#{expected_type}`",
-          tag_name: node.tag_name
+          tag_name: node.tag_name, line: node.line, file: node.file
         )
       end
     end
@@ -183,12 +185,18 @@ module MjmlRb
       end
     end
 
-    def error(message, line: nil, tag_name: nil)
+    def error(message, line: nil, tag_name: nil, file: nil)
+      location = [
+        ("line #{line}" if line),
+        ("in #{file}" if file)
+      ].compact.join(", ")
+
       {
         line: line,
+        file: file,
         message: message,
         tag_name: tag_name,
-        formatted_message: message
+        formatted_message: location.empty? ? message : "#{message} (#{location})"
       }
     end
   end

@@ -15,7 +15,7 @@ So output size, CSS ordering, and exact markup can still differ even when the re
   - [x] support `type="css"`
   - [x] support `css-inline="inline"`
   - [x] track circular includes
-  - [ ] preserve file and line metadata
+  - [x] preserve file and line metadata — the parser annotates MJML tags with `data-mjml-line` before REXML parsing (since REXML doesn't expose source positions), and `expand_includes` marks included content with `data-mjml-file`. Both are extracted into `AstNode.line` and `AstNode.file` fields and stripped from component attributes. Validation errors now include line numbers and file paths in `formatted_message`.
   - [x] collect include errors instead of failing immediately
 - [x] Rework ending-tag parsing to match npm semantics. The parser now wraps inner content of ending-tag components (`mj-text`, `mj-button`, `mj-accordion-text`, `mj-accordion-title`, `mj-navbar-link`, `mj-raw`) in CDATA before REXML parsing, preserving raw HTML as `node.content` on the AST. Components use the preserved content directly. `mj-table` is excluded because its component needs structural access for attribute normalization.
 - [x] Further align inline `mj-style inline="inline"` processing in `lib/mjml-rb/renderer.rb`. The CSS inliner now preserves `@`-rules (`@media`, `@font-face`, etc.) by extracting them and injecting them as a `<style>` block instead of stripping them. Rules are sorted by CSS specificity before application, so higher-specificity selectors correctly override lower ones regardless of source order.

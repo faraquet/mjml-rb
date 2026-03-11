@@ -378,4 +378,99 @@ class ValidatorTest < Minitest::Test
 
     assert(errors.any? { |e| e[:message].include?("fake-attr") && e[:message].include?("mj-breakpoint") })
   end
+
+  # ── line number metadata tests ──────────────────────
+
+  def test_validation_errors_include_line_numbers
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-image alt="no src" />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    src_error = errors.find { |e| e[:message].include?("`src` is required") }
+    assert src_error, "Expected a required-src error"
+    assert_kind_of Integer, src_error[:line], "Error should have a line number"
+    assert src_error[:line] > 0, "Line number should be positive"
+    assert_includes src_error[:formatted_message], "line #{src_error[:line]}"
+  end
+
+  def test_validation_error_line_number_points_to_correct_element
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>OK</mj-text>
+              <mj-image alt="missing src" />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    src_error = errors.find { |e| e[:message].include?("`src` is required") }
+    assert src_error
+    # mj-image is on line 6 (1-indexed)
+    assert_equal 6, src_error[:line]
+  end
+
+  def test_ast_nodes_have_line_numbers
+    parser = MjmlRb::Parser.new
+    ast = parser.parse(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    # Root mjml node is on line 1
+    assert_equal 1, ast.line
+
+    body = ast.element_children.find { |c| c.tag_name == "mj-body" }
+    assert body.line, "mj-body should have a line number"
+    assert body.line > 1, "mj-body should be after line 1"
+
+    section = body.element_children.first
+    assert section.line > body.line, "mj-section should be on a later line than mj-body"
+  end
+
+  def test_metadata_attributes_not_leaked_to_component_attributes
+    parser = MjmlRb::Parser.new
+    ast = parser.parse(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text align="left">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    # Walk to mj-text
+    text_node = ast.element_children
+                    .find { |c| c.tag_name == "mj-body" }
+                    .element_children.first  # mj-section
+                    .element_children.first  # mj-column
+                    .element_children.first  # mj-text
+
+    assert_equal "mj-text", text_node.tag_name
+    assert_equal "left", text_node.attributes["align"]
+    refute text_node.attributes.key?("data-mjml-line"), "data-mjml-line should be stripped from attributes"
+    refute text_node.attributes.key?("data-mjml-file"), "data-mjml-file should be stripped from attributes"
+    assert text_node.line, "mj-text should have a line number via the line field"
+  end
 end

@@ -1,13 +1,14 @@
 module MjmlRb
   class AstNode
-    attr_reader :tag_name, :attributes, :children, :content, :line
+    attr_reader :tag_name, :attributes, :children, :content, :line, :file
 
-    def initialize(tag_name:, attributes: {}, children: [], content: nil, line: nil)
+    def initialize(tag_name:, attributes: {}, children: [], content: nil, line: nil, file: nil)
       @tag_name = tag_name.to_s
       @attributes = attributes.transform_keys(&:to_s)
       @children = Array(children)
       @content = content
       @line = line
+      @file = file
     end
 
     def text?

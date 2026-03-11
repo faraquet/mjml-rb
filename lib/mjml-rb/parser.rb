@@ -33,7 +33,8 @@ module MjmlRb
       xml = normalize_html_void_tags(xml)
       xml = expand_includes(xml, opts) unless opts[:ignore_includes]
 
-      doc = Document.new(sanitize_bare_ampersands(xml))
+      xml = annotate_line_numbers(sanitize_bare_ampersands(xml))
+      doc = Document.new(xml)
       element_to_ast(doc.root, keep_comments: opts[:keep_comments])
     rescue ParseException => e
       raise ParseError.new("XML parse error: #{e.message}")
@@ -119,6 +120,7 @@ module MjmlRb
         fragment = Document.new(sanitize_bare_ampersands("<include-root>#{replacement}</include-root>"))
         insert_before = include_node
         fragment.root.children.each do |child|
+          annotate_include_source(child, resolved_path) if child.is_a?(Element)
           parent.insert_before(insert_before, deep_clone(child))
         end
         parent.delete(include_node)
@@ -211,6 +213,36 @@ module MjmlRb
       content.gsub(/&(?!(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);)/, "&amp;")
     end
 
+    # Adds data-mjml-line attributes to MJML tags so line numbers survive
+    # REXML parsing (which doesn't expose source positions).
+    # Skips content inside CDATA sections to avoid modifying raw HTML.
+    def annotate_line_numbers(xml)
+      line = 1
+      xml.gsub(/(\n)|(<!\[CDATA\[.*?\]\]>)|(<(?:mj-[\w-]+|mjml)(?=[\s\/>]))/m) do
+        if Regexp.last_match(1) # newline
+          line += 1
+          "\n"
+        elsif Regexp.last_match(2) # CDATA section — count newlines, pass through
+          line += Regexp.last_match(2).count("\n")
+          Regexp.last_match(2)
+        else # opening MJML tag
+          "#{Regexp.last_match(3)} data-mjml-line=\"#{line}\""
+        end
+      end
+    end
+
+    # Recursively marks REXML elements from included files with data-mjml-file.
+    # Only sets the attribute on elements that don't already have it (preserving
+    # deeper include annotations from recursive expansion).
+    def annotate_include_source(element, file_path)
+      return unless element.is_a?(Element)
+
+      if (element.name.start_with?("mj-") || element.name == "mjml") && !element.attributes["data-mjml-file"]
+        element.add_attribute("data-mjml-file", file_path)
+      end
+      element.each_element { |child| annotate_include_source(child, file_path) }
+    end
+
     def resolve_include_path(include_path, actual_path, file_path)
       include_path = include_path.to_s
       return include_path if File.absolute_path(include_path) == include_path && File.file?(include_path)
@@ -245,16 +277,25 @@ module MjmlRb
     def element_to_ast(element, keep_comments:)
       raise ParseError, "Missing XML root element" unless element
 
+      # Extract metadata annotations (added by annotate_line_numbers / annotate_include_source)
+      # and strip them from the public attributes hash.
+      meta_line = element.attributes["data-mjml-line"]&.to_i
+      meta_file = element.attributes["data-mjml-file"]
+      attrs = element.attributes.each_with_object({}) do |(name, val), h|
+        h[name] = val unless name.start_with?("data-mjml-")
+      end
+
       # For ending-tag elements whose content was wrapped in CDATA, store
       # the raw HTML directly as content instead of parsing structurally.
       if ENDING_TAGS_FOR_CDATA.include?(element.name)
         raw_content = element.children.select { |c| c.is_a?(Text) }.map(&:value).join
         return AstNode.new(
           tag_name: element.name,
-          attributes: element.attributes.each_with_object({}) { |(name, val), h| h[name] = val },
+          attributes: attrs,
           children: [],
           content: raw_content.empty? ? nil : raw_content,
-          line: nil
+          line: meta_line,
+          file: meta_file
         )
       end
 
@@ -272,9 +313,10 @@ module MjmlRb
 
       AstNode.new(
         tag_name: element.name,
-        attributes: element.attributes.each_with_object({}) { |(name, val), h| h[name] = val },
+        attributes: attrs,
         children: children,
-        line: nil
+        line: meta_line,
+        file: meta_file
       )
     end
   end
