@@ -46,4 +46,4 @@ bundle exec bin/mjml --migrate old.mjml -s
 > MJML templates the same way you render ERB — no extra runtime, no
 > `package.json`, no `node_modules`.
 
-Remaining parity work is tracked in [doc/npm ↔ Ruby Parity Audit](/docs/PARITY_AUDIT.md).
+Remaining parity work is tracked in [npm ↔ Ruby Parity Audit](/docs/PARITY_AUDIT.md).
