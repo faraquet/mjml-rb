@@ -114,7 +114,7 @@ module MjmlRb
       media_queries_tags = build_media_queries_tags(context[:breakpoint], context[:column_widths])
       component_styles_tag = build_style_tag(unique_strings(context[:component_head_styles]))
       user_styles_tag = build_style_tag(unique_strings(context[:user_styles]))
-      preview_block = preview.empty? ? "" : %(<div style="display:none;max-height:0;overflow:hidden;opacity:0;">#{escape_html(preview)}</div>)
+      preview_block = preview.empty? ? "" : %(<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">#{escape_html(preview)}</div>)
       html_attributes = {
         "lang" => context[:lang],
         "dir" => context[:dir],

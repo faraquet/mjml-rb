@@ -41,7 +41,6 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 |---|---|---|---|
 | `<meta charset="utf-8">` | Not present | Present (extra tag) | Low |
 | `<body style>` includes background-color | Yes (`word-spacing:normal;background-color:…;`) | No (only `word-spacing:normal`) | Medium |
-| Preview div styling | Full: `display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;` | Minimal: `display:none;max-height:0;overflow:hidden;opacity:0;` | Medium |
 | Style tag construction | `headStyle` is a hash of *functions* called with `breakpoint` | `component_head_styles` are pre-computed strings | Match (same output) |
 | OWA desktop queries | Conditional output when `forceOWADesktop` | Not implemented | Low |
 | Print media queries | Conditional output when `printerSupport` | Not implemented | Low |
@@ -241,7 +240,6 @@ The Ruby pipeline is:
 - [ ] **Outlook conditional merging (global)**: Apply `merge_outlook_conditionals` as a global post-processing step after CSS inlining, not just within section rendering
 - [ ] **Unknown tag validation**: Add a `validate_known_tag` check that rejects tags with no registered component (matching npm's `validTag.js`)
 - [ ] **Default fonts**: Expand `DEFAULT_FONTS` to match npm (Open Sans, Droid Sans, Lato, Roboto, Ubuntu)
-- [ ] **Preview div styling**: Add missing CSS properties to the preview hidden div: `font-size:1px;color:#ffffff;line-height:1px;max-width:0px;`
 
 ### P2 — Behavioral Parity (may affect edge cases)
 
