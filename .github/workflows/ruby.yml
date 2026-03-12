@@ -25,11 +25,8 @@ jobs:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true
 
-    - name: Install minitest
-      run: gem install minitest
-
     - name: Run tests
       run: |
         for f in test/test_*.rb; do
-          ruby -Ilib "$f"
+          bundle exec ruby -Ilib "$f"
         done
