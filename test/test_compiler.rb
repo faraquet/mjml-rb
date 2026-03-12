@@ -200,7 +200,7 @@ class MJMLCompilerTest < Minitest::Test
     refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700')
     refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Droid+Sans:300,400,500,700')
     refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Lato:300,400,500,700')
-    refute_includes(result.html, 'https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700')
+    assert_includes(result.html, 'https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700')
     assert_includes(result.html, 'lang="und" dir="auto"')
   end
 

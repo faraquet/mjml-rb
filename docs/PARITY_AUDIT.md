@@ -195,9 +195,9 @@ npm's `validTag.js` rejects tags that have no registered component (e.g., `<mj-f
 
 | npm | Ruby |
 |---|---|
-| Open Sans, Droid Sans, Lato, Roboto, Ubuntu | Roboto only |
+| Open Sans, Droid Sans, Lato, Roboto, Ubuntu | Open Sans, Droid Sans, Lato, Roboto, Ubuntu |
 
-npm ships 5 default Google Fonts. Ruby ships only Roboto. This means templates using `Open Sans` etc. won't get `<link>` tags unless fonts are explicitly passed as options.
+Both ship the same 5 default Google Fonts.
 
 ---
 
@@ -239,7 +239,6 @@ The Ruby pipeline is:
 - [ ] **Outlook conditional minification**: Implement `minify_outlook_conditionals` as a global post-processing step (strip inter-tag whitespace inside `<!--[if …]>` blocks)
 - [ ] **Outlook conditional merging (global)**: Apply `merge_outlook_conditionals` as a global post-processing step after CSS inlining, not just within section rendering
 - [ ] **Unknown tag validation**: Add a `validate_known_tag` check that rejects tags with no registered component (matching npm's `validTag.js`)
-- [ ] **Default fonts**: Expand `DEFAULT_FONTS` to match npm (Open Sans, Droid Sans, Lato, Roboto, Ubuntu)
 
 ### P2 — Behavioral Parity (may affect edge cases)
 
