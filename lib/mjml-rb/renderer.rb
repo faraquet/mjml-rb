@@ -126,7 +126,10 @@ module MjmlRb
         "xmlns:v" => "urn:schemas-microsoft-com:vml",
         "xmlns:o" => "urn:schemas-microsoft-com:office:office"
       }
-      body_style = style_join("word-spacing" => "normal")
+      body_style = style_join(
+        "word-spacing" => "normal",
+        "background-color" => context[:background_color]
+      )
 
       html = <<~HTML
         <!doctype html>

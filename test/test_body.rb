@@ -22,7 +22,7 @@ class MJMLBodyTest < Minitest::Test
     result = MjmlRb::Compiler.new.compile(body)
     assert_empty(result.errors)
     assert_includes(result.html, '<html lang="ar" dir="rtl" xmlns="http://www.w3.org/1999/xhtml"')
-    assert_includes(result.html, '<body style="word-spacing:normal">')
+    assert_includes(result.html, '<body style="word-spacing:normal;background-color:#f5f5f5">')
     assert_includes(result.html, 'aria-label="Body Title"')
     assert_includes(result.html, 'aria-roledescription="email"')
     assert_includes(result.html, 'class="body-class"')

@@ -24,7 +24,7 @@ Last updated 2026-03-12.
 | Pipeline ordering | html-attributes → skeleton → Juice → merge conditionals | skeleton → html-attributes → inline CSS → prepend before_doctype | Partial |
 | Outlook conditional minification | `minifyOutlookConditionnals()` strips whitespace between tags inside `<!--[if …]>` blocks *before* skeleton | Not implemented | Missing |
 | Outlook conditional merging | `mergeOutlookConditionnals()` merges adjacent `<!--[endif]--><!--[if mso\|IE]>` *after* CSS inlining | `merge_outlook_conditionals` exists but is only used inside `Section` component, not as a global post-process step | Partial |
-| Background-color on `<body>` | Skeleton adds `background-color:${backgroundColor}` to `<body style>` | Body component sets it on the inner `<div>` only, not on the `<body>` tag itself | Missing |
+| Background-color on `<body>` | Skeleton adds `background-color:${backgroundColor}` to `<body style>` | Propagated from `context[:background_color]` to `<body style>` | Match |
 | `beautify` / `minify` post-processing | `js-beautify` / `html-minifier` (deprecated, warns) | Regex-based simplistic implementation | Partial |
 | `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Not implemented | Missing |
 | `printerSupport` option | Adds `@media only print` media queries | Not implemented | Missing |
@@ -40,7 +40,7 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 | Detail | npm | Ruby | Priority |
 |---|---|---|---|
 | `<meta charset="utf-8">` | Not present | Present (extra tag) | Low |
-| `<body style>` includes background-color | Yes (`word-spacing:normal;background-color:…;`) | No (only `word-spacing:normal`) | Medium |
+| `<body style>` includes background-color | Yes (`word-spacing:normal;background-color:…;`) | Yes (`word-spacing:normal;background-color:…`) | Match |
 | Style tag construction | `headStyle` is a hash of *functions* called with `breakpoint` | `component_head_styles` are pre-computed strings | Match (same output) |
 | OWA desktop queries | Conditional output when `forceOWADesktop` | Not implemented | Low |
 | Print media queries | Conditional output when `printerSupport` | Not implemented | Low |
@@ -234,7 +234,6 @@ The Ruby pipeline is:
 
 ### P1 — Functional Gaps (affect rendered output)
 
-- [ ] **Body background-color on `<body>` tag**: Propagate `context[:background_color]` to the `<body style>` attribute in the skeleton, matching upstream `background-color:${backgroundColor};`
 - [ ] **Pipeline ordering**: npm applies `mj-html-attributes` via Cheerio **before** skeleton generation, then applies inline CSS via Juice **after** skeleton. Ruby applies both **after** skeleton. This means `mj-html-attributes` selectors in npm operate on body content only, while in Ruby they operate on the full document including `<head>`. Consider whether reordering is needed or if current behavior is acceptable.
 - [ ] **Outlook conditional minification**: Implement `minify_outlook_conditionals` as a global post-processing step (strip inter-tag whitespace inside `<!--[if …]>` blocks)
 - [ ] **Outlook conditional merging (global)**: Apply `merge_outlook_conditionals` as a global post-processing step after CSS inlining, not just within section rendering
