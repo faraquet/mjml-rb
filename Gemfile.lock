@@ -8,20 +8,44 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
+    mini_portile2 (2.8.9)
+    nokogiri (1.19.1)
+      mini_portile2 (~> 2.8.2)
+      racc (~> 1.4)
+    nokogiri (1.19.1-aarch64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.19.1-arm-linux-gnu)
+      racc (~> 1.4)
     nokogiri (1.19.1-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.1-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.1-x86_64-linux-gnu)
       racc (~> 1.4)
     racc (1.8.1)
     rexml (3.4.4)
 
 PLATFORMS
-  arm64-darwin-25
+  aarch64-linux
+  arm-linux
+  arm64-darwin
+  ruby
+  x86-linux
+  x86_64-darwin
+  x86_64-linux
 
 DEPENDENCIES
   mjml-rb!
 
 CHECKSUMS
+  mini_portile2 (2.8.9) sha256=0cd7c7f824e010c072e33f68bc02d85a00aeb6fce05bb4819c03dfd3c140c289
   mjml-rb (0.2.34)
+  nokogiri (1.19.1) sha256=598b327f36df0b172abd57b68b18979a6e14219353bca87180c31a51a00d5ad3
+  nokogiri (1.19.1-aarch64-linux-gnu) sha256=cfdb0eafd9a554a88f12ebcc688d2b9005f9fce42b00b970e3dc199587b27f32
+  nokogiri (1.19.1-arm-linux-gnu) sha256=0a39ed59abe3bf279fab9dd4c6db6fe8af01af0608f6e1f08b8ffa4e5d407fa3
   nokogiri (1.19.1-arm64-darwin) sha256=dfe2d337e6700eac47290407c289d56bcf85805d128c1b5a6434ddb79731cb9e
+  nokogiri (1.19.1-x86_64-darwin) sha256=7093896778cc03efb74b85f915a775862730e887f2e58d6921e3fa3d981e68bf
+  nokogiri (1.19.1-x86_64-linux-gnu) sha256=1a4902842a186b4f901078e692d12257678e6133858d0566152fe29cdb98456a
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
 
