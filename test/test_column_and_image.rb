@@ -117,4 +117,32 @@ class TestColumnAndImage < Minitest::Test
     assert_includes html, 'width="auto"'
     assert_includes html, 'height="24"'
   end
+
+  def test_image_supports_fluid_on_mobile_and_passthrough_source_attributes
+    html = render(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-image
+                src="https://example.com/photo.jpg"
+                alt="Photo"
+                fluid-on-mobile="true"
+                usemap="#promo-map"
+                srcset="https://example.com/photo.jpg 1x, https://example.com/photo@2x.jpg 2x"
+                sizes="100vw"
+              />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_includes html, "table.mj-full-width-mobile { width: 100% !important; }"
+    assert_includes html, "td.mj-full-width-mobile { width: auto !important; }"
+    assert_includes html, 'class="mj-full-width-mobile"'
+    assert_includes html, 'usemap="#promo-map"'
+    assert_includes html, 'srcset="https://example.com/photo.jpg 1x, https://example.com/photo@2x.jpg 2x"'
+    assert_includes html, 'sizes="100vw"'
+  end
 end

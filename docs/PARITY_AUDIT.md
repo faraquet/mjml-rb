@@ -71,7 +71,7 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 - The `rawAttrs` / `globalAttributes` distinction on AST nodes exists in npm but not in Ruby. Ruby resolves attributes at render time via `resolved_attributes()` in the renderer, which effectively produces the same merge order (`mj-all` defaults → `mj-class` attrs → tag defaults → class defaults → node attrs`).
 - **Comment handling**: npm wraps HTML comments as `mj-raw` nodes with `content: "<!--...-->"`. Ruby preserves them as `#comment` AST nodes. This means comments inside body content may render differently.
 - **Boolean conversion**: npm converts `"true"`/`"false"` attribute strings to actual booleans (`convertBooleans` option). Ruby keeps them as strings. Component code should handle both forms.
-- **Bare include wrapping**: npm auto-wraps bare MJML includes in `<mjml><mj-body>…</mj-body></mjml>` if the content doesn't already contain `<mjml>`. Ruby expects well-formed documents and will fail on bare fragments.
+- **Bare include wrapping**: Ruby now auto-wraps bare MJML include fragments in `<mjml><mj-body>…</mj-body></mjml>`, matching npm behavior.
 - **Ending-tag detection**: npm reads `component.endingTag` from the component registry at runtime. Ruby hardcodes the list in `ENDING_TAGS_FOR_CDATA`. Adding new ending-tag components requires updating the constant.
 
 ---
@@ -131,9 +131,9 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 
 #### mj-image
 
-- **Fluid images** (`fluid-on-mobile`): npm has `fluid-on-mobile` attribute that generates specific CSS for responsive images. Verify Ruby parity.
-- **`usemap`** attribute: npm supports `usemap` for image maps. Verify Ruby.
-- **`srcset`** / `sizes`**: npm passes these through. Verify Ruby.
+- **Fluid images** (`fluid-on-mobile`): Ruby emits the responsive mobile class and media query, matching npm behavior.
+- **`usemap`** attribute: Ruby passes `usemap` through to the rendered `<img>`.
+- **`srcset`** / `sizes`**: Ruby passes these through to the rendered `<img>`.
 
 #### mj-social
 
@@ -245,7 +245,7 @@ The Ruby pipeline is:
 - [ ] **Replace Nokogiri post-processing for inline CSS**: Same concern. The custom CSS inliner works well but the Nokogiri round-trip can introduce subtle markup changes.
 - [ ] **Verify section/wrapper VML background output**: Compare Outlook VML background rendering (`v:fill`, `v:rect`, `v:image`) against npm output for `background-url` attributes.
 - [ ] **Verify `direction` attribute**: Ensure RTL column reordering in sections matches npm behavior.
-- [ ] **Verify `fluid-on-mobile` in mj-image**: Ensure the responsive CSS class and media query generation matches npm.
+- [x] **Verify `fluid-on-mobile` in mj-image**: Ensure the responsive CSS class and media query generation matches npm.
 - [ ] **Verify hero VML background**: Compare hero Outlook background rendering.
 - [ ] **Verify carousel CSS output**: The CSS-only carousel relies on exact CSS for email client compatibility. Diff against npm output.
 - [ ] **Social element icon URLs**: Verify all built-in social network icon image URLs match upstream definitions.
@@ -253,7 +253,7 @@ The Ruby pipeline is:
 - [ ] **mj-table content normalization**: Ruby adds `font-family:inherit` to td/th and extracts width from style attributes. This is intentional but diverges from npm's raw passthrough. Verify it doesn't cause regressions.
 - [ ] **Attribute type precision**: Some Ruby attribute type specs use generic `string` where npm uses precise `unit(px)` or `integer`. Tightening types would improve validation accuracy.
 - [ ] **Comment rendering**: npm wraps HTML comments as `mj-raw` nodes; Ruby keeps them as `#comment` nodes. Verify comment rendering in body content matches.
-- [ ] **Bare include wrapping**: npm auto-wraps bare MJML fragments (without `<mjml>` root) in `<mjml><mj-body>…</mj-body></mjml>`. Ruby doesn't — bare includes will fail parsing.
+- [x] **Bare include wrapping**: npm auto-wraps bare MJML fragments (without `<mjml>` root) in `<mjml><mj-body>…</mj-body></mjml>`. Ruby now does the same for include expansion.
 
 ### P3 — Feature Gaps (rarely used / nice-to-have)
 

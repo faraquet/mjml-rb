@@ -160,6 +160,35 @@ class MJMLCompilerTest < Minitest::Test
     end
   end
 
+  def test_include_expansion_wraps_bare_mjml_fragments
+    Dir.mktmpdir do |dir|
+      partial = File.join(dir, "partial.mjml")
+      main = File.join(dir, "main.mjml")
+      File.write(partial, <<~MJML)
+        <mj-text>Bare include</mj-text>
+        <mj-button href="https://example.com">Go</mj-button>
+      MJML
+      File.write(main, <<~MJML)
+        <mjml>
+          <mj-body>
+            <mj-section>
+              <mj-column>
+                <mj-include path="./partial.mjml" />
+              </mj-column>
+            </mj-section>
+          </mj-body>
+        </mjml>
+      MJML
+
+      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      result = compiler.compile(File.read(main))
+
+      assert_empty(result.errors)
+      assert_includes(result.html, "Bare include")
+      assert_includes(result.html, ">Go<")
+    end
+  end
+
   def test_include_expansion_tolerates_html_void_tags_in_mjml_include
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")

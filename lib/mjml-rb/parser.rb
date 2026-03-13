@@ -66,6 +66,7 @@ module MjmlRb
       return xml if includes.empty?
 
       css_includes = []
+      head_includes = []
 
       includes.reverse_each do |include_node|
         path_attr = include_node.attributes["path"]
@@ -109,22 +110,33 @@ module MjmlRb
         replacement = if include_type == "html"
                         %(<mj-raw><![CDATA[#{escape_cdata(include_content)}]]></mj-raw>)
                       else
-                        prepared = wrap_ending_tags_in_cdata(normalize_html_void_tags(strip_xml_declaration(include_content)))
-                        # Recursively expand includes in the included content
-                        expand_includes(prepared, options.merge(
+                        prepared = prepare_mjml_include_document(include_content)
+                        prepared = wrap_ending_tags_in_cdata(normalize_html_void_tags(prepared))
+                        expanded = expand_includes(prepared, options.merge(
                           actual_path: resolved_path,
                           file_path: File.dirname(resolved_path)
                         ), included_in + [resolved_path])
+                        body_children, include_head_children = extract_mjml_include_children(expanded)
+                        head_includes.unshift(*include_head_children)
+                        body_children
                       end
 
-        fragment = Document.new(sanitize_bare_ampersands("<include-root>#{replacement}</include-root>"))
         insert_before = include_node
-        fragment.root.children.each do |child|
+        replacement_nodes = if replacement.is_a?(Array)
+                              replacement
+                            else
+                              fragment = Document.new(sanitize_bare_ampersands("<include-root>#{replacement}</include-root>"))
+                              fragment.root.children.map { |child| deep_clone(child) }
+                            end
+
+        replacement_nodes.each do |child|
           annotate_include_source(child, resolved_path) if child.is_a?(Element)
-          parent.insert_before(insert_before, deep_clone(child))
+          parent.insert_before(insert_before, child)
         end
         parent.delete(include_node)
       end
+
+      inject_head_includes(doc, head_includes) unless head_includes.empty?
 
       # Inject CSS includes into mj-head
       unless css_includes.empty?
@@ -138,22 +150,34 @@ module MjmlRb
       raise ParseError, "Failed to parse included content: #{e.message}"
     end
 
-    def inject_css_includes(doc, css_includes)
-      mjml_root = doc.root
-      return unless mjml_root
+    def prepare_mjml_include_document(content)
+      stripped = strip_xml_declaration(content)
+      return stripped if stripped.match?(/<mjml(?=[\s>])/i)
 
-      # Find or create mj-head
+      "<mjml><mj-body>#{stripped}</mj-body></mjml>"
+    end
+
+    def extract_mjml_include_children(xml)
+      include_doc = Document.new(sanitize_bare_ampersands(xml))
+      mjml_root = include_doc.root
+      return [[], []] unless mjml_root&.name == "mjml"
+
+      body = XPath.first(mjml_root, "mj-body")
       head = XPath.first(mjml_root, "mj-head")
-      unless head
-        head = Element.new("mj-head")
-        # Insert mj-head before mj-body if possible
-        body = XPath.first(mjml_root, "mj-body")
-        if body
-          mjml_root.insert_before(body, head)
-        else
-          mjml_root.add(head)
-        end
-      end
+
+      [
+        body ? body.children.map { |child| deep_clone(child) } : [],
+        head ? head.children.map { |child| deep_clone(child) } : []
+      ]
+    end
+
+    def inject_head_includes(doc, head_includes)
+      head = ensure_head(doc)
+      head_includes.each { |child| head.add(child) }
+    end
+
+    def inject_css_includes(doc, css_includes)
+      head = ensure_head(doc)
 
       # Add each CSS include as an mj-style element
       css_includes.each do |css_include|
@@ -162,6 +186,23 @@ module MjmlRb
         style_node.add(CData.new(css_include[:content]))
         head.add(style_node)
       end
+    end
+
+    def ensure_head(doc)
+      mjml_root = doc.root
+      return unless mjml_root
+
+      head = XPath.first(mjml_root, "mj-head")
+      return head if head
+
+      head = Element.new("mj-head")
+      body = XPath.first(mjml_root, "mj-body")
+      if body
+        mjml_root.insert_before(body, head)
+      else
+        mjml_root.add(head)
+      end
+      head
     end
 
     def strip_xml_declaration(content)
