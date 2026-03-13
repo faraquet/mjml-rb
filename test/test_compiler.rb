@@ -37,7 +37,26 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(html, ".mj-outlook-group-fix { width:100% !important; }")
     assert_includes(html, 'style="word-spacing:normal"')
     assert_includes(html, ".moz-text-html .mj-column-per-100")
-    assert_includes(html, "[owa] .mj-column-per-100")
+    refute_includes(html, "[owa] .mj-column-per-100")
+  end
+
+  def test_owa_desktop_emits_owa_media_queries
+    mjml = <<~MJML
+      <mjml owa="desktop">
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Hello Ruby</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb.mjml2html(mjml)
+
+    assert_empty(result[:errors])
+    assert_includes(result[:html], "[owa] .mj-column-per-100")
   end
 
   def test_strict_validation_rejects_invalid_document

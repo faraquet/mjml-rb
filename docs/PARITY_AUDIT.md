@@ -26,7 +26,7 @@ Last updated 2026-03-12.
 | Outlook conditional merging | `mergeOutlookConditionnals()` merges adjacent `<!--[endif]--><!--[if mso\|IE]>` *after* CSS inlining | Applied globally after CSS inlining | Match |
 | Background-color on `<body>` | Skeleton adds `background-color:${backgroundColor}` to `<body style>` | Propagated from `context[:background_color]` to `<body style>` | Match |
 | `beautify` / `minify` post-processing | `js-beautify` / `html-minifier` (deprecated, warns) | Regex-based simplistic implementation | Partial |
-| `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Not implemented | Missing |
+| `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Supported via conditional OWA media queries | Match |
 | `printerSupport` option | Adds `@media only print` media queries | Not implemented | Missing |
 | `juiceOptions` / `juicePreserveTags` | Pass-through to Juice | N/A (custom CSS inliner) | Missing |
 | `mjml-migrate` (MJML v3 → v4) | Automatically called via `handleMjml3()` | Not implemented | Missing |
@@ -42,7 +42,7 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 | `<meta charset="utf-8">` | Not present | Present (extra tag) | Low |
 | `<body style>` includes background-color | Yes (`word-spacing:normal;background-color:…;`) | Yes (`word-spacing:normal;background-color:…`) | Match |
 | Style tag construction | `headStyle` is a hash of *functions* called with `breakpoint` | `component_head_styles` are pre-computed strings | Match (same output) |
-| OWA desktop queries | Conditional output when `forceOWADesktop` | Not implemented | Low |
+| OWA desktop queries | Conditional output when `forceOWADesktop` | Conditional output when `owa="desktop"` | Match |
 | Print media queries | Conditional output when `printerSupport` | Not implemented | Low |
 
 ---
@@ -257,7 +257,7 @@ The Ruby pipeline is:
 
 ### P3 — Feature Gaps (rarely used / nice-to-have)
 
-- [ ] **`forceOWADesktop`**: Support `owa="desktop"` attribute on `<mjml>` to emit `[owa]`-prefixed media queries.
+- [x] **`forceOWADesktop`**: Support `owa="desktop"` attribute on `<mjml>` to emit `[owa]`-prefixed media queries.
 - [ ] **`printerSupport`**: Support `@media only print` media queries when option is set.
 - [ ] **`.mjmlrc` config file**: Support reading `.mjmlrc` for default options and custom package registration.
 - [ ] **Custom component registration / presets**: Support for `registerComponent()` and preset packages.

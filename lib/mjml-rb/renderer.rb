@@ -72,6 +72,7 @@ module MjmlRb
       context[:before_doctype] = root_file_start_raw(document)
       context[:lang] = options[:lang] || document.attributes["lang"] || "und"
       context[:dir] = options[:dir] || document.attributes["dir"] || "auto"
+      context[:force_owa_desktop] = document.attributes["owa"] == "desktop"
       context[:column_widths] = {}
       append_component_head_styles(document, context)
       content = render_node(body, context, parent: "mjml")
@@ -116,7 +117,11 @@ module MjmlRb
       head_raw = Array(context[:head_raw]).join("\n")
       before_doctype = context[:before_doctype].to_s
       font_tags = build_font_tags(content, context[:inline_styles], context[:fonts])
-      media_queries_tags = build_media_queries_tags(context[:breakpoint], context[:column_widths])
+      media_queries_tags = build_media_queries_tags(
+        context[:breakpoint],
+        context[:column_widths],
+        force_owa_desktop: context[:force_owa_desktop]
+      )
       component_styles_tag = build_style_tag(unique_strings(context[:component_head_styles]))
       user_styles_tag = build_style_tag(unique_strings(context[:user_styles]))
       preview_block = preview.empty? ? "" : %(<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">#{escape_html(preview)}</div>)
@@ -240,7 +245,7 @@ module MjmlRb
       end
     end
 
-    def build_media_queries_tags(breakpoint, column_widths)
+    def build_media_queries_tags(breakpoint, column_widths, force_owa_desktop: false)
       widths = column_widths || {}
       return "" if widths.empty?
 
@@ -265,7 +270,9 @@ module MjmlRb
         parts << "<style media=\"screen and (min-width:#{bp})\">\n#{moz_rules.join("\n")}\n</style>"
       end
 
-      parts << "<style type=\"text/css\">\n#{owa_rules.join("\n")}\n</style>"
+      if force_owa_desktop
+        parts << "<style type=\"text/css\">\n#{owa_rules.join("\n")}\n</style>"
+      end
       parts.join("\n")
     end
 
