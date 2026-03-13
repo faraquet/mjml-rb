@@ -84,7 +84,7 @@ class MJMLStyleInlineTest < Minitest::Test
     assert(styles.any? { |style| style.include?("letter-spacing: 2px") })
   end
 
-  def test_mj_style_inline_preserves_important_declarations
+  def test_mj_style_inline_does_not_serialize_important_declarations
     mjml = <<~MJML
       <mjml>
         <mj-head>
@@ -111,9 +111,43 @@ class MJMLStyleInlineTest < Minitest::Test
     document = Nokogiri::HTML(result.html)
     style = document.at_css(".card--header--content a")["style"].to_s
 
-    assert_includes(style, "display: inline !important")
+    assert_includes(style, "display: block")
     assert_includes(style, "width: 100%")
-    refute_includes(style, "display: block")
+    refute_includes(style, "!important")
+    refute_includes(style, "display: inline !important")
+  end
+
+  def test_mj_style_inline_does_not_add_redundant_background
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            p.notice {
+              background-color: #fff2e8 !important;
+              padding-left: 10px !important;
+              padding-right: 10px !important;
+            }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text><p class="notice">Example</p></mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    style = document.at_css("p.notice")["style"].to_s
+
+    assert_includes(style, "background-color: #fff2e8")
+    refute_includes(style, "background: #fff2e8")
+    refute_includes(style, "!important")
   end
 
   def test_mj_style_inline_preserves_at_media_rules

@@ -532,7 +532,8 @@ module MjmlRb
       background_color = declaration_value(declarations["background-color"])
       return if background_color.nil? || background_color.empty?
 
-      if syncable_background?(declaration_value(declarations["background"]))
+      background = declarations["background"]
+      if background && syncable_background?(declaration_value(background))
         declarations["background"] = {
           value: background_color,
           important: declarations.fetch("background-color", {}).fetch(:important, false)
@@ -577,9 +578,7 @@ module MjmlRb
 
     def serialize_css_declarations(declarations)
       declarations.map do |property, declaration|
-        value = declaration[:value]
-        value = "#{value} !important" if declaration[:important]
-        "#{property}: #{value}"
+        "#{property}: #{declaration[:value]}"
       end.join("; ")
     end
 
