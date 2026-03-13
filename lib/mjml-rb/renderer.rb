@@ -110,6 +110,7 @@ module MjmlRb
     end
 
     def build_html_document(content, context)
+      content = minify_outlook_conditionals(content)
       title = context[:title].to_s
       preview = context[:preview]
       head_raw = Array(context[:head_raw]).join("\n")
@@ -278,6 +279,20 @@ module MjmlRb
       # MJML post-processes the HTML to merge adjacent Outlook conditional comments.
       # e.g. <![endif]-->\n<!--[if mso | IE]> become a single conditional block.
       html.gsub(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, "")
+    end
+
+    def minify_outlook_conditionals(html)
+      html.gsub(/(<!--\[if\s[^\]]+\]>)([\s\S]*?)(<!\[endif\]-->)/m) do
+        prefix = Regexp.last_match(1)
+        content = Regexp.last_match(2)
+        suffix = Regexp.last_match(3)
+
+        processed = content
+                    .gsub(/(^|>)(\s+)(<|$)/m, '\1\3')
+                    .gsub(/\s{2,}/m, " ")
+
+        "#{prefix}#{processed}#{suffix}"
+      end
     end
 
     def apply_html_attributes(html, context)

@@ -85,6 +85,28 @@ class MJMLCompilerTest < Minitest::Test
     refute_match(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, result.html)
   end
 
+  def test_minifies_whitespace_inside_outlook_conditionals
+    renderer = MjmlRb::Renderer.new
+    input = <<~HTML
+      <div>
+        <!--[if mso | IE]>
+        <table
+          align="center"
+        >
+          <tr>
+            <td>Text</td>
+          </tr>
+        </table>
+        <![endif]-->
+      </div>
+    HTML
+
+    output = renderer.send(:minify_outlook_conditionals, input)
+
+    assert_match(/<!--\[if mso \| IE\]><table align="center"\s*><tr><td>Text<\/td><\/tr><\/table><!\[endif\]-->/, output)
+    refute_match(/<!--\[if mso \| IE\]>\s+</m, output)
+  end
+
   def test_include_expansion
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")
