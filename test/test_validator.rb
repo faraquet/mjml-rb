@@ -379,6 +379,34 @@ class ValidatorTest < Minitest::Test
     assert(errors.any? { |e| e[:message].include?("fake-attr") && e[:message].include?("mj-breakpoint") })
   end
 
+  def test_rejects_unknown_mjml_tag
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-foo />
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert(errors.any? { |e| e[:message].include?("doesn't exist or is not registered") && e[:message].include?("<mj-foo>") })
+  end
+
+  def test_allows_html_tags_inside_ending_tag_components
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text><strong>Hello</strong><br />World</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(errors)
+  end
+
   # ── line number metadata tests ──────────────────────
 
   def test_validation_errors_include_line_numbers

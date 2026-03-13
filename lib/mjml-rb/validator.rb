@@ -43,12 +43,24 @@ module MjmlRb
     def walk(node, errors)
       return unless node.element?
 
+      validate_known_tag(node, errors)
       validate_allowed_children(node, errors)
       validate_required_attributes(node, errors)
       validate_supported_attributes(node, errors)
       validate_attribute_types(node, errors)
 
+      return if Dependencies::ENDING_TAGS.include?(node.tag_name)
+
       node.element_children.each { |child| walk(child, errors) }
+    end
+
+    def validate_known_tag(node, errors)
+      return if known_tag?(node.tag_name)
+
+      errors << error(
+        "Element <#{node.tag_name}> doesn't exist or is not registered",
+        tag_name: node.tag_name, line: node.line, file: node.file
+      )
     end
 
     def validate_allowed_children(node, errors)
@@ -128,6 +140,10 @@ module MjmlRb
       rescue NameError
         nil
       end.find { |klass| klass.tags.include?(tag_name) }
+    end
+
+    def known_tag?(tag_name)
+      tag_name == "mjml" || !component_class_for_tag(tag_name).nil?
     end
 
     def valid_attribute_value?(value, expected_type)

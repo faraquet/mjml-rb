@@ -171,7 +171,7 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 | Unknown attribute rejection | `validAttributes.js` | `validate_supported_attributes` | Match |
 | Attribute type validation | `validTypes.js` + `type.js` type system | `valid_attribute_value?` | Partial |
 | Parent-child validation | `validChildren.js` + `dependencies` map | `RULES` hash in `dependencies.rb` | Match |
-| Unknown tag detection | `validTag.js` checks component registry | Not implemented (unknown tags silently pass) | Missing |
+| Unknown tag detection | `validTag.js` checks component registry | Rejects unknown MJML tags during validation | Match |
 | Error format | `{ line, tagName, message, formattedMessage }` | `{ line, file, message, tag_name, formatted_message }` | Match (Ruby adds `file`) |
 | Line numbers in errors | Yes | Yes | Match |
 | File paths in errors | No (npm doesn't track include file paths in errors) | Yes (Ruby tracks `file` from include expansion) | Match (Ruby is better) |
@@ -187,7 +187,7 @@ All ending-tag dependency rules (`mj-raw`, `mj-table`, `mj-text`) are aligned wi
 
 ### Missing Validation: Unknown Tags
 
-npm's `validTag.js` rejects tags that have no registered component (e.g., `<mj-foo>`). Ruby does not have this check — unknown tags are silently ignored during validation.
+npm's `validTag.js` rejects tags that have no registered component (e.g., `<mj-foo>`). Ruby now mirrors this behavior during validation.
 
 ---
 
@@ -237,7 +237,7 @@ The Ruby pipeline is:
 - [ ] **Pipeline ordering**: npm applies `mj-html-attributes` via Cheerio **before** skeleton generation, then applies inline CSS via Juice **after** skeleton. Ruby applies both **after** skeleton. This means `mj-html-attributes` selectors in npm operate on body content only, while in Ruby they operate on the full document including `<head>`. Consider whether reordering is needed or if current behavior is acceptable.
 - [ ] **Outlook conditional minification**: Implement `minify_outlook_conditionals` as a global post-processing step (strip inter-tag whitespace inside `<!--[if …]>` blocks)
 - [ ] **Outlook conditional merging (global)**: Apply `merge_outlook_conditionals` as a global post-processing step after CSS inlining, not just within section rendering
-- [ ] **Unknown tag validation**: Add a `validate_known_tag` check that rejects tags with no registered component (matching npm's `validTag.js`)
+- [x] **Unknown tag validation**: Add a `validate_known_tag` check that rejects tags with no registered component (matching npm's `validTag.js`)
 
 ### P2 — Behavioral Parity (may affect edge cases)
 
