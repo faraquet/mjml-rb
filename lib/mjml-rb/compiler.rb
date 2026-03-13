@@ -10,6 +10,7 @@ module MjmlRb
       minify: false,
       keep_comments: true,
       ignore_includes: false,
+      printer_support: false,
       preprocessors: [],
       validation_level: "soft",
       file_path: ".",

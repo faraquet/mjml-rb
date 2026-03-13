@@ -73,6 +73,7 @@ module MjmlRb
       context[:lang] = options[:lang] || document.attributes["lang"] || "und"
       context[:dir] = options[:dir] || document.attributes["dir"] || "auto"
       context[:force_owa_desktop] = document.attributes["owa"] == "desktop"
+      context[:printer_support] = options[:printer_support] || options[:printerSupport]
       context[:column_widths] = {}
       append_component_head_styles(document, context)
       content = render_node(body, context, parent: "mjml")
@@ -120,7 +121,8 @@ module MjmlRb
       media_queries_tags = build_media_queries_tags(
         context[:breakpoint],
         context[:column_widths],
-        force_owa_desktop: context[:force_owa_desktop]
+        force_owa_desktop: context[:force_owa_desktop],
+        printer_support: context[:printer_support]
       )
       component_styles_tag = build_style_tag(unique_strings(context[:component_head_styles]))
       user_styles_tag = build_style_tag(unique_strings(context[:user_styles]))
@@ -146,7 +148,6 @@ module MjmlRb
             <meta http-equiv="X-UA-Compatible" content="IE=edge">
             <!--<![endif]-->
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-            <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style type="text/css">#{DOCUMENT_RESET_CSS}</style>
             #{OUTLOOK_DOCUMENT_SETTINGS}
@@ -245,7 +246,7 @@ module MjmlRb
       end
     end
 
-    def build_media_queries_tags(breakpoint, column_widths, force_owa_desktop: false)
+    def build_media_queries_tags(breakpoint, column_widths, force_owa_desktop: false, printer_support: false)
       widths = column_widths || {}
       return "" if widths.empty?
 
@@ -268,6 +269,10 @@ module MjmlRb
       else
         parts << "<style type=\"text/css\">\n@media only screen and (min-width:#{bp}) {\n#{base_rules.join("\n")}\n}\n</style>"
         parts << "<style media=\"screen and (min-width:#{bp})\">\n#{moz_rules.join("\n")}\n</style>"
+      end
+
+      if printer_support
+        parts << "<style type=\"text/css\">\n@media only print {\n#{base_rules.join("\n")}\n}\n</style>"
       end
 
       if force_owa_desktop

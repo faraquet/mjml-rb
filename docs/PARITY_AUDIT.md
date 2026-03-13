@@ -27,7 +27,7 @@ Last updated 2026-03-12.
 | Background-color on `<body>` | Skeleton adds `background-color:${backgroundColor}` to `<body style>` | Propagated from `context[:background_color]` to `<body style>` | Match |
 | `beautify` / `minify` post-processing | `js-beautify` / `html-minifier` (deprecated, warns) | Regex-based simplistic implementation | Partial |
 | `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Supported via conditional OWA media queries | Match |
-| `printerSupport` option | Adds `@media only print` media queries | Not implemented | Missing |
+| `printerSupport` option | Adds `@media only print` media queries | Supported via `printer_support` render option | Match |
 | `juiceOptions` / `juicePreserveTags` | Pass-through to Juice | N/A (custom CSS inliner) | Missing |
 | `mjml-migrate` (MJML v3 → v4) | Automatically called via `handleMjml3()` | Not implemented | Missing |
 | `.mjmlrc` config file support | `handleMjmlConfig` reads `.mjmlrc` for packages, options, preprocessors | Not implemented | Missing |
@@ -39,11 +39,11 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 
 | Detail | npm | Ruby | Priority |
 |---|---|---|---|
-| `<meta charset="utf-8">` | Not present | Present (extra tag) | Low |
+| `<meta charset="utf-8">` | Not present | Not present | Match |
 | `<body style>` includes background-color | Yes (`word-spacing:normal;background-color:…;`) | Yes (`word-spacing:normal;background-color:…`) | Match |
 | Style tag construction | `headStyle` is a hash of *functions* called with `breakpoint` | `component_head_styles` are pre-computed strings | Match (same output) |
 | OWA desktop queries | Conditional output when `forceOWADesktop` | Conditional output when `owa="desktop"` | Match |
-| Print media queries | Conditional output when `printerSupport` | Not implemented | Low |
+| Print media queries | Conditional output when `printerSupport` | Conditional output when `printer_support` is enabled | Match |
 
 ---
 
@@ -258,11 +258,11 @@ The Ruby pipeline is:
 ### P3 — Feature Gaps (rarely used / nice-to-have)
 
 - [x] **`forceOWADesktop`**: Support `owa="desktop"` attribute on `<mjml>` to emit `[owa]`-prefixed media queries.
-- [ ] **`printerSupport`**: Support `@media only print` media queries when option is set.
+- [x] **`printerSupport`**: Support `@media only print` media queries when option is set.
 - [ ] **`.mjmlrc` config file**: Support reading `.mjmlrc` for default options and custom package registration.
 - [ ] **Custom component registration / presets**: Support for `registerComponent()` and preset packages.
 - [ ] **MJML v3 → v4 migration**: The `mjml-migrate` package auto-converts v3 syntax. Low priority unless v3 templates are in use.
-- [ ] **Remove extra `<meta charset="utf-8">`**: The upstream skeleton doesn't include this tag; removing it would make output match more closely.
+- [x] **Remove extra `<meta charset="utf-8">`**: The upstream skeleton doesn't include this tag; removing it would make output match more closely.
 
 ---
 

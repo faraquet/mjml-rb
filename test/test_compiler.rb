@@ -33,10 +33,12 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(html, 'xmlns:o="urn:schemas-microsoft-com:office:office"')
     assert_includes(html, '<meta http-equiv="X-UA-Compatible" content="IE=edge">')
     assert_includes(html, '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">')
+    refute_includes(html, '<meta charset="utf-8">')
     assert_includes(html, "<o:PixelsPerInch>96</o:PixelsPerInch>")
     assert_includes(html, ".mj-outlook-group-fix { width:100% !important; }")
     assert_includes(html, 'style="word-spacing:normal"')
     assert_includes(html, ".moz-text-html .mj-column-per-100")
+    refute_includes(html, "@media only print")
     refute_includes(html, "[owa] .mj-column-per-100")
   end
 
@@ -57,6 +59,14 @@ class MJMLCompilerTest < Minitest::Test
 
     assert_empty(result[:errors])
     assert_includes(result[:html], "[owa] .mj-column-per-100")
+  end
+
+  def test_printer_support_emits_print_media_queries
+    result = MjmlRb.mjml2html(SAMPLE, printer_support: true)
+
+    assert_empty(result[:errors])
+    assert_includes(result[:html], "@media only print")
+    assert_includes(result[:html], ".mj-column-per-100 { width:100% !important; max-width: 100%; }")
   end
 
   def test_strict_validation_rejects_invalid_document
