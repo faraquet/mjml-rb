@@ -61,6 +61,30 @@ class MJMLCompilerTest < Minitest::Test
     assert_match(/not allowed inside <mj-body>/, result.errors.first[:message])
   end
 
+  def test_globally_merges_adjacent_outlook_conditionals
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>One</mj-text>
+            </mj-column>
+          </mj-section>
+          <mj-section>
+            <mj-column>
+              <mj-text>Two</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new.compile(mjml)
+
+    assert_empty(result.errors)
+    refute_match(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, result.html)
+  end
+
   def test_include_expansion
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")

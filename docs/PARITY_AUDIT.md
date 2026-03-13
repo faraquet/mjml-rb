@@ -23,7 +23,7 @@ Last updated 2026-03-12.
 | `mj-html-attributes` application | **Cheerio** (`xmlMode: true, decodeEntities: false`), applied **before** skeleton | **Nokogiri** (`Nokogiri::HTML`), applied **after** skeleton | Partial |
 | Pipeline ordering | html-attributes → skeleton → Juice → merge conditionals | skeleton → html-attributes → inline CSS → prepend before_doctype | Partial |
 | Outlook conditional minification | `minifyOutlookConditionnals()` strips whitespace between tags inside `<!--[if …]>` blocks *before* skeleton | Not implemented | Missing |
-| Outlook conditional merging | `mergeOutlookConditionnals()` merges adjacent `<!--[endif]--><!--[if mso\|IE]>` *after* CSS inlining | `merge_outlook_conditionals` exists but is only used inside `Section` component, not as a global post-process step | Partial |
+| Outlook conditional merging | `mergeOutlookConditionnals()` merges adjacent `<!--[endif]--><!--[if mso\|IE]>` *after* CSS inlining | Applied globally after CSS inlining | Match |
 | Background-color on `<body>` | Skeleton adds `background-color:${backgroundColor}` to `<body style>` | Propagated from `context[:background_color]` to `<body style>` | Match |
 | `beautify` / `minify` post-processing | `js-beautify` / `html-minifier` (deprecated, warns) | Regex-based simplistic implementation | Partial |
 | `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Not implemented | Missing |
@@ -236,7 +236,7 @@ The Ruby pipeline is:
 
 - [ ] **Pipeline ordering**: npm applies `mj-html-attributes` via Cheerio **before** skeleton generation, then applies inline CSS via Juice **after** skeleton. Ruby applies both **after** skeleton. This means `mj-html-attributes` selectors in npm operate on body content only, while in Ruby they operate on the full document including `<head>`. Consider whether reordering is needed or if current behavior is acceptable.
 - [ ] **Outlook conditional minification**: Implement `minify_outlook_conditionals` as a global post-processing step (strip inter-tag whitespace inside `<!--[if …]>` blocks)
-- [ ] **Outlook conditional merging (global)**: Apply `merge_outlook_conditionals` as a global post-processing step after CSS inlining, not just within section rendering
+- [x] **Outlook conditional merging (global)**: Apply `merge_outlook_conditionals` as a global post-processing step after CSS inlining, not just within section rendering
 - [x] **Unknown tag validation**: Add a `validate_known_tag` check that rejects tags with no registered component (matching npm's `validTag.js`)
 
 ### P2 — Behavioral Parity (may affect edge cases)

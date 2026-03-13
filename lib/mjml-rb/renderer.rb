@@ -160,6 +160,7 @@ module MjmlRb
 
       html = apply_html_attributes(html, context)
       html = apply_inline_styles(html, context)
+      html = merge_outlook_conditionals(html)
       before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
     end
 
