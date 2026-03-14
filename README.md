@@ -61,6 +61,9 @@ that template engine first, so partials and embedded Ruby can assemble MJML
 before the outer template is compiled to HTML. Without that setting, non-XML
 MJML source is rejected instead of being guessed.
 
+For `:slim` or `:haml`, the matching Rails template handler must already be
+registered in `ActionView` by the corresponding gem or integration layer.
+
 Create a view such as `app/views/user_mailer/welcome.html.mjml`:
 
 ```mjml

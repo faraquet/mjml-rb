@@ -40,7 +40,7 @@ module MjmlRb
       return unless defined?(ActionView::Template)
 
       require_relative "mjml-rb/template_handler"
-      ActionView::Template.register_template_handler(:mjml, TemplateHandler)
+      ActionView::Template.register_template_handler(:mjml, TemplateHandler.new)
     end
 
     def mjml2html(mjml, options = {})

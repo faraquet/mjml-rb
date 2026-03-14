@@ -14,6 +14,14 @@ rescue LoadError
 end
 
 class RailsIntegrationTest < Minitest::Test
+  class SlimTestHandler
+    def call(template, source = nil)
+      require "slim"
+
+      ::Slim::Engine.new.call(source || template.source)
+    end
+  end
+
   if !RAILS_INTEGRATION_AVAILABLE
     def test_rails_dependencies_are_optional
       skip "action_view and rails are not installed in this environment"
@@ -22,18 +30,25 @@ class RailsIntegrationTest < Minitest::Test
     def setup
       @original_rails_compiler_options = MjmlRb.rails_compiler_options
       @original_rails_template_language = MjmlRb.rails_template_language
+      @original_mjml_handler = ActionView::Template.handler_for_extension(:mjml)
+      @original_slim_handler = ActionView::Template.registered_template_handler(:slim)
       MjmlRb.rails_compiler_options = {validation_level: "strict"}
       MjmlRb.rails_template_language = nil
+      ActionView::Template.register_template_handler(:slim, SlimTestHandler.new)
       MjmlRb.register_action_view_template_handler!
     end
 
     def teardown
       MjmlRb.rails_compiler_options = @original_rails_compiler_options
       MjmlRb.rails_template_language = @original_rails_template_language
+      ActionView::Template.unregister_template_handler(:mjml)
+      ActionView::Template.register_template_handler(:mjml, @original_mjml_handler) if @original_mjml_handler
+      ActionView::Template.unregister_template_handler(:slim)
+      ActionView::Template.register_template_handler(:slim, @original_slim_handler) if @original_slim_handler
     end
 
     def test_registers_mjml_template_handler_with_action_view
-      assert_equal MjmlRb::TemplateHandler, ActionView::Template.handler_for_extension(:mjml)
+      assert_instance_of MjmlRb::TemplateHandler, ActionView::Template.handler_for_extension(:mjml)
     end
 
     def test_renders_html_mjml_template_through_action_view
@@ -165,7 +180,7 @@ class RailsIntegrationTest < Minitest::Test
           view.render(template: "welcome")
         end
 
-        assert_includes error.cause&.message.to_s, "template_language is set to :haml"
+        assert_includes error.cause&.message.to_s, "template_language `haml` is not registered"
       end
     end
 
