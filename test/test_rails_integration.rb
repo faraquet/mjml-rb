@@ -133,7 +133,7 @@ class RailsIntegrationTest < Minitest::Test
         end
 
         assert_includes error.cause&.message.to_s, "template_language"
-        assert_includes error.cause&.message.to_s, "Supported values: nil, :slim, :haml"
+        assert_includes error.cause&.message.to_s, "Configure it with one of: :slim, :haml"
       end
     end
 

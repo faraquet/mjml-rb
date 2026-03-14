@@ -3,7 +3,7 @@ require "action_view/template"
 
 module MjmlRb
   class TemplateHandler
-    SUPPORTED_TEMPLATE_LANGUAGES = %w[nil :slim :haml].freeze
+    SUPPORTED_TEMPLATE_LANGUAGES = %w[:slim :haml].freeze
 
     def call(template, source = nil)
       compiled_source = compile_source(template, source)
@@ -59,7 +59,7 @@ module MjmlRb
     end
 
     def missing_template_language_error
-      "MJML Rails template_language is not configured for non-XML templates. Supported values: #{SUPPORTED_TEMPLATE_LANGUAGES.join(', ')}"
+      "MJML Rails template_language is not configured for non-XML templates. Configure it with one of: #{SUPPORTED_TEMPLATE_LANGUAGES.join(', ')}. Otherwise use raw XML MJML."
     end
   end
 end
