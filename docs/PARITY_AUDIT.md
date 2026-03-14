@@ -250,7 +250,7 @@ The Ruby pipeline is:
 - [ ] **Social element icon URLs**: Verify all built-in social network icon image URLs match upstream definitions.
 - [ ] **mj-spacer outer wrapper**: Ruby wraps spacer in `<tr><td>` with padding styles; npm renders just a `<div>`. Verify whether this divergence affects layout.
 - [ ] **mj-table content normalization**: Ruby adds `font-family:inherit` to td/th and extracts width from style attributes. This is intentional but diverges from npm's raw passthrough. Verify it doesn't cause regressions.
-- [ ] **Attribute type precision**: Some Ruby attribute type specs use generic `string` where npm uses precise `unit(px)` or `integer`. Tightening types would improve validation accuracy. `mj-hero` `mode` now validates as `enum(fixed-height,fluid-height)`, and `mj-style` `inline` now validates as `enum(inline)`.
+- [ ] **Attribute type precision**: Some Ruby attribute type specs use generic `string` where npm uses precise `unit(px)` or `integer`. Tightening types would improve validation accuracy. `mj-hero` `mode` now validates as `enum(fixed-height,fluid-height)`, `mj-style` `inline` now validates as `enum(inline)`, and `mj-navbar` `hamburger` now validates as `enum(hamburger)`.
 - [x] **Comment rendering**: Preserve HTML comments in rendered output when `keep_comments` is enabled, matching npm body-content behavior.
 - [x] **Bare include wrapping**: npm auto-wraps bare MJML fragments (without `<mjml>` root) in `<mjml><mj-body>…</mj-body></mjml>`. Ruby now does the same for include expansion.
 

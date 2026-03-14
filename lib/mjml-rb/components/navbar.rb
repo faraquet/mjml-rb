@@ -10,7 +10,7 @@ module MjmlRb
       NAVBAR_ALLOWED_ATTRIBUTES = {
         "align" => "enum(left,center,right)",
         "base-url" => "string",
-        "hamburger" => "string",
+        "hamburger" => "enum(hamburger)",
         "ico-align" => "enum(left,center,right)",
         "ico-open" => "string",
         "ico-close" => "string",

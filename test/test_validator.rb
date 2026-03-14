@@ -420,6 +420,28 @@ class ValidatorTest < Minitest::Test
     end)
   end
 
+  def test_rejects_invalid_navbar_hamburger_value
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-navbar hamburger="true">
+                <mj-navbar-link href="/">Home</mj-navbar-link>
+              </mj-navbar>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert(errors.any? do |e|
+      e[:message].include?("Attribute `hamburger`") &&
+        e[:message].include?("<mj-navbar>") &&
+        e[:message].include?("enum(hamburger)")
+    end)
+  end
+
   def test_rejects_unknown_mjml_tag
     errors = validate(<<~MJML)
       <mjml>
