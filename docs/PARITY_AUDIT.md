@@ -251,7 +251,7 @@ The Ruby pipeline is:
 - [ ] **mj-spacer outer wrapper**: Ruby wraps spacer in `<tr><td>` with padding styles; npm renders just a `<div>`. Verify whether this divergence affects layout.
 - [ ] **mj-table content normalization**: Ruby adds `font-family:inherit` to td/th and extracts width from style attributes. This is intentional but diverges from npm's raw passthrough. Verify it doesn't cause regressions.
 - [ ] **Attribute type precision**: Some Ruby attribute type specs use generic `string` where npm uses precise `unit(px)` or `integer`. Tightening types would improve validation accuracy.
-- [ ] **Comment rendering**: npm wraps HTML comments as `mj-raw` nodes; Ruby keeps them as `#comment` nodes. Verify comment rendering in body content matches.
+- [x] **Comment rendering**: Preserve HTML comments in rendered output when `keep_comments` is enabled, matching npm body-content behavior.
 - [x] **Bare include wrapping**: npm auto-wraps bare MJML fragments (without `<mjml>` root) in `<mjml><mj-body>…</mj-body></mjml>`. Ruby now does the same for include expansion.
 
 ### P3 — Feature Gaps (rarely used / nice-to-have)

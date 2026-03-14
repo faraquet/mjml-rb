@@ -209,7 +209,7 @@ module MjmlRb
 
     def render_node(node, context, parent:)
       return escape_html(node.content.to_s) if node.text?
-      return "" if node.comment?
+      return "<!--#{node.content}-->" if node.comment?
 
       attrs = resolved_attributes(node, context)
       if (component = component_for(node.tag_name))
