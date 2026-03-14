@@ -28,6 +28,14 @@ module MjmlRb
       @rails_compiler_options = options || {}
     end
 
+    def rails_template_language
+      @rails_template_language
+    end
+
+    def rails_template_language=(language)
+      @rails_template_language = language&.to_sym
+    end
+
     def register_action_view_template_handler!
       return unless defined?(ActionView::Template)
 

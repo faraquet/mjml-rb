@@ -46,6 +46,21 @@ bundle exec bin/mjml --validate example.mjml
 In a Rails app, requiring the gem registers an `ActionView` template handler for
 `.mjml` templates through a `Railtie`.
 
+By default, `.mjml` files are treated as raw MJML/XML source.
+
+If you want Slim-backed MJML templates, configure it explicitly:
+
+```ruby
+config.mjml_rb.template_language = :slim
+```
+
+Supported values are `:erb`, `:slim`, and `:haml`.
+
+With a configured `template_language`, `.mjml` templates are rendered through
+that template engine first, so partials and embedded Ruby can assemble MJML
+before the outer template is compiled to HTML. Without that setting, non-XML
+MJML source is rejected instead of being guessed.
+
 Create a view such as `app/views/user_mailer/welcome.html.mjml`:
 
 ```mjml
