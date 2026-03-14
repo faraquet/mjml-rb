@@ -397,6 +397,29 @@ class ValidatorTest < Minitest::Test
     assert(errors.any? { |e| e[:message].include?("fake-attr") && e[:message].include?("mj-breakpoint") })
   end
 
+  def test_rejects_invalid_mj_style_inline_value
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-head>
+          <mj-style inline="true">.caps { text-transform: uppercase; }</mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert(errors.any? do |e|
+      e[:message].include?("Attribute `inline`") &&
+        e[:message].include?("<mj-style>") &&
+        e[:message].include?("enum(inline)")
+    end)
+  end
+
   def test_rejects_unknown_mjml_tag
     errors = validate(<<~MJML)
       <mjml>

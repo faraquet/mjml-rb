@@ -7,7 +7,7 @@ module MjmlRb
 
       ALLOWED_ATTRIBUTES = {
         "mj-style" => {
-          "inline" => "string"
+          "inline" => "enum(inline)"
         },
         "mj-font" => {
           "name" => "string",
