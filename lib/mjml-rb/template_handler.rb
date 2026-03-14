@@ -3,7 +3,7 @@ require "action_view/template"
 
 module MjmlRb
   class TemplateHandler
-    SUPPORTED_TEMPLATE_LANGUAGES = %w[nil :erb :slim :haml].freeze
+    SUPPORTED_TEMPLATE_LANGUAGES = %w[nil :slim :haml].freeze
 
     def call(template, source = nil)
       compiled_source = compile_source(template, source)

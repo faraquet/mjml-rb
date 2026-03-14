@@ -54,7 +54,7 @@ If you want Slim-backed MJML templates, configure it explicitly:
 config.mjml_rb.template_language = :slim
 ```
 
-Supported values are `:erb`, `:slim`, and `:haml`.
+Supported values are `:slim` and `:haml`.
 
 With a configured `template_language`, `.mjml` templates are rendered through
 that template engine first, so partials and embedded Ruby can assemble MJML

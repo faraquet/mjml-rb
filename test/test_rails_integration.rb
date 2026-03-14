@@ -120,35 +120,6 @@ class RailsIntegrationTest < Minitest::Test
       end
     end
 
-    def test_renders_erb_mjml_template_with_nested_partials
-      MjmlRb.rails_template_language = :erb
-
-      with_templates(
-        "welcome.html.mjml" => <<~ERB,
-          <mjml>
-            <mj-body>
-              <%= render "shared/greeting", message: "Hello from ERB" %>
-            </mj-body>
-          </mjml>
-        ERB
-        "shared/_greeting.html.mjml" => <<~ERB
-          <mj-section>
-            <mj-column>
-              <mj-text><%= message %></mj-text>
-            </mj-column>
-          </mj-section>
-        ERB
-      ) do |view|
-        html = view.render(template: "welcome")
-
-        assert_includes html, "Hello from ERB"
-        refute_includes html, "&lt;mj-section"
-
-        document = Nokogiri::HTML(html)
-        assert_equal "Hello from ERB", document.at_css("div")&.text.to_s.strip
-      end
-    end
-
     def test_non_xml_template_requires_explicit_template_language
       with_template("welcome.html.mjml", <<~SLIM) do |view|
         mjml
@@ -162,7 +133,7 @@ class RailsIntegrationTest < Minitest::Test
         end
 
         assert_includes error.cause&.message.to_s, "template_language"
-        assert_includes error.cause&.message.to_s, "Supported values: nil, :erb, :slim, :haml"
+        assert_includes error.cause&.message.to_s, "Supported values: nil, :slim, :haml"
       end
     end
 
