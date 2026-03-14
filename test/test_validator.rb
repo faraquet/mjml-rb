@@ -183,6 +183,24 @@ class ValidatorTest < Minitest::Test
     assert(errors.any? { |e| e[:message].include?("fake-attr") && e[:message].include?("mj-hero") })
   end
 
+  def test_rejects_invalid_hero_mode_value
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-hero mode="stretch-height">
+            <mj-text>Hello</mj-text>
+          </mj-hero>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert(errors.any? do |e|
+      e[:message].include?("Attribute `mode`") &&
+        e[:message].include?("<mj-hero>") &&
+        e[:message].include?("enum(fixed-height,fluid-height)")
+    end)
+  end
+
   def test_rejects_unknown_attribute_on_mj_column
     errors = validate(<<~MJML)
       <mjml>

@@ -6,7 +6,7 @@ module MjmlRb
       TAGS = ["mj-hero"].freeze
 
       ALLOWED_ATTRIBUTES = {
-        "mode" => "string",
+        "mode" => "enum(fixed-height,fluid-height)",
         "height" => "unit(px,%)",
         "background-url" => "string",
         "background-width" => "unit(px,%)",
