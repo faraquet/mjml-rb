@@ -1,114 +1,65 @@
+require "action_view"
+require "action_view/template"
+
 module MjmlRb
   class TemplateHandler
-    MJML_CAPTURE_DEPTH_IVAR = :@_mjml_rb_capture_depth
-    TEMPLATE_ENGINES = {
-      slim: {
-        require: "slim",
-        gem_name: "slim"
-      },
-      haml: {
-        require: "haml",
-        gem_name: "haml"
-      }
-    }.freeze
+    SUPPORTED_TEMPLATE_LANGUAGES = %w[:slim :haml].freeze
 
-    class << self
-      def call(template, source = nil)
-        <<~RUBY
-          ::MjmlRb::TemplateHandler.render(self, #{template.source.inspect}, #{template.identifier.inspect}, local_assigns)
-        RUBY
+    def call(template, source = nil)
+      compiled_source = compile_source(template, source)
+      template_path = template.respond_to?(:virtual_path) ? template.virtual_path : template.identifier
+
+      if /<mjml.*?>/i.match?(compiled_source)
+        "::MjmlRb::TemplateHandler.render_compiled_source(begin;#{compiled_source};end, #{template_path.inspect})"
+      else
+        "::MjmlRb::TemplateHandler.render_partial_source(begin;#{compiled_source};end)"
+      end
+    end
+
+    def self.render_compiled_source(mjml_source, template_path)
+      mjml_result = ::MjmlRb::Compiler.new(::MjmlRb.rails_compiler_options || {}).compile(mjml_source.to_s)
+
+      if mjml_result.errors.any?
+        raise "MJML compilation failed for #{template_path}: #{mjml_result.errors.map { |error| error[:formatted_message] || error[:message] }.join(', ')}"
       end
 
-      def render(view_context, source, identifier, local_assigns = {})
-        if capture_mode?(view_context)
-          return mark_html_safe(render_source(view_context, source, local_assigns))
-        end
+      html = mjml_result.html.to_s
+      html.respond_to?(:html_safe) ? html.html_safe : html
+    end
 
-        with_capture_mode(view_context) do
-          mjml_source = render_source(view_context, source, local_assigns).to_s
-          mjml_result = ::MjmlRb::Compiler.new(::MjmlRb.rails_compiler_options || {}).compile(mjml_source)
+    def self.render_partial_source(compiled_source)
+      output = compiled_source.to_s
+      output.respond_to?(:html_safe) ? output.html_safe : output
+    end
 
-          if mjml_result.errors.any?
-            raise "MJML compilation failed for #{identifier}: #{mjml_result.errors.map { |error| error[:formatted_message] || error[:message] }.join(', ')}"
-          end
+    private
 
-          mark_html_safe(mjml_result.html.to_s)
-        end
-      end
+    def template_handler
+      language = MjmlRb.rails_template_language
+      raise missing_rails_template_language_error if language.nil?
 
-      private
+      handler = ActionView::Template.registered_template_handler(language)
+      return handler if handler
 
-      def render_source(view_context, source, local_assigns)
-        language = ::MjmlRb.rails_template_language
-        if language.nil?
-          stripped_source = source.to_s.lstrip
-          return source.to_s if stripped_source.start_with?("<")
+      raise "MJML Rails rails_template_language `#{language}` is not registered with ActionView. Make sure the matching Rails template handler is loaded."
+    end
 
-          raise "MJML Rails template_language is not configured for non-XML templates. Supported values: nil, :erb, :slim, :haml"
-        end
+    def compile_source(template, source)
+      return template.source.inspect if xml_source?(template.source)
 
-        case language
-        when :erb
-          render_erb_source(view_context, source.to_s, local_assigns)
-        when :slim, :haml
-          render_template_language_source(view_context, source.to_s, local_assigns, language)
-        else
-          raise "Unsupported MJML Rails template_language `#{language}`. Supported values: nil, :erb, :slim, :haml"
-        end
-      end
+      template_handler.call(template, source)
+    rescue RuntimeError => error
+      raise error unless error.message == missing_rails_template_language_error
 
-      def render_erb_source(view_context, source, local_assigns)
-        require "erb"
+      %(raise #{missing_rails_template_language_error.inspect})
+    end
 
-        local_assigns.each do |name, value|
-          define_local_reader(view_context, name, value)
-        end
+    def xml_source?(source)
+      source.to_s.lstrip.start_with?("<")
+    end
 
-        erb = ::ERB.new(source)
-        erb.result(view_context.instance_eval { binding })
-      end
-
-      def render_template_language_source(view_context, source, local_assigns, language)
-        engine = TEMPLATE_ENGINES.fetch(language)
-        require engine[:require]
-
-        case language
-        when :slim
-          ::Slim::Template.new { source }.render(view_context, local_assigns.transform_keys(&:to_sym))
-        when :haml
-          if defined?(::Haml::Template)
-            ::Haml::Template.new { source }.render(view_context, local_assigns.transform_keys(&:to_sym))
-          else
-            raise "MJML Rails template_language is set to :haml, but this Haml version does not expose Haml::Template"
-          end
-        end
-      rescue LoadError
-        raise "MJML Rails template_language is set to :#{language}, but the `#{engine[:gem_name]}` gem is not available"
-      end
-
-      def define_local_reader(view_context, name, value)
-        singleton_class = class << view_context; self; end
-        singleton_class.send(:define_method, name) do
-          value
-        end
-      end
-
-      def capture_mode?(view_context)
-        view_context.instance_variable_get(MJML_CAPTURE_DEPTH_IVAR).to_i.positive?
-      end
-
-      def with_capture_mode(view_context)
-        depth = view_context.instance_variable_get(MJML_CAPTURE_DEPTH_IVAR).to_i
-        view_context.instance_variable_set(MJML_CAPTURE_DEPTH_IVAR, depth + 1)
-        yield
-      ensure
-        next_depth = view_context.instance_variable_get(MJML_CAPTURE_DEPTH_IVAR).to_i - 1
-        view_context.instance_variable_set(MJML_CAPTURE_DEPTH_IVAR, [next_depth, 0].max)
-      end
-
-      def mark_html_safe(value)
-        value.respond_to?(:html_safe) ? value.html_safe : value
-      end
+    def missing_rails_template_language_error
+      "MJML Rails rails_template_language is not configured for non-XML templates. Configure it with one of: #{SUPPORTED_TEMPLATE_LANGUAGES.join(', ')}. Otherwise use raw XML MJML."
     end
   end
 end
