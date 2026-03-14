@@ -215,4 +215,35 @@ class MJMLStyleInlineTest < Minitest::Test
     assert(styles.any? { |style| style.include?("color: red") },
            "Expected .container .item (higher specificity) to win over .item")
   end
+
+  def test_mj_style_inline_keeps_latest_declaration_order_for_overwritten_properties
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .scope td.target { padding: 0 0 10px !important; width: auto !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-raw>
+            <table class="scope">
+              <tr>
+                <td class="target" style="padding: 5px 0; color: #333; padding-bottom: 0">Cell</td>
+              </tr>
+            </table>
+          </mj-raw>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    style = document.at_css("td.target")["style"].to_s
+
+    assert_includes(style, "padding-bottom: 0")
+    assert_includes(style, "padding: 0 0 10px !important")
+    assert_operator(style.index("padding-bottom: 0"), :<, style.index("padding: 0 0 10px !important"))
+  end
 end

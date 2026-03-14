@@ -522,7 +522,11 @@ module MjmlRb
     def merge_inline_style!(node, declarations)
       existing = parse_css_declarations(node["style"].to_s)
       declarations.each do |property, value|
-        existing[property] = merge_css_declaration(existing[property], value)
+        merged = merge_css_declaration(existing[property], value)
+        next if merged.equal?(existing[property])
+
+        existing.delete(property)
+        existing[property] = merged
       end
       normalize_background_fallbacks!(node, existing)
       node["style"] = serialize_css_declarations(existing)
