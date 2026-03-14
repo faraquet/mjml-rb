@@ -1,6 +1,6 @@
 # npm ↔ Ruby Parity Audit
 
-Comparison of upstream npm MJML (`.mjml-src/packages/`) against the Ruby port (`lib/mjml-rb/`).
+Comparison of upstream npm MJML v4.18.0 against the Ruby port.
 Last updated 2026-03-12.
 
 ---
