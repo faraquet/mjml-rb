@@ -484,6 +484,23 @@ class ValidatorTest < Minitest::Test
     assert(errors.any? { |e| e[:message].include?("Attribute `width`") && e[:message].include?("<mj-table>") })
   end
 
+  def test_accepts_upstream_table_layout_values
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table table-layout="initial"><tr><td>Initial</td></tr></mj-table>
+              <mj-table table-layout="inherit"><tr><td>Inherit</td></tr></mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(errors)
+  end
+
   def test_accepts_negative_letter_spacing_for_upstream_components
     errors = validate(<<~MJML)
       <mjml>

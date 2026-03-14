@@ -22,7 +22,7 @@ module MjmlRb
         "padding-bottom" => "unit(px,%)",
         "padding-left" => "unit(px,%)",
         "role" => "enum(none,presentation)",
-        "table-layout" => "enum(auto,fixed)",
+        "table-layout" => "enum(auto,fixed,initial,inherit)",
         "vertical-align" => "enum(top,bottom,middle)",
         "width" => "unit(px,%,auto)"
       }.freeze
