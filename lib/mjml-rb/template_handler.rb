@@ -1,6 +1,7 @@
 module MjmlRb
   class TemplateHandler
     MJML_CAPTURE_DEPTH_IVAR = :@_mjml_rb_capture_depth
+    LOCAL_ASSIGNS_IVAR = :@_mjml_rb_local_assigns
     TEMPLATE_ENGINES = {
       slim: {
         require: "slim",
@@ -60,30 +61,51 @@ module MjmlRb
       def render_erb_source(view_context, source, local_assigns)
         require "erb"
 
-        local_assigns.each do |name, value|
-          define_local_reader(view_context, name, value)
+        prepare_locals(view_context, local_assigns) do
+          erb = ::ERB.new(source)
+          erb.result(view_context.instance_eval { binding })
         end
-
-        erb = ::ERB.new(source)
-        erb.result(view_context.instance_eval { binding })
       end
 
       def render_template_language_source(view_context, source, local_assigns, language)
         engine = TEMPLATE_ENGINES.fetch(language)
         require engine[:require]
 
-        case language
-        when :slim
-          ::Slim::Template.new { source }.render(view_context, local_assigns.transform_keys(&:to_sym))
-        when :haml
-          if defined?(::Haml::Template)
-            ::Haml::Template.new { source }.render(view_context, local_assigns.transform_keys(&:to_sym))
-          else
-            raise "MJML Rails template_language is set to :haml, but this Haml version does not expose Haml::Template"
+        prepare_locals(view_context, local_assigns) do
+          case language
+          when :slim
+            ::Slim::Template.new { source }.render(view_context, local_assigns.transform_keys(&:to_sym))
+          when :haml
+            if defined?(::Haml::Template)
+              ::Haml::Template.new { source }.render(view_context, local_assigns.transform_keys(&:to_sym))
+            else
+              raise "MJML Rails template_language is set to :haml, but this Haml version does not expose Haml::Template"
+            end
           end
         end
       rescue LoadError
         raise "MJML Rails template_language is set to :#{language}, but the `#{engine[:gem_name]}` gem is not available"
+      end
+
+      def prepare_locals(view_context, local_assigns)
+        previous_local_assigns = view_context.instance_variable_get(LOCAL_ASSIGNS_IVAR)
+        view_context.instance_variable_set(LOCAL_ASSIGNS_IVAR, local_assigns)
+        define_local_assigns_reader(view_context)
+
+        local_assigns.each do |name, value|
+          define_local_reader(view_context, name, value)
+        end
+
+        yield
+      ensure
+        view_context.instance_variable_set(LOCAL_ASSIGNS_IVAR, previous_local_assigns)
+      end
+
+      def define_local_assigns_reader(view_context)
+        singleton_class = class << view_context; self; end
+        singleton_class.send(:define_method, :local_assigns) do
+          instance_variable_get(LOCAL_ASSIGNS_IVAR) || {}
+        end
       end
 
       def define_local_reader(view_context, name, value)

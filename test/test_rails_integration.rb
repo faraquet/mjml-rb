@@ -83,6 +83,28 @@ class RailsIntegrationTest < Minitest::Test
       end
     end
 
+    def test_slim_partial_can_access_local_assigns
+      MjmlRb.rails_template_language = :slim
+
+      with_templates(
+        "welcome.html.mjml" => <<~SLIM,
+          mjml
+            mj-body
+              = render "shared/greeting", message: "Hello from locals"
+        SLIM
+        "shared/_greeting.html.mjml" => <<~SLIM
+          - text = local_assigns.fetch(:message)
+          mj-section
+            mj-column
+              mj-text = text
+        SLIM
+      ) do |view|
+        html = view.render(template: "welcome")
+
+        assert_includes html, "Hello from locals"
+      end
+    end
+
     def test_renders_erb_mjml_template_with_nested_partials
       MjmlRb.rails_template_language = :erb
 
