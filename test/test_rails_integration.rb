@@ -120,7 +120,7 @@ class RailsIntegrationTest < Minitest::Test
       end
     end
 
-    def test_non_xml_template_requires_explicit_template_language
+    def test_non_xml_template_requires_explicit_rails_template_language
       with_template("welcome.html.mjml", <<~SLIM) do |view|
         mjml
           mj-body
@@ -132,7 +132,7 @@ class RailsIntegrationTest < Minitest::Test
           view.render(template: "welcome")
         end
 
-        assert_includes error.cause&.message.to_s, "template_language"
+        assert_includes error.cause&.message.to_s, "rails_template_language"
         assert_includes error.cause&.message.to_s, "Configure it with one of: :slim, :haml"
       end
     end
@@ -151,7 +151,7 @@ class RailsIntegrationTest < Minitest::Test
           view.render(template: "welcome")
         end
 
-        assert_includes error.cause&.message.to_s, "template_language `haml` is not registered"
+        assert_includes error.cause&.message.to_s, "rails_template_language `haml` is not registered"
       end
     end
 

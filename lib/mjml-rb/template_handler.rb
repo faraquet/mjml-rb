@@ -36,12 +36,12 @@ module MjmlRb
 
     def template_handler
       language = MjmlRb.rails_template_language
-      raise missing_template_language_error if language.nil?
+      raise missing_rails_template_language_error if language.nil?
 
       handler = ActionView::Template.registered_template_handler(language)
       return handler if handler
 
-      raise "MJML Rails template_language `#{language}` is not registered with ActionView. Make sure the matching Rails template handler is loaded."
+      raise "MJML Rails rails_template_language `#{language}` is not registered with ActionView. Make sure the matching Rails template handler is loaded."
     end
 
     def compile_source(template, source)
@@ -49,17 +49,17 @@ module MjmlRb
 
       template_handler.call(template, source)
     rescue RuntimeError => error
-      raise error unless error.message == missing_template_language_error
+      raise error unless error.message == missing_rails_template_language_error
 
-      %(raise #{missing_template_language_error.inspect})
+      %(raise #{missing_rails_template_language_error.inspect})
     end
 
     def xml_source?(source)
       source.to_s.lstrip.start_with?("<")
     end
 
-    def missing_template_language_error
-      "MJML Rails template_language is not configured for non-XML templates. Configure it with one of: #{SUPPORTED_TEMPLATE_LANGUAGES.join(', ')}. Otherwise use raw XML MJML."
+    def missing_rails_template_language_error
+      "MJML Rails rails_template_language is not configured for non-XML templates. Configure it with one of: #{SUPPORTED_TEMPLATE_LANGUAGES.join(', ')}. Otherwise use raw XML MJML."
     end
   end
 end
