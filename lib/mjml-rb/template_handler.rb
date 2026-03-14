@@ -1,15 +1,12 @@
 require "action_view"
 require "action_view/template"
-require "rails/version"
 
 module MjmlRb
   class TemplateHandler
-    def call(template, source = nil)
-      if MjmlRb.rails_template_language.nil? && !xml_source?(template.source)
-        return %(raise "MJML Rails template_language is not configured for non-XML templates. Supported values: nil, :erb, :slim, :haml")
-      end
+    SUPPORTED_TEMPLATE_LANGUAGES = %w[nil :erb :slim :haml].freeze
 
-      compiled_source = compile_source(source, template)
+    def call(template, source = nil)
+      compiled_source = compile_source(template, source)
       template_path = template.respond_to?(:virtual_path) ? template.virtual_path : template.identifier
 
       if /<mjml.*?>/i.match?(compiled_source)
@@ -37,13 +34,9 @@ module MjmlRb
 
     private
 
-    def xml_source?(source)
-      source.to_s.lstrip.start_with?("<")
-    end
-
     def template_handler
       language = MjmlRb.rails_template_language
-      raise "MJML Rails template_language is not configured for non-XML templates. Supported values: nil, :erb, :slim, :haml" if language.nil?
+      raise missing_template_language_error if language.nil?
 
       handler = ActionView::Template.registered_template_handler(language)
       return handler if handler
@@ -51,12 +44,22 @@ module MjmlRb
       raise "MJML Rails template_language `#{language}` is not registered with ActionView. Make sure the matching Rails template handler is loaded."
     end
 
-    def compile_source(source, template)
-      if MjmlRb.rails_template_language.nil?
-        template.source.inspect
-      else
-        template_handler.call(template, source)
-      end
+    def compile_source(template, source)
+      return template.source.inspect if xml_source?(template.source)
+
+      template_handler.call(template, source)
+    rescue RuntimeError => error
+      raise error unless error.message == missing_template_language_error
+
+      %(raise #{missing_template_language_error.inspect})
+    end
+
+    def xml_source?(source)
+      source.to_s.lstrip.start_with?("<")
+    end
+
+    def missing_template_language_error
+      "MJML Rails template_language is not configured for non-XML templates. Supported values: #{SUPPORTED_TEMPLATE_LANGUAGES.join(', ')}"
     end
   end
 end
