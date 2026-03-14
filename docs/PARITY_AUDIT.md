@@ -29,7 +29,6 @@ Last updated 2026-03-12.
 | `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Supported via conditional OWA media queries | Match |
 | `printerSupport` option | Adds `@media only print` media queries | Supported via `printer_support` render option | Match |
 | `juiceOptions` / `juicePreserveTags` | Pass-through to Juice | N/A (custom CSS inliner) | Missing |
-| `mjml-migrate` (MJML v3 → v4) | Automatically called via `handleMjml3()` | Not implemented | Missing |
 | `.mjmlrc` config file support | `handleMjmlConfig` reads `.mjmlrc` for packages, options, preprocessors | Not implemented | Missing |
 | Custom component registration | `registerComponent()`, presets with `assignComponents` | No plugin/preset system | Missing |
 
@@ -261,7 +260,6 @@ The Ruby pipeline is:
 - [x] **`printerSupport`**: Support `@media only print` media queries when option is set.
 - [ ] **`.mjmlrc` config file**: Support reading `.mjmlrc` for default options and custom package registration.
 - [ ] **Custom component registration / presets**: Support for `registerComponent()` and preset packages.
-- [ ] **MJML v3 → v4 migration**: The `mjml-migrate` package auto-converts v3 syntax. Low priority unless v3 templates are in use.
 - [x] **Remove extra `<meta charset="utf-8">`**: The upstream skeleton doesn't include this tag; removing it would make output match more closely.
 
 ---

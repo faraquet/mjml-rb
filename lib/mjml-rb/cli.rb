@@ -4,7 +4,6 @@ require "pathname"
 require "time"
 
 require_relative "compiler"
-require_relative "migrator"
 require_relative "version"
 
 module MjmlRb
@@ -58,7 +57,6 @@ module MjmlRb
     def default_options
       {
         read: [],
-        migrate: [],
         validate: [],
         watch: [],
         stdin: false,
@@ -77,7 +75,6 @@ module MjmlRb
         opts.banner = "Usage: mjml [options] [files]"
 
         opts.on("-r", "--read FILES", Array, "Compile MJML files") { |v| options[:read].concat(v) }
-        opts.on("-m", "--migrate FILES", Array, "Migrate MJML3 files") { |v| options[:migrate].concat(v) }
         opts.on("-v", "--validate FILES", Array, "Validate MJML files") { |v| options[:validate].concat(v) }
         opts.on("-w", "--watch FILES", Array, "Watch and compile files when modified") { |v| options[:watch].concat(v) }
         opts.on("-i", "--stdin", "Read MJML from stdin") { options[:stdin] = true }
@@ -148,7 +145,6 @@ module MjmlRb
     def resolve_input(options)
       inputs = {}
       inputs[:read] = options[:read] unless options[:read].empty?
-      inputs[:migrate] = options[:migrate] unless options[:migrate].empty?
       inputs[:validate] = options[:validate] unless options[:validate].empty?
       inputs[:watch] = options[:watch] unless options[:watch].empty?
       inputs[:stdin] = true if options[:stdin]
@@ -183,9 +179,6 @@ module MjmlRb
 
     def process_input(input, mode, config)
       case mode
-      when :migrate
-        html = Migrator.new.migrate(input[:mjml])
-        { file: input[:file], compiled: Result.new(html: html) }
       when :validate
         compiler = Compiler.new(config.merge(validation_level: "strict"))
         { file: input[:file], compiled: compiler.compile(input[:mjml]) }

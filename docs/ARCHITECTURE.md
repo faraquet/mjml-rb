@@ -35,11 +35,10 @@ returns `Result#to_h` for compatibility with the expected `mjml2html` shape.
 
 ### CLI
 
-`bin/mjml` delegates to `MjmlRb::CLI`, which supports four main modes:
+`bin/mjml` delegates to `MjmlRb::CLI`, which supports three main modes:
 
 - Read/compile files.
 - Validate files.
-- Migrate MJML3 markup.
 - Watch files and recompile them on change.
 
 The CLI accepts both explicit mode flags and stdin/stdout usage. Watch mode is
@@ -305,15 +304,6 @@ the architecture:
 - `Raw`
   - Preserves raw markup and supports `position="file-start"` before the
     doctype.
-
-## Migration Support
-
-`MjmlRb::Migrator` is intentionally small. It currently performs a limited tag
-rename:
-
-- `mj-container` -> `mj-body`
-
-This is a compatibility helper, not a full MJML migration framework.
 
 ## Test Coverage Snapshot
 

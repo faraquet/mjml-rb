@@ -12,12 +12,20 @@
 > feedback, bug reports, test cases, optimizations, proposals, and pull requests.
 > No warranty of any kind is provided.
 
-This directory contains a Ruby-first implementation of the main MJML user-facing tooling:
+This gem provides a Ruby-first implementation of the main MJML tooling:
 
 - library API compatible with `mjml2html`
 - command-line interface (`mjml`)
-- migration and validation commands
-- pure Ruby parser + AST + renderer (no external native renderer dependency)
+- validation commands
+- pure Ruby parser, AST, validator, and renderer
+- no Node.js runtime and no shelling out to the official npm renderer
+
+## Compatibility
+
+This project targets **MJML v4 only**.
+
+- parsing, validation, and rendering are implemented against the MJML v4 document structure
+- component rules and attribute validation follow the MJML v4 model
 
 ## Quick start
 
@@ -31,19 +39,64 @@ bundle exec ruby -Ilib -e 'require "mjml-rb"; puts MjmlRb.mjml2html("<mjml><mj-b
 ```bash
 bundle exec bin/mjml example.mjml -o output.html
 bundle exec bin/mjml --validate example.mjml
-bundle exec bin/mjml --migrate old.mjml -s
 ```
 
-## Implementation idea
+## Architecture
 
-> **Zero-dependency pure-Ruby MJML renderer.**
+The compile pipeline is intentionally simple and fully Ruby-based:
+
+1. `MjmlRb.mjml2html` calls `MjmlRb::Compiler`.
+2. `MjmlRb::Parser` normalizes the source, expands `mj-include`, and builds an `AstNode` tree.
+3. `MjmlRb::Validator` checks structural rules and supported attributes.
+4. `MjmlRb::Renderer` resolves head metadata, applies component defaults, and renders HTML.
+5. `MjmlRb::Compiler` post-processes the output and returns a `Result`.
+
+The key architectural idea is that the project uses a small shared AST plus a component registry:
+
+- the parser produces generic `AstNode` objects instead of component-specific node types
+- structure rules live in `lib/mjml-rb/dependencies.rb`
+- rendering logic lives in `lib/mjml-rb/components/*`
+- head components populate a shared rendering context
+- body components consume that context and emit the final HTML
+
+That split keeps the compiler pipeline predictable:
+
+- parsing is responsible for source normalization and include expansion
+- validation is responsible for MJML structure and attribute checks
+- rendering is responsible for HTML generation and responsive email output
+
+## Project structure
+
+The main files are organized like this:
+
+```text
+lib/mjml-rb.rb                    # public gem entry point
+lib/mjml-rb/compiler.rb           # orchestration: parse -> validate -> render
+lib/mjml-rb/parser.rb             # MJML/XML normalization, includes, AST building
+lib/mjml-rb/ast_node.rb           # shared tree representation
+lib/mjml-rb/validator.rb          # structural and attribute validation
+lib/mjml-rb/dependencies.rb       # allowed parent/child relationships
+lib/mjml-rb/renderer.rb           # HTML document assembly and render context
+lib/mjml-rb/components/*          # per-component rendering and head handling
+lib/mjml-rb/result.rb             # result object returned by the compiler
+lib/mjml-rb/cli.rb                # CLI implementation used by bin/mjml
+docs/ARCHITECTURE.md              # deeper architecture notes
+docs/PARITY_AUDIT.md              # npm vs Ruby parity tracking
+```
+
+If you want the full internal walkthrough, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Implementation goal
+
+> **Ruby MJML pipeline without the Node.js renderer.**
 >
 > The npm `mjml` package requires Node.js at build time (or runtime via a child
 > process / FFI bridge). This project replaces that entire pipeline with a single
 > Ruby library: XML parsing, AST construction, attribute resolution, validation,
-> and HTML rendering — all in Ruby, with no native extensions and no Node.js
-> dependency. Drop it into a Rails, Sinatra, or plain Ruby project and render
-> MJML templates the same way you render ERB — no extra runtime, no
+> and HTML rendering — all in Ruby, with no Node.js runtime and no need to
+> shell out to the official MJML renderer. Drop it into a Rails, Sinatra, or
+> plain Ruby project and render MJML templates the same way you render ERB — no
+> extra runtime, no
 > `package.json`, no `node_modules`.
 
-Remaining parity work is tracked in [npm ↔ Ruby Parity Audit](/docs/PARITY_AUDIT.md).
+Remaining parity work is tracked in [npm ↔ Ruby Parity Audit](docs/PARITY_AUDIT.md).

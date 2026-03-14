@@ -6,7 +6,6 @@ require_relative "mjml-rb/parser"
 require_relative "mjml-rb/renderer"
 require_relative "mjml-rb/compiler"
 require_relative "mjml-rb/validator"
-require_relative "mjml-rb/migrator"
 require_relative "mjml-rb/cli"
 
 module MjmlRb
