@@ -20,10 +20,31 @@ module MjmlRb
   WARNING
 
   class << self
+    def rails_compiler_options
+      @rails_compiler_options ||= {validation_level: "strict"}
+    end
+
+    def rails_compiler_options=(options)
+      @rails_compiler_options = options || {}
+    end
+
+    def register_action_view_template_handler!
+      return unless defined?(ActionView::Template)
+
+      require_relative "mjml-rb/template_handler"
+      ActionView::Template.register_template_handler(:mjml, TemplateHandler)
+    end
+
     def mjml2html(mjml, options = {})
       Compiler.new(options).compile(mjml).to_h
     end
 
     alias to_html mjml2html
   end
+end
+
+MjmlRb.register_action_view_template_handler! if defined?(ActionView::Template)
+
+if defined?(Rails::Railtie)
+  require_relative "mjml-rb/railtie"
 end

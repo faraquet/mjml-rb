@@ -41,6 +41,42 @@ bundle exec bin/mjml example.mjml -o output.html
 bundle exec bin/mjml --validate example.mjml
 ```
 
+## Rails integration
+
+In a Rails app, requiring the gem registers an `ActionView` template handler for
+`.mjml` templates through a `Railtie`.
+
+Create a view such as `app/views/user_mailer/welcome.html.mjml`:
+
+```mjml
+<mjml>
+  <mj-body>
+    <mj-section>
+      <mj-column>
+        <mj-text>Hello from Rails</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
+```
+
+Then render it like any other Rails template:
+
+```ruby
+class UserMailer < ApplicationMailer
+  def welcome
+    mail(to: "user@example.com", subject: "Welcome")
+  end
+end
+```
+
+Rails rendering uses strict MJML validation by default. You can override the
+compiler options in your application config:
+
+```ruby
+config.mjml_rb.compiler_options = { validation_level: "soft" }
+```
+
 ## Architecture
 
 The compile pipeline is intentionally simple and fully Ruby-based:
