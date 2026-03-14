@@ -61,7 +61,7 @@ module MjmlRb
         "font-size" => "unit(px)",
         "font-family" => "string",
         "font-weight" => "string",
-        "letter-spacing" => "unit(px,em)",
+        "letter-spacing" => "unitWithNegative(px,em)",
         "line-height" => "unit(px,%,)",
         "color" => "color",
         "padding-bottom" => "unit(px,%)",

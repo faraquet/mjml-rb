@@ -42,7 +42,7 @@ module MjmlRb
         "name" => "string",
         "target" => "string",
         "rel" => "string",
-        "letter-spacing" => "string",
+        "letter-spacing" => "unitWithNegative(px,em)",
         "line-height" => "unit(px,%)",
         "padding-bottom" => "unit(px,%)",
         "padding-left" => "unit(px,%)",

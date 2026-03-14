@@ -25,7 +25,7 @@ module MjmlRb
         "name" => "string",
         "title" => "string",
         "inner-padding" => "unit(px,%){1,4}",
-        "letter-spacing" => "unit(px,em)",
+        "letter-spacing" => "unitWithNegative(px,em)",
         "line-height" => "unit(px,%,)",
         "padding-bottom" => "unit(px,%)",
         "padding-left" => "unit(px,%)",

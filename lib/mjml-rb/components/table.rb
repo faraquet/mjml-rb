@@ -8,23 +8,23 @@ module MjmlRb
       ALLOWED_ATTRIBUTES = {
         "align" => "enum(left,right,center)",
         "border" => "string",
-        "cellpadding" => "string",
-        "cellspacing" => "string",
+        "cellpadding" => "integer",
+        "cellspacing" => "integer",
         "color" => "color",
         "container-background-color" => "color",
         "font-family" => "string",
-        "font-size" => "string",
+        "font-size" => "unit(px)",
         "font-weight" => "string",
-        "line-height" => "string",
+        "line-height" => "unit(px,%,)",
         "padding" => "unit(px,%){1,4}",
         "padding-top" => "unit(px,%)",
         "padding-right" => "unit(px,%)",
         "padding-bottom" => "unit(px,%)",
         "padding-left" => "unit(px,%)",
-        "role" => "string",
+        "role" => "enum(none,presentation)",
         "table-layout" => "enum(auto,fixed)",
         "vertical-align" => "enum(top,bottom,middle)",
-        "width" => "string"
+        "width" => "unit(px,%,auto)"
       }.freeze
 
       DEFAULTS = {

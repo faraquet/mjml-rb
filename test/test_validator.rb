@@ -442,6 +442,74 @@ class ValidatorTest < Minitest::Test
     end)
   end
 
+  def test_rejects_invalid_text_precise_attribute_values
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text font-size="big" height="tall" letter-spacing="wide" line-height="normal">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert(errors.any? { |e| e[:message].include?("Attribute `font-size`") && e[:message].include?("<mj-text>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `height`") && e[:message].include?("<mj-text>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `letter-spacing`") && e[:message].include?("<mj-text>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `line-height`") && e[:message].include?("<mj-text>") })
+  end
+
+  def test_rejects_invalid_table_precise_attribute_values
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table cellpadding="10px" cellspacing="wide" font-size="big" line-height="normal" role="article" width="stretch">
+                <tr><td>Cell</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert(errors.any? { |e| e[:message].include?("Attribute `cellpadding`") && e[:message].include?("<mj-table>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `cellspacing`") && e[:message].include?("<mj-table>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `font-size`") && e[:message].include?("<mj-table>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `line-height`") && e[:message].include?("<mj-table>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `role`") && e[:message].include?("<mj-table>") })
+    assert(errors.any? { |e| e[:message].include?("Attribute `width`") && e[:message].include?("<mj-table>") })
+  end
+
+  def test_accepts_negative_letter_spacing_for_upstream_components
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text letter-spacing="-1px">Text</mj-text>
+              <mj-button letter-spacing="-0.5em">Button</mj-button>
+              <mj-navbar>
+                <mj-navbar-link href="/" letter-spacing="-1px">Home</mj-navbar-link>
+              </mj-navbar>
+              <mj-accordion>
+                <mj-accordion-element>
+                  <mj-accordion-title>Title</mj-accordion-title>
+                  <mj-accordion-text letter-spacing="-1px">Body</mj-accordion-text>
+                </mj-accordion-element>
+              </mj-accordion>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(errors)
+  end
+
   def test_rejects_unknown_mjml_tag
     errors = validate(<<~MJML)
       <mjml>
