@@ -161,12 +161,12 @@ module MjmlRb
       when /\Aenum\((.+)\)\z/
         Regexp.last_match(1).split(",").map(&:strip).include?(value)
       when /\AunitWithNegative\((.+)\)(?:\{(\d+),(\d+)\})?\z/
-        units = Regexp.last_match(1).split(",").map(&:strip)
+        units = Regexp.last_match(1).split(",", -1).map(&:strip)
         min_count = Regexp.last_match(2)&.to_i || 1
         max_count = Regexp.last_match(3)&.to_i || 1
         unit_values?(value, units, min_count: min_count, max_count: max_count)
       when /\Aunit\((.+)\)(?:\{(\d+),(\d+)\})?\z/
-        units = Regexp.last_match(1).split(",").map(&:strip)
+        units = Regexp.last_match(1).split(",", -1).map(&:strip)
         min_count = Regexp.last_match(2)&.to_i || 1
         max_count = Regexp.last_match(3)&.to_i || 1
         unit_values?(value, units, min_count: min_count, max_count: max_count)
@@ -193,7 +193,11 @@ module MjmlRb
       return true if value.match?(/\A0(?:\.0+)?\z/)
 
       units.any? do |unit|
-        value == unit || value.match?(/\A-?\d+(?:\.\d+)?#{Regexp.escape(unit)}\z/)
+        if unit.empty?
+          value.match?(/\A-?\d+(?:\.\d+)?\z/)
+        else
+          value == unit || value.match?(/\A-?\d+(?:\.\d+)?#{Regexp.escape(unit)}\z/)
+        end
       end
     end
 

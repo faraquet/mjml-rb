@@ -29,7 +29,7 @@ module MjmlRb
         "padding-right" => "unit(px,%)",
         "padding-bottom" => "unit(px,%)",
         "ico-text-decoration" => "string",
-        "ico-line-height" => "unit(px,%)"
+        "ico-line-height" => "unit(px,%,)"
       }.freeze
 
       NAVBAR_LINK_ALLOWED_ATTRIBUTES = {
@@ -43,7 +43,7 @@ module MjmlRb
         "target" => "string",
         "rel" => "string",
         "letter-spacing" => "unitWithNegative(px,em)",
-        "line-height" => "unit(px,%)",
+        "line-height" => "unit(px,%,)",
         "padding-bottom" => "unit(px,%)",
         "padding-left" => "unit(px,%)",
         "padding-right" => "unit(px,%)",

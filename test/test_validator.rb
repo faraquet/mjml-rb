@@ -501,6 +501,24 @@ class ValidatorTest < Minitest::Test
     assert_empty(errors)
   end
 
+  def test_accepts_unitless_navbar_line_height_values
+    errors = validate(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-navbar hamburger="hamburger" ico-line-height="30">
+                <mj-navbar-link href="/" line-height="22">Home</mj-navbar-link>
+              </mj-navbar>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(errors)
+  end
+
   def test_accepts_negative_letter_spacing_for_upstream_components
     errors = validate(<<~MJML)
       <mjml>
