@@ -1,4 +1,5 @@
 require "minitest/autorun"
+require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
@@ -63,5 +64,40 @@ class MJMLSpacerTest < Minitest::Test
 
     result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
+  end
+
+  def test_spacer_effective_markup_matches_upstream_layout_contract
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-spacer
+                css-class="gap-block"
+                height="32px"
+                padding="4px 8px"
+                container-background-color="#fafafa"
+              />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    spacer_td = document.at_css("td.gap-block")
+    spacer_div = spacer_td&.at_css("> div")
+
+    refute_nil(spacer_td)
+    refute_nil(spacer_div)
+    assert_empty(spacer_td.css("table"), "Spacer should not introduce an extra nested table wrapper")
+    assert_includes(spacer_td["style"].to_s, "background:#fafafa")
+    assert_includes(spacer_td["style"].to_s, "padding:4px 8px")
+    assert_includes(spacer_td["style"].to_s, "word-break:break-word")
+    assert_includes(spacer_div["style"].to_s, "height:32px")
+    assert_includes(spacer_div["style"].to_s, "line-height:32px")
   end
 end
