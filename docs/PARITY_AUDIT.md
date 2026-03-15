@@ -29,8 +29,8 @@ Last updated 2026-03-15.
 | `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Supported via conditional OWA media queries | Match |
 | `printerSupport` option | Adds `@media only print` media queries | Supported via `printer_support` render option | Match |
 | `juiceOptions` / `juicePreserveTags` | Pass-through to Juice | N/A (custom CSS inliner) | Missing |
-| `.mjmlrc` config file support | `handleMjmlConfig` reads `.mjmlrc` for packages, options, preprocessors | Not implemented | Missing |
-| Custom component registration | `registerComponent()`, presets with `assignComponents` | No plugin/preset system | Missing |
+| `.mjmlrc` config file support | `handleMjmlConfig` reads `.mjmlrc` for packages, options, preprocessors | `ConfigFile.load` reads `.mjmlrc` for packages and options; CLI loads automatically | Match |
+| Custom component registration | `registerComponent()`, presets with `assignComponents` | `MjmlRb.register_component(klass, dependencies:, ending_tags:)` | Match |
 
 ### Skeleton Markup Differences
 
@@ -261,8 +261,8 @@ The Ruby pipeline is (in `build_html_document`):
 
 - [x] **`forceOWADesktop`**: Support `owa="desktop"` attribute on `<mjml>` to emit `[owa]`-prefixed media queries.
 - [x] **`printerSupport`**: Support `@media only print` media queries when option is set.
-- [ ] **`.mjmlrc` config file**: Support reading `.mjmlrc` for default options and custom package registration.
-- [ ] **Custom component registration / presets**: Support for `registerComponent()` and preset packages.
+- [x] **`.mjmlrc` config file**: `ConfigFile.load` reads `.mjmlrc` (JSON) for `packages` (Ruby files to require, expected to call `MjmlRb.register_component`) and `options` (default compiler options). CLI loads automatically from working directory.
+- [x] **Custom component registration**: `MjmlRb.register_component(klass, dependencies:, ending_tags:)` registers custom component classes. Components must inherit from `MjmlRb::Components::Base` (or implement the same interface). Registered components are picked up by both the renderer and validator.
 - [x] **Remove extra `<meta charset="utf-8">`**: The upstream skeleton doesn't include this tag; removing it would make output match more closely.
 
 ---

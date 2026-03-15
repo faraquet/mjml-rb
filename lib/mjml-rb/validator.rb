@@ -49,7 +49,7 @@ module MjmlRb
       validate_supported_attributes(node, errors)
       validate_attribute_types(node, errors)
 
-      return if Dependencies::ENDING_TAGS.include?(node.tag_name)
+      return if MjmlRb.component_registry.ending_tags.include?(node.tag_name)
 
       node.element_children.each { |child| walk(child, errors) }
     end
@@ -66,9 +66,9 @@ module MjmlRb
     def validate_allowed_children(node, errors)
       # Ending-tag components treat content as raw HTML; REXML still parses
       # children structurally, so skip child validation for those tags.
-      return if Dependencies::ENDING_TAGS.include?(node.tag_name)
+      return if MjmlRb.component_registry.ending_tags.include?(node.tag_name)
 
-      allowed = Dependencies::RULES[node.tag_name]
+      allowed = MjmlRb.component_registry.dependency_rules[node.tag_name]
       return unless allowed
 
       node.element_children.each do |child|
@@ -134,12 +134,7 @@ module MjmlRb
     end
 
     def component_class_for_tag(tag_name)
-      MjmlRb::Components.constants.filter_map do |name|
-        value = MjmlRb::Components.const_get(name)
-        value if value.is_a?(Class) && value < MjmlRb::Components::Base
-      rescue NameError
-        nil
-      end.find { |klass| klass.tags.include?(tag_name) }
+      MjmlRb.component_registry.component_class_for_tag(tag_name)
     end
 
     def known_tag?(tag_name)

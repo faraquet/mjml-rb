@@ -2,6 +2,8 @@ require_relative "mjml-rb/version"
 require_relative "mjml-rb/result"
 require_relative "mjml-rb/ast_node"
 require_relative "mjml-rb/dependencies"
+require_relative "mjml-rb/component_registry"
+require_relative "mjml-rb/config_file"
 require_relative "mjml-rb/parser"
 require_relative "mjml-rb/renderer"
 require_relative "mjml-rb/compiler"
@@ -41,6 +43,14 @@ module MjmlRb
 
       require_relative "mjml-rb/template_handler"
       ActionView::Template.register_template_handler(:mjml, TemplateHandler.new)
+    end
+
+    def register_component(klass, dependencies: {}, ending_tags: [])
+      component_registry.register(klass, dependencies: dependencies, ending_tags: ending_tags)
+    end
+
+    def component_registry
+      @component_registry ||= ComponentRegistry.new
     end
 
     def mjml2html(mjml, options = {})

@@ -95,6 +95,59 @@ compiler options in your application config:
 config.mjml_rb.compiler_options = { validation_level: "soft" }
 ```
 
+## Custom components
+
+You can register custom MJML components written in Ruby:
+
+```ruby
+class MjRating < MjmlRb::Components::Base
+  TAGS = ["mj-rating"].freeze
+  ALLOWED_ATTRIBUTES = { "stars" => "integer", "color" => "color" }.freeze
+  DEFAULT_ATTRIBUTES = { "stars" => "5", "color" => "#f4b400" }.freeze
+
+  def render(tag_name:, node:, context:, attrs:, parent:)
+    stars = (attrs["stars"] || "5").to_i
+    color = attrs["color"] || "#f4b400"
+    %(<div style="color:#{escape_attr(color)}">#{"\u2605" * stars}</div>)
+  end
+end
+
+MjmlRb.register_component(MjRating,
+  dependencies: { "mj-column" => ["mj-rating"] },
+  ending_tags: ["mj-rating"]
+)
+```
+
+The `dependencies` hash declares which parent tags accept the new component as a child. The `ending_tags` list tells the parser to treat content as raw HTML (like `mj-text`). Both are optional.
+
+Once registered, the component works in MJML markup and is validated like any built-in component.
+
+## `.mjmlrc` config file
+
+Place a `.mjmlrc` file (JSON) in your project root to auto-register custom components and set default compiler options:
+
+```json
+{
+  "packages": [
+    "./lib/mjml_components/mj_rating.rb"
+  ],
+  "options": {
+    "beautify": true,
+    "validation-level": "soft"
+  }
+}
+```
+
+- **`packages`** — Ruby files to `require`. Each file should call `MjmlRb.register_component` to register its components.
+- **`options`** — Default compiler options. CLI flags and programmatic options override these.
+
+The CLI loads `.mjmlrc` automatically from the working directory. For the library API, load it explicitly:
+
+```ruby
+MjmlRb::ConfigFile.load("/path/to/project")
+result = MjmlRb.mjml2html(mjml_string)
+```
+
 ## Architecture
 
 The compile pipeline is intentionally simple and fully Ruby-based:

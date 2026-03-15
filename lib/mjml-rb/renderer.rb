@@ -648,6 +648,11 @@ module MjmlRb
         register_component(registry, Components::Section.new(self))
         register_component(registry, Components::Column.new(self))
         register_component(registry, Components::Spacer.new(self))
+
+        MjmlRb.component_registry.custom_components.each do |klass|
+          register_component(registry, klass.new(self))
+        end
+
         registry
       end
     end

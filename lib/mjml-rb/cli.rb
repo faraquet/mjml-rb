@@ -24,6 +24,11 @@ module MjmlRb
       parser.parse!(argv)
       options[:positional] = argv
 
+      rc_config = ConfigFile.load
+      if rc_config[:options]
+        options[:config] = rc_config[:options].merge(options[:config])
+      end
+
       input_mode, input_values = resolve_input(options)
       output_mode = resolve_output(options)
       config = options[:config]
