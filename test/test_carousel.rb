@@ -8,6 +8,14 @@ class CarouselTest < Minitest::Test
     MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
   end
 
+  def compile_with_fixed_carousel_id(mjml, carousel_id: "0123456789abcdef")
+    original_hex = SecureRandom.method(:hex)
+    SecureRandom.define_singleton_method(:hex) { |_length = nil| carousel_id }
+    compile(mjml)
+  ensure
+    SecureRandom.define_singleton_method(:hex, original_hex)
+  end
+
   def test_carousel_renders_radios_controls_images_and_thumbnails
     result = compile(<<~MJML)
       <mjml>
@@ -125,5 +133,47 @@ class CarouselTest < Minitest::Test
 
     assert_includes(messages, "Attribute `invalid` is not allowed for <mj-carousel>")
     assert_includes(messages, "Attribute `extra` is not allowed for <mj-carousel-image>")
+  end
+
+  def test_carousel_component_head_style_matches_upstream_selector_contract
+    result = compile_with_fixed_carousel_id(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-carousel icon-width="44px" tb-hover-border-color="#fead0d" tb-selected-border-color="#ccc">
+                <mj-carousel-image src="https://example.com/1.jpg" />
+                <mj-carousel-image src="https://example.com/2.jpg" />
+                <mj-carousel-image src="https://example.com/3.jpg" />
+              </mj-carousel>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    html = result.html
+    assert_includes(html, ".mj-carousel {\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  user-select: none;\n}")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-icons-cell {\n  display: table-cell !important;\n  width: 44px !important;\n}")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio:checked + .mj-carousel-content .mj-carousel-image,")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio:checked + * + .mj-carousel-content .mj-carousel-image,")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio:checked + * + * + .mj-carousel-content .mj-carousel-image {")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio-1:checked + * + * + .mj-carousel-content .mj-carousel-image-1,")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio-2:checked + * + .mj-carousel-content .mj-carousel-image-2,")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio-3:checked + .mj-carousel-content .mj-carousel-image-3 {")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio-1:checked + * + * + .mj-carousel-content .mj-carousel-next-2,")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio-1:checked + * + * + .mj-carousel-content .mj-carousel-previous-3,")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio-1:checked + * + * + .mj-carousel-content .mj-carousel-0123456789abcdef-thumbnail-1,")
+    assert_includes(html, "border-color: #ccc !important;")
+    assert_includes(html, ".mj-carousel-thumbnail:hover {\n  border-color: #fead0d !important;\n}")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-thumbnail-3:hover + .mj-carousel-main .mj-carousel-image-3 {")
+    assert_includes(html, ".mj-carousel noinput { display:block !important; }")
+    assert_includes(html, ".mj-carousel noinput .mj-carousel-image-1 { display: block !important; }")
+    assert_includes(html, "[owa] .mj-carousel-thumbnail { display: none !important; }")
+    assert_includes(html, "@media screen yahoo {")
+    assert_includes(html, ".mj-carousel-0123456789abcdef-radio-1:checked + * + * + .mj-carousel-content .mj-carousel-0123456789abcdef-thumbnail-1 {")
+    assert_includes(html, "border-color: transparent;")
   end
 end
