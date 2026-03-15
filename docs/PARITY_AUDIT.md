@@ -233,7 +233,7 @@ The Ruby pipeline is:
 
 ### P1 — Functional Gaps (affect rendered output)
 
-- [ ] **Pipeline ordering**: npm applies `mj-html-attributes` via Cheerio **before** skeleton generation, then applies inline CSS via Juice **after** skeleton. Ruby applies both **after** skeleton. This means `mj-html-attributes` selectors in npm operate on body content only, while in Ruby they operate on the full document including `<head>`. Consider whether reordering is needed or if current behavior is acceptable.
+- [x] **Pipeline ordering**: `mj-html-attributes` now runs on body content before skeleton generation, while inline CSS still runs after skeleton generation. This matches upstream ordering and prevents html-attribute selectors from mutating `<head>` markup in the final document.
 - [x] **Outlook conditional minification**: Implement `minify_outlook_conditionals` before skeleton generation to strip inter-tag whitespace inside `<!--[if …]>` blocks
 - [x] **Outlook conditional merging (global)**: Apply `merge_outlook_conditionals` as a global post-processing step after CSS inlining, not just within section rendering
 - [x] **Unknown tag validation**: Add a `validate_known_tag` check that rejects tags with no registered component (matching npm's `validTag.js`)

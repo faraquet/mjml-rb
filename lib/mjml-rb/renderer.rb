@@ -113,6 +113,7 @@ module MjmlRb
 
     def build_html_document(content, context)
       content = minify_outlook_conditionals(content)
+      content = apply_html_attributes_to_content(content, context)
       title = context[:title].to_s
       preview = context[:preview]
       head_raw = Array(context[:head_raw]).join("\n")
@@ -165,7 +166,6 @@ module MjmlRb
         </html>
       HTML
 
-      html = apply_html_attributes(html, context)
       html = apply_inline_styles(html, context)
       html = merge_outlook_conditionals(html)
       before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
@@ -307,23 +307,33 @@ module MjmlRb
       end
     end
 
-    def apply_html_attributes(html, context)
+    def apply_html_attributes_to_content(content, context)
       rules = context[:html_attributes] || {}
-      return html if rules.empty?
+      return content if rules.empty?
 
-      document = Nokogiri::HTML(html)
+      root = html_attributes_fragment_root(content, context)
 
       rules.each do |selector, attrs|
         next if selector.empty? || attrs.empty?
 
-        select_nodes(document, selector).each do |node|
+        select_nodes(root, selector).each do |node|
           attrs.each do |name, value|
             node[name] = value.to_s
           end
         end
       end
 
-      document.to_html
+      root.inner_html
+    end
+
+    def html_attributes_fragment_root(content, context)
+      wrapper_attrs = {
+        "data-mjml-body-root" => "true",
+        "lang" => context[:lang],
+        "dir" => context[:dir]
+      }
+      fragment = Nokogiri::HTML::DocumentFragment.parse("<div#{html_attrs(wrapper_attrs)}>#{content}</div>")
+      fragment.at_css("div[data-mjml-body-root='true']")
     end
 
     def apply_inline_styles(html, context)

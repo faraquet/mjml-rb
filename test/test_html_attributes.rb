@@ -116,4 +116,68 @@ class HtmlAttributesTest < Minitest::Test
     document = Nokogiri::HTML(result.html)
     assert_equal(["yes"], document.css(".caps").map { |node| node["data-lang-match"] })
   end
+
+  def test_html_attributes_do_not_apply_to_head_markup
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-head>
+          <mj-title>Welcome</mj-title>
+          <mj-html-attributes>
+            <mj-selector path="title">
+              <mj-html-attribute name="data-head-mutated">yes</mj-html-attribute>
+            </mj-selector>
+            <mj-selector path=".copy div">
+              <mj-html-attribute name="data-copy">ok</mj-html-attribute>
+            </mj-selector>
+          </mj-html-attributes>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="copy">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    assert_nil(document.at_css("title")["data-head-mutated"])
+    assert_equal(["ok"], document.css(".copy div").map { |node| node["data-copy"] })
+  end
+
+  def test_html_attributes_run_before_inline_styles
+    result = compile(<<~MJML, validation_level: "strict")
+      <mjml>
+        <mj-head>
+          <mj-html-attributes>
+            <mj-selector path=".copy div">
+              <mj-html-attribute name="class">copy decorated</mj-html-attribute>
+            </mj-selector>
+          </mj-html-attributes>
+          <mj-style inline="inline">
+            .decorated { text-transform: uppercase; color: #ff0000; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="copy">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    node = document.at_css(".decorated")
+
+    refute_nil(node)
+    assert_includes(node["style"].to_s, "text-transform: uppercase")
+    assert_includes(node["style"].to_s, "color: #ff0000")
+  end
 end
