@@ -246,4 +246,201 @@ class MJMLStyleInlineTest < Minitest::Test
     assert_includes(style, "padding: 0 0 10px !important")
     assert_operator(style.index("padding-bottom: 0"), :<, style.index("padding: 0 0 10px !important"))
   end
+
+  # ── HTML attribute syncing (Juice parity) ──────────────────────────────
+
+  def test_inline_css_syncs_width_and_height_on_img
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .logo img { width: auto !important; height: 24px !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column css-class="logo">
+              <mj-image width="140px" src="logo.png" />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    img = document.at_css("img[src='logo.png']")
+    refute_nil(img, "Expected to find img with src=logo.png")
+
+    assert_equal("auto", img["width"], "CSS width: auto should sync to HTML width attribute")
+    assert_equal("24", img["height"], "CSS height: 24px should sync to HTML height attribute (without px)")
+  end
+
+  def test_inline_css_syncs_width_percentage_on_img
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .full img { width: 100% !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column css-class="full">
+              <mj-image width="200px" src="photo.jpg" />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    img = document.at_css("img[src='photo.jpg']")
+    refute_nil(img)
+
+    assert_equal("100%", img["width"], "CSS width: 100% should sync as-is to HTML width attribute")
+  end
+
+  def test_inline_css_syncs_bgcolor_on_td
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .highlight td { background-color: #ff0000 !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section css-class="highlight">
+            <mj-column>
+              <mj-text>Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    tds_with_bgcolor = document.css("td[bgcolor='#ff0000']")
+    refute_empty(tds_with_bgcolor, "Expected td elements to get bgcolor attribute from inlined background-color")
+  end
+
+  def test_inline_css_syncs_align_on_td
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .right-align td { text-align: right !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="right-align">
+                <tr><td>Value</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    tds_with_align = document.css("td[align='right']")
+    refute_empty(tds_with_align, "Expected td elements to get align attribute from inlined text-align")
+  end
+
+  def test_inline_css_syncs_valign_on_td
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .top-align td { vertical-align: top !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="top-align">
+                <tr><td>Value</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    tds_with_valign = document.css("td[valign='top']")
+    refute_empty(tds_with_valign, "Expected td elements to get valign attribute from inlined vertical-align")
+  end
+
+  def test_inline_css_syncs_width_on_table
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .fixed-table table { width: 400px !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="fixed-table">
+                <tr><td>Cell</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    tables = document.css(".fixed-table table[width='400']")
+    refute_empty(tables, "Expected table to get width=400 from inlined width: 400px (px stripped)")
+  end
+
+  def test_inline_css_does_not_sync_bgcolor_for_transparent
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .transparent td { background-color: transparent !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="transparent">
+                <tr><td>Cell</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    tds_with_bgcolor = document.css(".transparent td[bgcolor]")
+    assert_empty(tds_with_bgcolor, "Should not set bgcolor for transparent background-color")
+  end
 end

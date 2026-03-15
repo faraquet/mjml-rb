@@ -1,5 +1,6 @@
 require "cgi"
 require "nokogiri"
+require "set"
 require_relative "components/accordion"
 require_relative "components/attributes"
 require_relative "components/body"
@@ -539,6 +540,7 @@ module MjmlRb
         existing[property] = merged
       end
       normalize_background_fallbacks!(node, existing)
+      sync_html_attributes!(node, existing)
       node["style"] = serialize_css_declarations(existing)
     end
 
@@ -552,12 +554,59 @@ module MjmlRb
           important: declarations.fetch("background-color", {}).fetch(:important, false)
         }
       end
+    end
 
-      return unless node.name == "td"
-      return unless node["bgcolor"]
-      return if %w[none transparent].include?(background_color.downcase)
+    # Sync HTML attributes from inlined CSS declarations.
+    # Mirrors Juice's attribute syncing: width/height on TABLE/TD/TH/IMG,
+    # and style-to-attribute mappings (bgcolor, background, align, valign)
+    # on table-related elements.
+    # See: https://github.com/Automattic/juice/blob/master/lib/inline.js
+    WIDTH_HEIGHT_ELEMENTS = Set.new(%w[table td th img]).freeze
+    TABLE_ELEMENTS = Set.new(%w[table th tr td caption colgroup col thead tbody tfoot]).freeze
+    STYLE_TO_ATTRIBUTE = {
+      "background-color" => "bgcolor",
+      "background-image" => "background",
+      "text-align" => "align",
+      "vertical-align" => "valign"
+    }.freeze
 
-      node["bgcolor"] = background_color
+    def sync_html_attributes!(node, declarations)
+      tag = node.name.downcase
+
+      # Sync width/height on TABLE, TD, TH, IMG
+      if WIDTH_HEIGHT_ELEMENTS.include?(tag)
+        %w[width height].each do |prop|
+          css_value = declaration_value(declarations[prop])
+          next if css_value.nil? || css_value.empty?
+
+          # Convert CSS px values to plain numbers for HTML attributes;
+          # keep other values (auto, %) as-is.
+          html_value = css_value.sub(/px\z/i, "")
+          node[prop] = html_value
+        end
+      end
+
+      # Sync style-to-attribute mappings on table elements
+      if TABLE_ELEMENTS.include?(tag)
+        STYLE_TO_ATTRIBUTE.each do |css_prop, html_attr|
+          css_value = declaration_value(declarations[css_prop])
+          next if css_value.nil? || css_value.empty?
+
+          case html_attr
+          when "bgcolor"
+            next if %w[none transparent].include?(css_value.downcase)
+            node[html_attr] = css_value
+          when "background"
+            # Extract url(...) from background-image
+            url = css_value[/url\(['"]?([^'")]+)['"]?\)/i, 1]
+            node[html_attr] = url if url
+          when "align"
+            node[html_attr] = css_value
+          when "valign"
+            node[html_attr] = css_value
+          end
+        end
+      end
     end
 
     def syncable_background?(value)
