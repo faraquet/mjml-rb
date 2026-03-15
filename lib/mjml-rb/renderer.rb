@@ -830,9 +830,16 @@ module MjmlRb
       CGI.escapeHTML(value.to_s)
     end
 
+    # HTML attributes that are meaningful even when empty.
+    # `alt=""` signals a decorative image to browsers, suppressing the
+    # broken-image placeholder icon.
+    KEEP_WHEN_EMPTY = Set.new(%w[alt]).freeze
+
     def html_attrs(hash)
       attrs = hash.each_with_object([]) do |(key, value), memo|
-        next if value.nil? || value.to_s.empty?
+        if value.nil? || value.to_s.empty?
+          next unless KEEP_WHEN_EMPTY.include?(key) && !value.nil?
+        end
         memo << %(#{key}="#{escape_attr(value)}")
       end
       return "" if attrs.empty?

@@ -26,7 +26,7 @@ class ColumnTest < Minitest::Test
     # Body default is 600px.  Section padding-left:20 + padding-right:20
     # reduces box to 560px.  Single column at 100% → child container = 560.
     # Image with padding 0 should get width="560" on the <img> tag.
-    assert_includes html, '<img src="https://example.com/img.jpg"'
+    assert_includes html, '<img alt="" src="https://example.com/img.jpg"'
     assert_includes html, 'width="560" height="auto" />'
   end
 
