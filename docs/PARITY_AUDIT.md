@@ -1,7 +1,7 @@
 # npm ↔ Ruby Parity Audit
 
 Comparison of upstream npm MJML v4.18.0 against the Ruby port.
-Last updated 2026-03-12.
+Last updated 2026-03-15.
 
 ---
 
@@ -20,8 +20,8 @@ Last updated 2026-03-12.
 | Parse → validate → render flow | `MJMLParser` → `MJMLValidator` → `processing(mjBody)` | `Parser#parse` → `Validator#validate` → `Renderer#render` | Match |
 | Validation levels (skip/soft/strict) | All three; strict throws `ValidationError` | All three; strict returns early with errors | Match |
 | CSS inlining (`mj-style inline`) | Uses **Juice** library with `juiceOptions`, `juicePreserveTags` | Custom Nokogiri-based inliner with specificity sort | Partial |
-| `mj-html-attributes` application | **Cheerio** (`xmlMode: true, decodeEntities: false`), applied **before** skeleton | **Nokogiri** (`Nokogiri::HTML`), applied **after** skeleton | Partial |
-| Pipeline ordering | html-attributes → skeleton → Juice → merge conditionals | skeleton → html-attributes → inline CSS → prepend before_doctype | Partial |
+| `mj-html-attributes` application | **Cheerio** (`xmlMode: true, decodeEntities: false`), applied **before** skeleton on body content | **Nokogiri** (`Nokogiri::HTML::DocumentFragment`), applied **before** skeleton on body content | Partial |
+| Pipeline ordering | minify conditionals → html-attributes → skeleton → Juice → merge conditionals | minify conditionals → html-attributes → skeleton → inline CSS → merge conditionals → prepend before_doctype | Match |
 | Outlook conditional minification | `minifyOutlookConditionnals()` strips whitespace between tags inside `<!--[if …]>` blocks *before* skeleton | Applied to body content before skeleton generation | Match |
 | Outlook conditional merging | `mergeOutlookConditionnals()` merges adjacent `<!--[endif]--><!--[if mso\|IE]>` *after* CSS inlining | Applied globally after CSS inlining | Match |
 | Background-color on `<body>` | Skeleton adds `background-color:${backgroundColor}` to `<body style>` | Propagated from `context[:background_color]` to `<body style>` | Match |
@@ -95,38 +95,38 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 | Component | npm package | Ruby file | Status | Notes |
 |---|---|---|---|---|
 | `mj-body` | `mjml-body` | `components/body.rb` | Match | |
-| `mj-section` | `mjml-section` | `components/section.rb` | Partial | See section notes |
-| `mj-wrapper` | `mjml-wrapper` | `components/section.rb` | Partial | Handled in same class; see wrapper notes |
-| `mj-column` | `mjml-column` | `components/column.rb` | Partial | See column notes |
-| `mj-group` | `mjml-group` | `components/group.rb` | Partial | |
+| `mj-section` | `mjml-section` | `components/section.rb` | Match | See section notes |
+| `mj-wrapper` | `mjml-wrapper` | `components/section.rb` | Match | Handled in same class; see wrapper notes |
+| `mj-column` | `mjml-column` | `components/column.rb` | Match | See column notes |
+| `mj-group` | `mjml-group` | `components/group.rb` | Match | |
 | `mj-text` | `mjml-text` | `components/text.rb` | Match | |
 | `mj-button` | `mjml-button` | `components/button.rb` | Match | |
-| `mj-image` | `mjml-image` | `components/image.rb` | Partial | See image notes |
+| `mj-image` | `mjml-image` | `components/image.rb` | Match | See image notes |
 | `mj-divider` | `mjml-divider` | `components/divider.rb` | Match | |
 | `mj-spacer` | `mjml-spacer` | `components/spacer.rb` | Match | |
 | `mj-table` | `mjml-table` | `components/table.rb` | Partial | Structural parsing (not CDATA) |
 | `mj-raw` | `mjml-raw` | `components/raw.rb` | Match | Including `position="file-start"` |
-| `mj-hero` | `mjml-hero` | `components/hero.rb` | Partial | |
-| `mj-social` | `mjml-social` | `components/social.rb` | Partial | See social notes |
+| `mj-hero` | `mjml-hero` | `components/hero.rb` | Match | See hero notes |
+| `mj-social` | `mjml-social` | `components/social.rb` | Match | See social notes |
 | `mj-accordion` | `mjml-accordion` | `components/accordion.rb` | Match | |
-| `mj-carousel` | `mjml-carousel` | `components/carousel.rb` | Partial | See carousel notes |
+| `mj-carousel` | `mjml-carousel` | `components/carousel.rb` | Match | See carousel notes |
 | `mj-navbar` | `mjml-navbar` | `components/navbar.rb` | Match | |
 
 ### Component-Specific Notes
 
 #### mj-section / mj-wrapper
 
-- **`full-width` mode**: npm has a complex full-width rendering path with background-image support and VML (Outlook) background. Ruby implements full-width but VML background specifics may diverge.
-- **`gap` attribute**: npm wrapper supports `gap` for spacing between child sections. Ruby section handles gap but should be compared for exact output.
-- **Background-image rendering**: npm uses `background-url`, `background-repeat`, `background-size`, `background-position` to generate VML `v:fill` and `v:rect` Outlook-specific background. The Ruby implementation should be verified for exact VML output.
-- **`border-radius`**: npm section supports `border-radius`. Verify Ruby parity.
-- **`direction` attribute**: npm section supports `direction` for RTL layout, which reverses column order. Verify Ruby parity.
+- **`full-width` mode**: Both npm and Ruby implement the full-width rendering path with background-image support and VML (Outlook) background. VML `v:rect` / `v:fill` output has been matched and regression-tested.
+- **`gap` attribute**: npm wrapper supports `gap` for spacing between child sections. Ruby wrapper handles gap via `margin-top` on child sections, matching upstream behavior.
+- **Background-image rendering**: Both implementations generate VML `v:fill` and `v:rect` Outlook-specific background markup. Ruby normalizes VML `origin` / `position` number formatting and uses integer `width` attributes in wrapper Outlook child rows, matching upstream output.
+- **`border-radius`**: Both support `border-radius` with `overflow:hidden` and `border-collapse:separate`.
+- **`direction` attribute**: Both support `direction` for RTL layout. Source order stays mobile-first, the section container emits `direction:rtl`, and child columns keep `direction:ltr`.
 
 #### mj-column
 
-- **Width calculation**: npm column does complex width calculations based on parent section width, column count, and explicit width attributes. Ruby `compute_column_widths` should match this logic.
+- **Width calculation**: Both npm and Ruby do complex width calculations based on parent section width, column count, and explicit width attributes. Ruby's `compute_column_widths` matches upstream logic.
 - **`inner-border` / `inner-border-radius`**: These are Ruby-specific extensions not present in upstream npm. They pass validation and render correctly but aren't upstream features.
-- **Media query registration**: npm columns register `addMediaQuery` for responsive width overrides. Ruby uses `context[:column_widths]` for the same purpose.
+- **Media query registration**: npm columns register `addMediaQuery` for responsive width overrides. Ruby uses `context[:column_widths]` for the same purpose, producing equivalent media queries.
 
 #### mj-image
 
@@ -136,16 +136,16 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 
 #### mj-social
 
-- **Built-in icon sets**: npm has a comprehensive set of built-in social network icons with image URLs (stored in `SocialElement.js`). Ruby must have matching icon definitions.
-- **`mj-social-element` sub-component**: npm has `SocialElement` as a separate component class. Ruby handles it inline within the social component.
-- **Icon modes** (`vertical`, `horizontal`): npm supports `mode` attribute for layout. Verify Ruby.
-- **`icon-padding`**, **`text-padding`**: Verify all padding sub-attributes match.
+- **Built-in icon sets**: Both npm and Ruby have matching icon definitions for 17 base networks (facebook, twitter, x, google, pinterest, linkedin, instagram, web, snapchat, youtube, tumblr, github, xing, vimeo, medium, soundcloud, dribbble) plus `-noshare` variants. Regression-tested against upstream definitions.
+- **`mj-social-element` sub-component**: npm has `SocialElement` as a separate component class. Ruby handles it inline within the social component, producing equivalent output.
+- **Icon modes** (`vertical`, `horizontal`): Both support `mode` attribute for layout direction.
+- **`icon-padding`**, **`text-padding`**: Both support all padding sub-attributes.
 
 #### mj-carousel
 
-- **CSS-only implementation**: npm carousel generates extensive CSS for the carousel animation. Ruby should match the CSS exactly for email client compatibility.
-- **`mj-carousel-image` sub-component**: Verify all attributes and rendering match.
-- **Thumbnail support**: npm has `thumbnails` attribute with thumbnail rendering. Verify Ruby.
+- **CSS-only implementation**: Both npm and Ruby generate equivalent CSS for carousel state management using radio buttons and adjacent sibling selectors. Regression-tested for radio-driven image visibility, next/previous controls, selected/hovered thumbnails, `noinput` fallback, OWA fallback, and Yahoo-specific rules.
+- **`mj-carousel-image` sub-component**: All attributes and rendering match upstream.
+- **Thumbnail support**: Both support `thumbnails` attribute with three states: "visible", "hidden", "supported".
 
 #### mj-table
 
@@ -153,12 +153,12 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 
 #### mj-spacer
 
-- **Outer wrapper**: npm renders just a `<div>` with height/line-height. Ruby wraps it in an outer `<tr><td>` with padding and word-break styles. Verify whether the extra wrapper causes layout differences.
+- **Outer wrapper**: The effective final layout contract matches upstream: the spacer renders as an outer cell carrying padding/background styles with an inner height/line-height `<div>`. The ownership of that outer cell differs in Ruby vs npm (Ruby's spacer component owns the `<tr><td>` wrapper rather than inheriting it from the column), but the rendered structure is layout-equivalent.
 
 #### mj-hero
 
-- **VML background**: npm hero generates Outlook-specific VML for background images. Verify Ruby matches.
-- **`mode`**: `fixed-height` vs `fluid-height`. Verify both modes.
+- **VML background**: Both npm and Ruby generate Outlook-specific VML for background images. Ruby matches upstream integer width output for the hero Outlook table + `v:image` markup. Regression-tested for both the background-image case and the no-background case.
+- **`mode`**: Both `fixed-height` and `fluid-height` modes are implemented. Fluid-height uses padding-bottom ratio technique; fixed-height uses direct height attribute.
 
 ---
 
@@ -168,7 +168,7 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 |---|---|---|---|
 | Required attributes | `validAttributes.js` checks `requiredAttributes` | `REQUIRED_BY_TAG` hash | Match |
 | Unknown attribute rejection | `validAttributes.js` | `validate_supported_attributes` | Match |
-| Attribute type validation | `validTypes.js` + `type.js` type system | `valid_attribute_value?` | Partial |
+| Attribute type validation | `validTypes.js` + `type.js` type system | `valid_attribute_value?` | Match |
 | Parent-child validation | `validChildren.js` + `dependencies` map | `RULES` hash in `dependencies.rb` | Match |
 | Unknown tag detection | `validTag.js` checks component registry | Rejects unknown MJML tags during validation | Match |
 | Error format | `{ line, tagName, message, formattedMessage }` | `{ line, file, message, tag_name, formatted_message }` | Match (Ruby adds `file`) |
@@ -212,20 +212,23 @@ The npm pipeline after rendering body content is:
 6. `mergeOutlookConditionnals(content)` — merge adjacent Outlook blocks
 7. Optional `beautify` / `minify`
 
-The Ruby pipeline is:
+The Ruby pipeline is (in `build_html_document`):
 
-1. Build HTML document (skeleton + content)
-2. Apply `mj-html-attributes` via Nokogiri (if any) — operates on **full document**
-3. Apply inline CSS via Nokogiri (if any)
-4. Prepend `before_doctype` raw content
-5. Optional `strip_comments` / `beautify` / `minify`
+1. `minify_outlook_conditionals(content)` — strip whitespace inside Outlook conditionals
+2. `apply_html_attributes_to_content(content)` via Nokogiri `DocumentFragment` — operates on **body content only**
+3. Build HTML document (skeleton wrapping content in `<!doctype>…<html>…</html>`)
+4. `apply_inline_styles(html)` via Nokogiri — CSS inlining with specificity sort
+5. `merge_outlook_conditionals(html)` — merge adjacent Outlook blocks
+6. Prepend `before_doctype` raw content
+7. Optional `strip_comments` / `beautify` / `minify` (in `Compiler#post_process`)
 
-**Differences:**
-- npm applies html-attributes **before** skeleton (body content only); Ruby applies **after** (full document including `<head>`)
-- Ruby is missing Outlook minification (step 1) and Outlook merge as global step (step 6)
-- Ruby applies `mj-html-attributes` and CSS inlining using Nokogiri; npm uses Cheerio and Juice respectively
+**Pipeline ordering now matches.** Both implementations follow the same sequence: minify conditionals → html-attributes (body only) → skeleton → CSS inline → merge conditionals → post-processing.
+
+**Remaining differences:**
+- Ruby uses **Nokogiri** for html-attributes and CSS inlining; npm uses **Cheerio** and **Juice** respectively
 - Nokogiri may alter whitespace, attribute ordering, and entity encoding differently from Cheerio
 - Juice has specific behaviors around `background` shorthand syncing with `background-color` that the Ruby custom inliner replicates
+- Ruby's `mj-html-attributes` parses body content as a `Nokogiri::HTML::DocumentFragment` (not a full document), minimizing re-serialization side effects
 
 ---
 
@@ -268,7 +271,7 @@ The Ruby pipeline is:
 
 ### Nokogiri Dependency
 
-Both `mj-html-attributes` and `mj-style inline="inline"` currently round-trip rendered HTML through Nokogiri for post-processing. This:
+Both `mj-html-attributes` and `mj-style inline="inline"` use Nokogiri for post-processing. The `mj-html-attributes` step now uses `Nokogiri::HTML::DocumentFragment` on body content only (reducing re-serialization scope), while CSS inlining round-trips the full document through `Nokogiri::HTML` / `Nokogiri::HTML5`. This:
 - Adds a native C-extension dependency
 - Can alter whitespace, entity encoding, and attribute ordering
 - Is the single largest source of markup divergence from npm
