@@ -4,6 +4,85 @@ require "nokogiri"
 require_relative "../lib/mjml-rb"
 
 class SocialTest < Minitest::Test
+  EXPECTED_SOCIAL_NETWORKS = {
+    "facebook" => {
+      "share-url" => "https://www.facebook.com/sharer/sharer.php?u=[[URL]]",
+      "background-color" => "#3b5998",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/facebook.png"
+    },
+    "twitter" => {
+      "share-url" => "https://twitter.com/intent/tweet?url=[[URL]]",
+      "background-color" => "#55acee",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/twitter.png"
+    },
+    "x" => {
+      "share-url" => "https://twitter.com/intent/tweet?url=[[URL]]",
+      "background-color" => "#000000",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/twitter-x.png"
+    },
+    "google" => {
+      "share-url" => "https://plus.google.com/share?url=[[URL]]",
+      "background-color" => "#dc4e41",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/google-plus.png"
+    },
+    "pinterest" => {
+      "share-url" => "https://pinterest.com/pin/create/button/?url=[[URL]]&media=&description=",
+      "background-color" => "#bd081c",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/pinterest.png"
+    },
+    "linkedin" => {
+      "share-url" => "https://www.linkedin.com/shareArticle?mini=true&url=[[URL]]&title=&summary=&source=",
+      "background-color" => "#0077b5",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/linkedin.png"
+    },
+    "instagram" => {
+      "background-color" => "#3f729b",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/instagram.png"
+    },
+    "web" => {
+      "background-color" => "#4BADE9",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/web.png"
+    },
+    "snapchat" => {
+      "background-color" => "#FFFA54",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/snapchat.png"
+    },
+    "youtube" => {
+      "background-color" => "#EB3323",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/youtube.png"
+    },
+    "tumblr" => {
+      "share-url" => "https://www.tumblr.com/widgets/share/tool?canonicalUrl=[[URL]]",
+      "background-color" => "#344356",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/tumblr.png"
+    },
+    "github" => {
+      "background-color" => "#000000",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/github.png"
+    },
+    "xing" => {
+      "share-url" => "https://www.xing.com/app/user?op=share&url=[[URL]]",
+      "background-color" => "#296366",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/xing.png"
+    },
+    "vimeo" => {
+      "background-color" => "#53B4E7",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/vimeo.png"
+    },
+    "medium" => {
+      "background-color" => "#000000",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/medium.png"
+    },
+    "soundcloud" => {
+      "background-color" => "#EF7F31",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/soundcloud.png"
+    },
+    "dribbble" => {
+      "background-color" => "#D95988",
+      "src" => "https://www.mailjet.com/images/theme/v1/icons/ico-social/dribbble.png"
+    }
+  }.freeze
+
   def compile(mjml, validation_level: "strict")
     MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
   end
@@ -204,5 +283,18 @@ class SocialTest < Minitest::Test
 
     assert_empty result.errors
     assert_includes result.html, "GitHub"
+  end
+
+  def test_social_network_defaults_match_upstream_icon_definitions
+    actual = MjmlRb::Components::Social::SOCIAL_NETWORKS
+
+    EXPECTED_SOCIAL_NETWORKS.each do |name, attrs|
+      assert_equal attrs, actual[name]
+
+      noshare_name = "#{name}-noshare"
+      assert_equal attrs["src"], actual[noshare_name]["src"]
+      assert_equal attrs["background-color"], actual[noshare_name]["background-color"]
+      assert_equal "[[URL]]", actual[noshare_name]["share-url"]
+    end
   end
 end

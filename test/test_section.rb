@@ -272,4 +272,36 @@ class SectionTest < Minitest::Test
 
     assert_empty(result.errors)
   end
+
+  def test_section_rtl_direction_preserves_source_order_and_emits_upstream_styles
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section direction="rtl">
+            <mj-column>
+              <mj-text>First</mj-text>
+            </mj-column>
+            <mj-column>
+              <mj-text>Second</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    section_td = document.at_css("div[aria-roledescription='email'] table tbody tr td[style*='direction:rtl']")
+    column_divs = document.css("div.mj-column-per-50")
+
+    refute_nil(section_td)
+    assert_includes(section_td["style"].to_s, "direction:rtl")
+
+    assert_equal(2, column_divs.length)
+    assert_equal(["First", "Second"], column_divs.map(&:text).map(&:strip))
+    column_divs.each do |column_div|
+      assert_includes(column_div["style"].to_s, "direction:ltr")
+    end
+  end
 end

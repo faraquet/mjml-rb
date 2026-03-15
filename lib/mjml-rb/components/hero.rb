@@ -238,11 +238,11 @@ module MjmlRb
       def hero_container_width(attrs, container_width)
         width = parse_unit_value(container_width)
         content_width = width - padding_side(attrs, "left") - padding_side(attrs, "right")
-        "#{[content_width, 0].max}px"
+        px_length([content_width, 0].max)
       end
 
       def normalize_container_width(value)
-        "#{parse_unit_value(value)}px"
+        px_length(parse_unit_value(value))
       end
 
       def padding_side(attrs, side)
@@ -279,6 +279,17 @@ module MjmlRb
 
       def blank?(value)
         value.nil? || value.to_s.empty?
+      end
+
+      def px_length(value)
+        "#{format_number(value)}px"
+      end
+
+      def format_number(value)
+        number = value.to_f
+        return number.to_i.to_s if number == number.to_i
+
+        number.to_s.sub(/\.?0+$/, "")
       end
     end
   end

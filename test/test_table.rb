@@ -172,6 +172,35 @@ class TableTest < Minitest::Test
     assert_includes(result.html, '<td style="text-align: right; font-family: inherit" align="right">C</td>')
   end
 
+  def test_mj_table_normalization_preserves_nested_links_with_inherited_font_family
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="link-table">
+                <tr>
+                  <td>
+                    <a href="https://example.com" style="color: #cc0000;">Link</a>
+                  </td>
+                </tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    link = document.at_css("td.link-table a")
+
+    refute_nil(link)
+    assert_equal("https://example.com", link["href"])
+    assert_equal("color: #cc0000; font-family: inherit", link["style"])
+  end
+
   private
 
   def extract_style_value(style, property)
