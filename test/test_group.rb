@@ -55,4 +55,26 @@ class GroupTest < Minitest::Test
 
     assert_includes(result.errors.map { |error| error[:message] }, "Attribute `invalid` is not allowed for <mj-group>")
   end
+
+  def test_group_keeps_child_columns_side_by_side_on_mobile
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-group>
+              <mj-column>
+                <mj-text>Left</mj-text>
+              </mj-column>
+              <mj-column>
+                <mj-text>Right</mj-text>
+              </mj-column>
+            </mj-group>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_equal(2, result.html.scan('class="mj-column-per-50 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:50%"').length)
+  end
 end

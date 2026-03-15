@@ -77,6 +77,7 @@ module MjmlRb
               width_pct = widths[column_index] || 100.0
               column_index += 1
               context[:_column_width_pct] = width_pct
+              context[:_column_mobile_width] = true
               td_style = style_join(
                 "vertical-align" => resolved_attributes(child, context)["vertical-align"] || "top",
                 "width" => "#{(group_width_px * width_pct / 100.0).round}px"

@@ -39,6 +39,7 @@ module MjmlRb
 
       def render(tag_name:, node:, context:, attrs:, parent:)
         width_pct = context.delete(:_column_width_pct) || 100.0
+        mobile_width = context.delete(:_column_mobile_width)
         css_class = attrs["css-class"]
         a = self.class.default_attributes.merge(attrs)
 
@@ -63,7 +64,7 @@ module MjmlRb
           "direction" => a["direction"],
           "display" => "inline-block",
           "vertical-align" => vertical_align,
-          "width" => "100%"
+          "width" => (mobile_width ? mobile_width_value(a, width_pct, context[:container_width]) : "100%")
         )
 
         column_markup =
@@ -166,6 +167,22 @@ module MjmlRb
 
       def present_attr?(value)
         value && !value.empty?
+      end
+
+      def mobile_width_value(attrs, width_pct, parent_width)
+        width = attrs["width"]
+
+        if present_attr?(width) && width.end_with?("%")
+          width
+        elsif present_attr?(width) && width.end_with?("px")
+          parent_width_px = parse_pixel_value(parent_width || "600px")
+          return "100%" if parent_width_px.zero?
+
+          percentage = (parse_pixel_value(width) / parent_width_px) * 100
+          "#{percentage.to_s.sub(/\.?0+$/, "")}%"
+        else
+          "#{width_pct.to_f.to_s.sub(/\.?0+$/, "")}%"
+        end
       end
 
       def with_child_container_width(context, attrs, width_pct)
