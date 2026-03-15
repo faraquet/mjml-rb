@@ -150,7 +150,7 @@ module MjmlRb
         ordered_keys = %w[title src alt style width border]
         rendered = ordered_keys.filter_map do |key|
           next unless attrs.key?(key)
-          next if key != "alt" && (attrs[key].nil? || attrs[key].to_s.empty?)
+          next if attrs[key].nil?
 
           %(#{key}="#{escape_attr(attrs[key].to_s)}")
         end

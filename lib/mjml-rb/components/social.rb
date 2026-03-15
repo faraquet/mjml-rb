@@ -360,15 +360,15 @@ module MjmlRb
         %(<tr#{tr_class}>#{cells}</tr>)
       end
 
-      # Build an <img> tag where alt is always rendered (even as alt="")
+      # Build an <img> tag — nil attributes are omitted, empty strings preserved.
       def build_img_tag(alt:, title:, src:, style:, width:, sizes:, srcset:)
         parts = [%( alt="#{escape_attr(alt.to_s)}")]
-        parts << %( title="#{escape_attr(title)}") unless title.nil? || title.to_s.empty?
-        parts << %( src="#{escape_attr(src)}") unless src.nil? || src.to_s.empty?
+        parts << %( title="#{escape_attr(title)}") unless title.nil?
+        parts << %( src="#{escape_attr(src)}") unless src.nil?
         parts << %( style="#{style}") unless style.nil? || style.empty?
-        parts << %( width="#{escape_attr(width)}") unless width.nil? || width.to_s.empty?
-        parts << %( sizes="#{escape_attr(sizes)}") unless sizes.nil? || sizes.to_s.empty?
-        parts << %( srcset="#{escape_attr(srcset)}") unless srcset.nil? || srcset.to_s.empty?
+        parts << %( width="#{escape_attr(width)}") unless width.nil?
+        parts << %( sizes="#{escape_attr(sizes)}") unless sizes.nil?
+        parts << %( srcset="#{escape_attr(srcset)}") unless srcset.nil?
         "<img#{parts.join} />"
       end
     end

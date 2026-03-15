@@ -19,7 +19,7 @@ Last updated 2026-03-15.
 |---|---|---|---|
 | Parse → validate → render flow | `MJMLParser` → `MJMLValidator` → `processing(mjBody)` | `Parser#parse` → `Validator#validate` → `Renderer#render` | Match |
 | Validation levels (skip/soft/strict) | All three; strict throws `ValidationError` | All three; strict returns early with errors | Match |
-| CSS inlining (`mj-style inline`) | Uses **Juice** library with `juiceOptions`, `juicePreserveTags` | Custom Nokogiri-based inliner with specificity sort | Partial |
+| CSS inlining (`mj-style inline`) | Uses **Juice** library with `juiceOptions`, `juicePreserveTags` | Custom Nokogiri-based inliner with specificity sort; Juice attribute syncing replicated (`widthElements`, `heightElements`, `styleToAttribute`, `tableElements`) | Partial |
 | `mj-html-attributes` application | **Cheerio** (`xmlMode: true, decodeEntities: false`), applied **before** skeleton on body content | **Nokogiri** (`Nokogiri::HTML::DocumentFragment`), applied **before** skeleton on body content | Partial |
 | Pipeline ordering | minify conditionals → html-attributes → skeleton → Juice → merge conditionals | minify conditionals → html-attributes → skeleton → inline CSS → merge conditionals → prepend before_doctype | Match |
 | Outlook conditional minification | `minifyOutlookConditionnals()` strips whitespace between tags inside `<!--[if …]>` blocks *before* skeleton | Applied to body content before skeleton generation | Match |
@@ -28,6 +28,7 @@ Last updated 2026-03-15.
 | `beautify` / `minify` post-processing | `js-beautify` / `html-minifier` (deprecated, warns) | Regex-based simplistic implementation | Partial |
 | `forceOWADesktop` option | Adds `[owa]` prefixed media queries when `owa="desktop"` on `<mjml>` | Supported via conditional OWA media queries | Match |
 | `printerSupport` option | Adds `@media only print` media queries | Supported via `printer_support` render option | Match |
+| `htmlAttributes` nil-only filtering | `omitBy(attributes, isNil)` — keeps empty strings | `html_attrs` skips only `nil` — keeps empty strings | Match |
 | `juiceOptions` / `juicePreserveTags` | Pass-through to Juice | N/A (custom CSS inliner) | Missing |
 | `.mjmlrc` config file support | `handleMjmlConfig` reads `.mjmlrc` for packages, options, preprocessors | `ConfigFile.load` reads `.mjmlrc` for packages and options; CLI loads automatically | Match |
 | Custom component registration | `registerComponent()`, presets with `assignComponents` | `MjmlRb.register_component(klass, dependencies:, ending_tags:)` | Match |
@@ -227,7 +228,7 @@ The Ruby pipeline is (in `build_html_document`):
 **Remaining differences:**
 - Ruby uses **Nokogiri** for html-attributes and CSS inlining; npm uses **Cheerio** and **Juice** respectively
 - Nokogiri may alter whitespace, attribute ordering, and entity encoding differently from Cheerio
-- Juice has specific behaviors around `background` shorthand syncing with `background-color` that the Ruby custom inliner replicates
+- Juice has specific behaviors around `background` shorthand syncing with `background-color` that the Ruby custom inliner replicates. Juice also syncs CSS `width`/`height` to HTML attributes on TABLE/TD/TH/IMG elements and maps `background-color`→`bgcolor`, `background-image`→`background`, `text-align`→`align`, `vertical-align`→`valign` on table elements — all replicated in `sync_html_attributes!`
 - Ruby's `mj-html-attributes` parses body content as a `Nokogiri::HTML::DocumentFragment` (not a full document), minimizing re-serialization side effects
 
 ---
