@@ -64,7 +64,7 @@ module MjmlRb
           render_wrapper(node, context, attrs)
         else
           a = self.class.default_attributes.merge(attrs)
-          if a["full-width"] == "full-width"
+          if a["full-width"] == "full-width" && !context[:_inside_full_width_wrapper]
             render_full_width_section(node, context, a)
           else
             render_section(node, context, a)
@@ -646,7 +646,9 @@ module MjmlRb
         box_width    = container_px - pad_left - pad_right - border_left - border_right
 
         previous_container_width = context[:container_width]
+        previous_full_width_wrapper = context[:_inside_full_width_wrapper]
         context[:container_width] = "#{box_width}px"
+        context[:_inside_full_width_wrapper] = full_width
 
         div_attrs = {"class" => (full_width ? nil : css_class), "style" => div_style}
         inner = merge_outlook_conditionals(render_wrapped_children_wrapper(node, context, container_px, a["gap"]))
@@ -693,6 +695,7 @@ module MjmlRb
         end
       ensure
         context[:container_width] = previous_container_width if previous_container_width
+        context[:_inside_full_width_wrapper] = previous_full_width_wrapper
       end
 
       # Wrap each child mj-section/mj-wrapper in an Outlook conditional <tr><td>.

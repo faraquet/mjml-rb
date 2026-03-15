@@ -205,6 +205,27 @@ class WrapperTest < Minitest::Test
     assert_includes(result.html, "mso-width-percent:1000")
   end
 
+  def test_full_width_wrapper_forces_child_full_width_sections_back_to_standard_width
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper full-width="full-width" background-color="#f0f0f0">
+            <mj-section full-width="full-width" css-class="inner-full">
+              <mj-column>
+                <mj-text>Hello</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    refute_includes(result.html, 'class="inner-full" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%"')
+    assert_includes(result.html, 'class="inner-full-outlook"')
+    assert_includes(result.html, 'class="inner-full" style="margin:0px auto;max-width:600px"')
+  end
+
   def test_wrapper_without_background_url_has_no_vml_or_inner_div
     result = compile(<<~MJML)
       <mjml>
