@@ -254,8 +254,8 @@ module MjmlRb
 
         # Build v:fill attributes
         fill_pairs = [
-          ["origin", "#{v_origin_x}, #{v_origin_y}"],
-          ["position", "#{v_pos_x}, #{v_pos_y}"],
+          ["origin", "#{format_vml_number(v_origin_x)}, #{format_vml_number(v_origin_y)}"],
+          ["position", "#{format_vml_number(v_pos_x)}, #{format_vml_number(v_pos_y)}"],
           ["src", bg_url],
           ["color", bg_color],
           ["type", vml_type]
@@ -285,6 +285,13 @@ module MjmlRb
         else
           [is_x ? 0 : -0.5, is_x ? 0 : -0.5]
         end
+      end
+
+      def format_vml_number(value)
+        number = value.to_f
+        return number.to_i.to_s if number == number.to_i
+
+        number.to_s.sub(/\.?0+$/, "")
       end
 
       def vml_size_attributes(bg_size)
@@ -703,7 +710,7 @@ module MjmlRb
             child_attrs = resolved_attributes(child, context)
             child_css   = child_attrs["css-class"]
             outlook_class = suffix_css_classes(child_css)
-            td_open  = %(<!--[if mso | IE]><tr><td class="#{escape_attr(outlook_class)}" width="#{container_px}px" ><![endif]-->)
+            td_open  = %(<!--[if mso | IE]><tr><td class="#{escape_attr(outlook_class)}" width="#{container_px}" ><![endif]-->)
             td_close = %(<!--[if mso | IE]></td></tr><![endif]-->)
             child_html = with_wrapper_child_gap(context, index.zero? ? nil : gap) do
               render_node(child, context, parent: "mj-wrapper")

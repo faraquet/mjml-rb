@@ -217,6 +217,30 @@ class SectionTest < Minitest::Test
     assert_includes(result.html, 'type="tile"')
   end
 
+  def test_section_background_vml_formats_origin_and_position_like_upstream
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section
+            background-url="https://example.com/tile.jpg"
+            background-repeat="repeat"
+            background-size="contain"
+            background-position="left top"
+          >
+            <mj-column><mj-text>Tile</mj-text></mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, 'origin="0, 0"')
+    assert_includes(result.html, 'position="0, 0"')
+    refute_includes(result.html, 'origin="0.0, 0.0"')
+    refute_includes(result.html, 'position="0.0, 0.0"')
+    assert_includes(result.html, 'aspect="atmost"')
+  end
+
   def test_section_background_auto_size_forces_tile
     result = compile(<<~MJML)
       <mjml>

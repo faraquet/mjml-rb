@@ -242,7 +242,7 @@ The Ruby pipeline is:
 
 - [ ] **Replace Nokogiri post-processing for `mj-html-attributes`**: The Nokogiri HTML parser may re-serialize HTML differently (entity encoding, attribute order, whitespace). Consider an approach that doesn't round-trip through a full HTML parser, or use Nokogiri with `xmlMode`-like settings.
 - [ ] **Replace Nokogiri post-processing for inline CSS**: Same concern. The custom CSS inliner works well but the Nokogiri round-trip can introduce subtle markup changes.
-- [ ] **Verify section/wrapper VML background output**: Compare Outlook VML background rendering (`v:fill`, `v:rect`, `v:image`) against npm output for `background-url` attributes.
+- [x] **Verify section/wrapper VML background output**: Matched section/wrapper Outlook background markup more closely to upstream by normalizing VML `origin` / `position` number formatting and using integer `width` attributes in wrapper Outlook child rows, with exact regression coverage for the generated `v:rect` / `v:fill` output.
 - [x] **Verify `direction` attribute**: Added regression coverage for `mj-section direction="rtl"` to lock the upstream contract: source order stays mobile-first, the section container emits `direction:rtl`, and child columns keep `direction:ltr` so desktop rendering reverses columns the same way as npm.
 - [x] **Verify `fluid-on-mobile` in mj-image**: Ensure the responsive CSS class and media query generation matches npm.
 - [x] **Verify hero VML background**: Matched the `mj-hero` Outlook VML wrapper/image formatting to upstream integer width output and added regression coverage for the hero Outlook table + `v:image` markup when a background image is present, plus the no-background case where no VML image should be emitted.

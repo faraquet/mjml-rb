@@ -138,6 +138,35 @@ class WrapperTest < Minitest::Test
     assert_includes(result.html, 'color="#cccccc"')
   end
 
+  def test_wrapper_background_vml_matches_upstream_outlook_width_and_fill_format
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper
+            background-url="https://example.com/bg.jpg"
+            background-color="#cccccc"
+            background-repeat="repeat"
+            background-size="contain"
+            background-position="left top"
+          >
+            <mj-section>
+              <mj-column>
+                <mj-text>Hello</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, 'origin="0, 0"')
+    assert_includes(result.html, 'position="0, 0"')
+    assert_includes(result.html, 'width="600" ><table align="center"')
+    refute_includes(result.html, 'width="600px" ><table align="center"')
+    assert_includes(result.html, 'aspect="atmost"')
+  end
+
   def test_wrapper_full_width_with_background_url
     result = compile(<<~MJML)
       <mjml>
