@@ -20,6 +20,8 @@ This gem provides a Ruby-first implementation of the main MJML tooling:
 - pure Ruby parser, AST, validator, and renderer
 - no Node.js runtime and no shelling out to the official npm renderer
 
+Remaining parity work is tracked in [npm ↔ Ruby Parity Audit](docs/PARITY_AUDIT.md).
+
 ## Compatibility
 
 This project targets **MJML v4 only**.
@@ -205,5 +207,3 @@ If you want the full internal walkthrough, see [docs/ARCHITECTURE.md](docs/ARCHI
 > plain Ruby project and render MJML templates the same way you render ERB — no
 > extra runtime, no
 > `package.json`, no `node_modules`.
-
-Remaining parity work is tracked in [npm ↔ Ruby Parity Audit](docs/PARITY_AUDIT.md).
