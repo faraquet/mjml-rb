@@ -92,7 +92,7 @@ module MjmlRb
         <<~HTML.chomp
           <a#{html_attrs(link_attrs)}>
             <label#{html_attrs(label_attrs)}>
-              #{build_img_tag(image_attrs)}
+              <img#{html_attrs(image_attrs)} />
             </label>
           </a>
         HTML
@@ -117,7 +117,7 @@ module MjmlRb
           "width" => container_width.to_i.to_s,
           "border" => "0"
         }
-        image_tag = build_img_tag(img_attrs)
+        image_tag = "<img#{html_attrs(img_attrs)} />"
 
         content = if a["href"]
                     link_attrs = {
@@ -146,17 +146,6 @@ module MjmlRb
         classes.split(/\s+/).map { |klass| "#{klass}-#{suffix}" }.join(" ")
       end
 
-      def build_img_tag(attrs)
-        ordered_keys = %w[title src alt style width border]
-        rendered = ordered_keys.filter_map do |key|
-          next unless attrs.key?(key)
-          next if attrs[key].nil?
-
-          %(#{key}="#{escape_attr(attrs[key].to_s)}")
-        end
-
-        "<img #{rendered.join(' ')} />"
-      end
     end
   end
 end

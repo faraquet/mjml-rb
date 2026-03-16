@@ -304,11 +304,16 @@ module MjmlRb
           "display"       => "block"
         )
 
-        # alt must always be rendered (even as alt=""), so build img tag manually
-        img_tag = build_img_tag(
-          alt: alt_val, title: title_val, src: src,
-          style: img_style, width: icon_width, sizes: sizes_attr, srcset: srcset
-        )
+        img_attrs = {
+          "alt" => alt_val,
+          "title" => title_val,
+          "src" => src,
+          "style" => img_style.empty? ? nil : img_style,
+          "width" => icon_width,
+          "sizes" => sizes_attr,
+          "srcset" => srcset
+        }
+        img_tag = "<img#{html_attrs(img_attrs)} />"
 
         if has_link
           link_attrs_str = html_attrs({ "href" => final_href, "rel" => rel_val, "target" => target_val })
@@ -360,17 +365,6 @@ module MjmlRb
         %(<tr#{tr_class}>#{cells}</tr>)
       end
 
-      # Build an <img> tag — nil attributes are omitted, empty strings preserved.
-      def build_img_tag(alt:, title:, src:, style:, width:, sizes:, srcset:)
-        parts = [%( alt="#{escape_attr(alt.to_s)}")]
-        parts << %( title="#{escape_attr(title)}") unless title.nil?
-        parts << %( src="#{escape_attr(src)}") unless src.nil?
-        parts << %( style="#{style}") unless style.nil? || style.empty?
-        parts << %( width="#{escape_attr(width)}") unless width.nil?
-        parts << %( sizes="#{escape_attr(sizes)}") unless sizes.nil?
-        parts << %( srcset="#{escape_attr(srcset)}") unless srcset.nil?
-        "<img#{parts.join} />"
-      end
     end
   end
 end
