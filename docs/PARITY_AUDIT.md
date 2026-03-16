@@ -265,6 +265,8 @@ The Ruby pipeline is (in `build_html_document`):
 - [x] **`.mjmlrc` config file**: `ConfigFile.load` reads `.mjmlrc` (JSON) for `packages` (Ruby files to require, expected to call `MjmlRb.register_component`) and `options` (default compiler options). CLI loads automatically from working directory.
 - [x] **Custom component registration**: `MjmlRb.register_component(klass, dependencies:, ending_tags:)` registers custom component classes. Components must inherit from `MjmlRb::Components::Base` (or implement the same interface). Registered components are picked up by both the renderer and validator.
 - [x] **Remove extra `<meta charset="utf-8">`**: The upstream skeleton doesn't include this tag; removing it would make output match more closely.
+- [ ] **Consolidate `build_img_tag` in social.rb**: `Social#build_img_tag` (line 364) hand-rolls attribute rendering instead of using the shared `html_attrs` helper. Currently correct (nil-only filtering), but a parallel code path that could diverge.
+- [ ] **Consolidate `build_img_tag` in carousel_image.rb**: `CarouselImage#build_img_tag` (line 149) also hand-rolls attribute rendering with `next if attrs[key].nil?`. Same risk of diverging from the shared `html_attrs` logic.
 
 ---
 
