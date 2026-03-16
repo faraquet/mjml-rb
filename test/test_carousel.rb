@@ -135,6 +135,61 @@ class CarouselTest < Minitest::Test
     assert_includes(messages, "Attribute `extra` is not allowed for <mj-carousel-image>")
   end
 
+  # Verify html_attrs consolidation: alt="" preserved, nil attrs omitted
+  def test_carousel_image_preserves_empty_alt_and_omits_nil_title
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-carousel>
+                <mj-carousel-image src="https://example.com/one.jpg" />
+              </mj-carousel>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty result.errors
+    doc = Nokogiri::HTML(result.html)
+
+    # Main carousel image
+    main_img = doc.at_css(".mj-carousel-image img")
+    refute_nil main_img, "Expected a main carousel <img>"
+    assert_equal "", main_img["alt"], "alt attribute should be empty string, not missing"
+    assert_nil main_img["title"], "title attribute should not be rendered when nil"
+
+    # Thumbnail image
+    thumb_img = doc.at_css(".mj-carousel-thumbnail img")
+    refute_nil thumb_img, "Expected a thumbnail <img>"
+    assert_equal "", thumb_img["alt"], "thumbnail alt should be empty string"
+  end
+
+  def test_carousel_image_renders_alt_and_title_when_provided
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-carousel>
+                <mj-carousel-image src="https://example.com/one.jpg" alt="Photo 1" title="First photo" />
+              </mj-carousel>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty result.errors
+    doc = Nokogiri::HTML(result.html)
+
+    main_img = doc.at_css(".mj-carousel-image img")
+    refute_nil main_img
+    assert_equal "Photo 1", main_img["alt"]
+    assert_equal "First photo", main_img["title"]
+  end
+
   def test_carousel_component_head_style_matches_upstream_selector_contract
     result = compile_with_fixed_carousel_id(<<~MJML)
       <mjml>

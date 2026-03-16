@@ -285,6 +285,58 @@ class SocialTest < Minitest::Test
     assert_includes result.html, "GitHub"
   end
 
+  # Verify html_attrs consolidation: alt="" preserved, nil attrs omitted
+  def test_social_element_img_preserves_empty_alt_and_omits_nil_title
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-social>
+                <mj-social-element name="facebook" href="https://facebook.com"></mj-social-element>
+              </mj-social>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty result.errors
+    doc = Nokogiri::HTML(result.html)
+    img = doc.at_css("img[src*='facebook']")
+    refute_nil img, "Expected an <img> for facebook icon"
+
+    # alt="" must be present (empty string preserved, not dropped)
+    assert_equal "", img["alt"], "alt attribute should be empty string, not missing"
+
+    # title is nil by default — should be omitted entirely
+    assert_nil img["title"], "title attribute should not be rendered when nil"
+  end
+
+  def test_social_element_img_renders_title_when_provided
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-social>
+                <mj-social-element name="github" href="https://github.com" alt="GH" title="GitHub">GitHub</mj-social-element>
+              </mj-social>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty result.errors
+    doc = Nokogiri::HTML(result.html)
+    img = doc.at_css("img[src*='github']")
+    refute_nil img
+
+    assert_equal "GH", img["alt"]
+    assert_equal "GitHub", img["title"]
+  end
+
   def test_social_network_defaults_match_upstream_icon_definitions
     actual = MjmlRb::Components::Social::SOCIAL_NETWORKS
 
