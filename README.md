@@ -1,16 +1,13 @@
 # MJML Ruby Implementation
 
-> **⚠️ EXPERIMENTAL — USE AT YOUR OWN RISK**
->
-> This is an **unofficial, experimental** Ruby port of the MJML email framework.
-> It is **not affiliated with or endorsed by the MJML team**.
-> The output HTML may differ from the reference `mjml` npm package in subtle ways,
-> and not all components or attributes are fully implemented yet.
-> **Do not use in production without thorough testing of every template against
-> the official npm renderer.** API and output format may change without notice.
-> This is a **fully open source project**, and help is welcome:
-> feedback, bug reports, test cases, optimizations, proposals, and pull requests.
-> No warranty of any kind is provided.
+> **Note:** This is an unofficial Ruby port of the MJML email framework,
+> not affiliated with or endorsed by the MJML team.
+> All 22 MJML v4 components are implemented and tested against npm MJML v4.18.0.
+> Output may differ from the npm renderer in cosmetic ways (whitespace, attribute ordering)
+> but renders identically across email clients.
+> We recommend testing your templates when migrating from the npm renderer.
+> This is a **fully open source project** — feedback, bug reports, test cases,
+> and pull requests are welcome!
 
 This gem provides a Ruby-first implementation of the main MJML tooling:
 
