@@ -18,6 +18,6 @@ Gem::Specification.new do |spec|
   spec.bindir = "bin"
   spec.executables = ["mjml"]
   spec.require_paths = ["lib"]
-  spec.add_dependency "nokogiri"
-  spec.add_dependency "rexml"
+  spec.add_dependency "nokogiri", ">= 1.13"
+  spec.add_dependency "rexml", ">= 3.2.5"
 end
