@@ -17,6 +17,15 @@ module MjmlRb
       mj-navbar-link mj-raw mj-text
     ].freeze
 
+    # Pre-compiled regex patterns to avoid rebuilding on every call
+    ENDING_TAGS_CDATA_RE = /<(#{ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")})(\s[^<>]*?)?(?<!\/)>(.*?)<\/\1>/mi.freeze
+
+    VOID_TAG_CLOSING_BR_RE = %r{</br\s*>}i.freeze
+    VOID_TAG_CLOSING_OTHER_RE = /<\/(#{(HTML_VOID_TAGS - ["br"]).join("|")})\s*>/i.freeze
+    VOID_TAG_OPEN_RE = /<(#{HTML_VOID_TAGS.join("|")})(\s[^<>]*?)?>/i.freeze
+    LINE_ANNOTATION_RE = /(\n)|(<!\[CDATA\[.*?\]\]>)|(<(?:mj-[\w-]+|mjml)(?=[\s\/>]))/m.freeze
+    BARE_AMPERSAND_RE = /&(?!(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);)/.freeze
+
     class ParseError < StandardError
       attr_reader :line
 
@@ -212,23 +221,21 @@ module MjmlRb
     def normalize_html_void_tags(content)
       # Legacy mail templates sometimes emit invalid closing </br> tags.
       # Browser-style recovery treats them as actual line breaks, so preserve that.
-      content = content.gsub(%r{</br\s*>}i, "<br />")
+      content = content.gsub(VOID_TAG_CLOSING_BR_RE, "<br />")
 
       # Remove other closing tags for void elements (e.g. </hr>, </img>).
       # These are invalid in both HTML and XML and HTML5 recovery drops them.
-      content = content.gsub(/<\/(#{(HTML_VOID_TAGS - ["br"]).join("|")})\s*>/i, "")
+      content = content.gsub(VOID_TAG_CLOSING_OTHER_RE, "")
 
       # Self-close opening void tags that aren't already self-closed.
-      pattern = /<(#{HTML_VOID_TAGS.join("|")})(\s[^<>]*?)?>/i
-      content.gsub(pattern) do |tag|
+      content.gsub(VOID_TAG_OPEN_RE) do |tag|
         tag.end_with?("/>") ? tag : tag.sub(/>$/, " />")
       end
     end
 
     def wrap_ending_tags_in_cdata(content)
-      tag_pattern = ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")
       # Negative lookbehind (?<!\/) ensures self-closing tags like <mj-text ... /> are skipped
-      content.gsub(/<(#{tag_pattern})(\s[^<>]*?)?(?<!\/)>(.*?)<\/\1>/mi) do
+      content.gsub(ENDING_TAGS_CDATA_RE) do
         tag = Regexp.last_match(1)
         attrs = Regexp.last_match(2).to_s
         inner = Regexp.last_match(3).to_s
@@ -251,7 +258,7 @@ module MjmlRb
     # (e.g. &amp; &#123; &#x1F;).  This lets REXML parse HTML-ish content
     # such as "Terms & Conditions" which is common in email templates.
     def sanitize_bare_ampersands(content)
-      content.gsub(/&(?!(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);)/, "&amp;")
+      content.gsub(BARE_AMPERSAND_RE, "&amp;")
     end
 
     # Adds data-mjml-line attributes to MJML tags so line numbers survive
@@ -259,7 +266,7 @@ module MjmlRb
     # Skips content inside CDATA sections to avoid modifying raw HTML.
     def annotate_line_numbers(xml)
       line = 1
-      xml.gsub(/(\n)|(<!\[CDATA\[.*?\]\]>)|(<(?:mj-[\w-]+|mjml)(?=[\s\/>]))/m) do
+      xml.gsub(LINE_ANNOTATION_RE) do
         if Regexp.last_match(1) # newline
           line += 1
           "\n"

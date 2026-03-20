@@ -305,39 +305,43 @@ module MjmlRb
       def component_head_style(carousel_id, length, attrs)
         return "" if length.zero?
 
-        hide_non_selected = (0...length).map do |index|
-          ".mj-carousel-#{carousel_id}-radio:checked #{adjacent_siblings(index)}+ .mj-carousel-content .mj-carousel-image"
-        end.join(",\n")
+        hide_non_selected = []
+        show_selected = []
+        next_icons = []
+        previous_icons = []
+        selected_thumbnail = []
+        show_thumbnails = []
+        hide_on_hover = []
+        show_on_hover = []
 
-        show_selected = (0...length).map do |index|
-          ".mj-carousel-#{carousel_id}-radio-#{index + 1}:checked #{adjacent_siblings(length - index - 1)}+ .mj-carousel-content .mj-carousel-image-#{index + 1}"
-        end.join(",\n")
+        # Pre-compute adjacent sibling strings to avoid repeated "+" * count" allocations
+        sibling_cache = Array.new(length) { |i| adjacent_siblings(i) }
 
-        next_icons = (0...length).map do |index|
-          target = ((index + 1) % length) + 1
-          ".mj-carousel-#{carousel_id}-radio-#{index + 1}:checked #{adjacent_siblings(length - index - 1)}+ .mj-carousel-content .mj-carousel-next-#{target}"
-        end.join(",\n")
+        length.times do |index|
+          siblings_index = sibling_cache[index]
+          siblings_reverse = sibling_cache[length - index - 1]
+          idx1 = index + 1
+          next_target = ((index + 1) % length) + 1
+          prev_target = ((index - 1) % length) + 1
 
-        previous_icons = (0...length).map do |index|
-          target = ((index - 1) % length) + 1
-          ".mj-carousel-#{carousel_id}-radio-#{index + 1}:checked #{adjacent_siblings(length - index - 1)}+ .mj-carousel-content .mj-carousel-previous-#{target}"
-        end.join(",\n")
+          hide_non_selected << ".mj-carousel-#{carousel_id}-radio:checked #{siblings_index}+ .mj-carousel-content .mj-carousel-image"
+          show_selected << ".mj-carousel-#{carousel_id}-radio-#{idx1}:checked #{siblings_reverse}+ .mj-carousel-content .mj-carousel-image-#{idx1}"
+          next_icons << ".mj-carousel-#{carousel_id}-radio-#{idx1}:checked #{siblings_reverse}+ .mj-carousel-content .mj-carousel-next-#{next_target}"
+          previous_icons << ".mj-carousel-#{carousel_id}-radio-#{idx1}:checked #{siblings_reverse}+ .mj-carousel-content .mj-carousel-previous-#{prev_target}"
+          selected_thumbnail << ".mj-carousel-#{carousel_id}-radio-#{idx1}:checked #{siblings_reverse}+ .mj-carousel-content .mj-carousel-#{carousel_id}-thumbnail-#{idx1}"
+          show_thumbnails << ".mj-carousel-#{carousel_id}-radio-#{idx1}:checked #{siblings_reverse}+ .mj-carousel-content .mj-carousel-#{carousel_id}-thumbnail"
+          hide_on_hover << ".mj-carousel-#{carousel_id}-thumbnail:hover #{siblings_reverse}+ .mj-carousel-main .mj-carousel-image"
+          show_on_hover << ".mj-carousel-#{carousel_id}-thumbnail-#{idx1}:hover #{siblings_reverse}+ .mj-carousel-main .mj-carousel-image-#{idx1}"
+        end
 
-        selected_thumbnail = (0...length).map do |index|
-          ".mj-carousel-#{carousel_id}-radio-#{index + 1}:checked #{adjacent_siblings(length - index - 1)}+ .mj-carousel-content .mj-carousel-#{carousel_id}-thumbnail-#{index + 1}"
-        end.join(",\n")
-
-        show_thumbnails = (0...length).map do |index|
-          ".mj-carousel-#{carousel_id}-radio-#{index + 1}:checked #{adjacent_siblings(length - index - 1)}+ .mj-carousel-content .mj-carousel-#{carousel_id}-thumbnail"
-        end.join(",\n")
-
-        hide_on_hover = (0...length).map do |index|
-          ".mj-carousel-#{carousel_id}-thumbnail:hover #{adjacent_siblings(length - index - 1)}+ .mj-carousel-main .mj-carousel-image"
-        end.join(",\n")
-
-        show_on_hover = (0...length).map do |index|
-          ".mj-carousel-#{carousel_id}-thumbnail-#{index + 1}:hover #{adjacent_siblings(length - index - 1)}+ .mj-carousel-main .mj-carousel-image-#{index + 1}"
-        end.join(",\n")
+        hide_non_selected = hide_non_selected.join(",\n")
+        show_selected = show_selected.join(",\n")
+        next_icons = next_icons.join(",\n")
+        previous_icons = previous_icons.join(",\n")
+        selected_thumbnail = selected_thumbnail.join(",\n")
+        show_thumbnails = show_thumbnails.join(",\n")
+        hide_on_hover = hide_on_hover.join(",\n")
+        show_on_hover = show_on_hover.join(",\n")
 
         <<~CSS
           .mj-carousel {

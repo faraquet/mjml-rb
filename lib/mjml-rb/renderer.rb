@@ -25,7 +25,7 @@ require_relative "components/spacer"
 
 module MjmlRb
   class Renderer
-    HTML_VOID_TAGS = %w[area base br col embed hr img input link meta param source track wbr].freeze
+    HTML_VOID_TAGS = Set.new(%w[area base br col embed hr img input link meta param source track wbr]).freeze
 
     DEFAULT_FONTS = {
       "Open Sans" => "https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700",
@@ -647,6 +647,8 @@ module MjmlRb
     end
 
     def append_component_head_styles(document, context)
+      all_tags = collect_tag_names(document)
+
       component_registry.each_value.uniq.each do |component|
         next unless component.respond_to?(:head_style)
 
@@ -662,7 +664,7 @@ module MjmlRb
                else
                  component.tags
                end
-        next unless Array(tags).any? { |tag| contains_tag?(document, tag) }
+        next unless Array(tags).any? { |tag| all_tags.include?(tag) }
 
         context[:component_head_styles] << style
       end
@@ -815,11 +817,12 @@ module MjmlRb
       end.join("\n")
     end
 
-    def contains_tag?(node, tag_name)
-      return false unless node.respond_to?(:tag_name)
-      return true if node.tag_name == tag_name
+    def collect_tag_names(node, result = Set.new)
+      return result unless node.respond_to?(:tag_name)
 
-      node.children.any? { |child| child.respond_to?(:children) && contains_tag?(child, tag_name) }
+      result << node.tag_name
+      node.children.each { |child| collect_tag_names(child, result) if child.respond_to?(:children) }
+      result
     end
 
     def escape_html(value)
@@ -845,9 +848,10 @@ module MjmlRb
     end
 
     def unique_strings(values)
+      seen = Set.new
       Array(values).each_with_object([]) do |value, memo|
         next if value.nil? || value.empty?
-        next if memo.include?(value)
+        next unless seen.add?(value)
 
         memo << value
       end
