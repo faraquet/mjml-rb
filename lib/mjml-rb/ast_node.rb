@@ -25,11 +25,13 @@ module MjmlRb
 
     def text_content
       return @content.to_s if text?
-      @children.map(&:text_content).join
+      result = +""
+      @children.each { |child| result << child.text_content }
+      result
     end
 
     def element_children
-      @children.select(&:element?)
+      @element_children ||= @children.select(&:element?)
     end
   end
 end

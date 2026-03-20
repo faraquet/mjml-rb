@@ -17,32 +17,48 @@ module MjmlRb
         @custom_dependencies[parent] = ((@custom_dependencies[parent] || []) + Array(children)).uniq
       end
       @custom_ending_tags.merge(Array(ending_tags))
+      invalidate_caches!
     end
 
     def component_class_for_tag(tag_name)
-      all_component_classes.find { |klass| klass.tags.include?(tag_name) }
+      tag_class_cache[tag_name]
     end
 
     def dependency_rules
-      merged = {}
-      Dependencies::RULES.each { |k, v| merged[k] = v.dup }
-      @custom_dependencies.each do |parent, children|
-        merged[parent] = ((merged[parent] || []) + Array(children)).uniq
+      @dependency_rules_cache ||= begin
+        merged = {}
+        Dependencies::RULES.each { |k, v| merged[k] = v.dup }
+        @custom_dependencies.each do |parent, children|
+          merged[parent] = ((merged[parent] || []) + Array(children)).uniq
+        end
+        merged
       end
-      merged
     end
 
     def ending_tags
-      Dependencies::ENDING_TAGS | @custom_ending_tags
+      @ending_tags_cache ||= (Dependencies::ENDING_TAGS | @custom_ending_tags)
     end
 
     def reset!
       @custom_components.clear
       @custom_dependencies.clear
       @custom_ending_tags.clear
+      invalidate_caches!
     end
 
     private
+
+    def invalidate_caches!
+      @tag_class_cache = nil
+      @dependency_rules_cache = nil
+      @ending_tags_cache = nil
+    end
+
+    def tag_class_cache
+      @tag_class_cache ||= all_component_classes.each_with_object({}) do |klass, h|
+        klass.tags.each { |tag| h[tag] ||= klass }
+      end
+    end
 
     def all_component_classes
       builtin = MjmlRb::Components.constants.filter_map do |name|
