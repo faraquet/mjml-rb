@@ -4,6 +4,15 @@ module MjmlRb
   class ConfigFile
     DEFAULT_NAME = ".mjmlrc"
 
+    class ConfigError < StandardError
+      attr_reader :path
+
+      def initialize(message, path:)
+        @path = path
+        super(message)
+      end
+    end
+
     def self.load(dir = Dir.pwd)
       path = File.join(dir, DEFAULT_NAME)
       return {} unless File.exist?(path)
@@ -27,8 +36,7 @@ module MjmlRb
 
       config
     rescue JSON::ParserError => e
-      warn "WARNING: Failed to parse #{path}: #{e.message}"
-      {}
+      raise ConfigError.new("Failed to parse #{path}: #{e.message}", path: path)
     end
   end
 end

@@ -52,6 +52,10 @@ module MjmlRb
       @stderr.puts("\nCommand line error:")
       @stderr.puts(e.message)
       1
+    rescue ConfigFile::ConfigError => e
+      @stderr.puts("\nConfiguration error:")
+      @stderr.puts(e.message)
+      1
     rescue OptionParser::ParseError => e
       @stderr.puts(e.message)
       1

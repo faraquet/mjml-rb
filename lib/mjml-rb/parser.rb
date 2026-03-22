@@ -35,7 +35,12 @@ module MjmlRb
       end
     end
 
+    # Errors collected during include expansion (missing files, etc.)
+    # Read after calling #parse to retrieve non-fatal include issues.
+    attr_reader :include_errors
+
     def parse(mjml, options = {})
+      @include_errors = []
       opts = normalize_options(options)
       xml = apply_preprocessors(mjml.to_s, opts[:preprocessors])
       xml = wrap_ending_tags_in_cdata(xml)
@@ -93,12 +98,12 @@ module MjmlRb
         include_content = resolved_path ? File.read(resolved_path) : nil
 
         if include_content.nil?
-          # Collect error as an mj-raw comment node instead of raising
           display_path = resolved_path || File.expand_path(path_attr, options[:file_path].to_s)
-          error_comment = "<!-- mj-include fails to read file : #{path_attr} at #{display_path} -->"
-          error_node = Element.new("mj-raw")
-          error_node.add(CData.new(error_comment))
-          parent.insert_before(include_node, error_node)
+          @include_errors << {
+            message: "mj-include fails to read file : #{path_attr} at #{display_path}",
+            tag_name: "mj-include",
+            file: display_path
+          }
           parent.delete(include_node)
           next
         end

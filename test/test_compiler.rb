@@ -537,7 +537,7 @@ class MJMLCompilerTest < Minitest::Test
     end
   end
 
-  def test_missing_include_file_produces_error_comment
+  def test_missing_include_file_produces_warning
     Dir.mktmpdir do |dir|
       main = File.join(dir, "main.mjml")
       File.write(main, <<~MJML)
@@ -555,12 +555,13 @@ class MJMLCompilerTest < Minitest::Test
 
       compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
-      assert_includes(result.html, "mj-include fails to read file")
+      assert(result.warnings.any? { |w| w[:message].include?("nonexistent.mjml") })
+      refute_includes(result.html, "mj-include fails to read file")
       assert_includes(result.html, "Still here")
     end
   end
 
-  def test_missing_css_include_file_produces_error_comment
+  def test_missing_css_include_file_produces_warning
     Dir.mktmpdir do |dir|
       main = File.join(dir, "main.mjml")
       File.write(main, <<~MJML)
@@ -578,7 +579,8 @@ class MJMLCompilerTest < Minitest::Test
 
       compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
-      assert_includes(result.html, "mj-include fails to read file")
+      assert(result.warnings.any? { |w| w[:message].include?("nonexistent.css") })
+      refute_includes(result.html, "mj-include fails to read file")
       assert_includes(result.html, "Still here")
     end
   end
