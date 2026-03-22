@@ -17,8 +17,17 @@ module MjmlRb
       actual_path: "."
     }.freeze
 
+    # Additional option keys accepted by the renderer but not in DEFAULT_OPTIONS.
+    EXTRA_VALID_KEYS = %i[lang dir fonts printerSupport].freeze
+
+    VALID_OPTION_KEYS = (DEFAULT_OPTIONS.keys + EXTRA_VALID_KEYS).freeze
+
+    VALID_VALIDATION_LEVELS = %w[soft strict skip].freeze
+
     def initialize(options = {})
-      @options = DEFAULT_OPTIONS.merge(symbolize_keys(options))
+      normalized = symbolize_keys(options)
+      validate_options!(normalized)
+      @options = DEFAULT_OPTIONS.merge(normalized)
       @parser = Parser.new
       @validator = Validator.new(parser: @parser)
       @renderer = Renderer.new
@@ -29,7 +38,16 @@ module MjmlRb
     end
 
     def compile(mjml, options = {})
-      merged = @options.merge(symbolize_keys(options))
+      normalized = symbolize_keys(options)
+      validate_options!(normalized)
+      merged = @options.merge(normalized)
+
+      do_compile(mjml, merged)
+    end
+
+    private
+
+    def do_compile(mjml, merged)
       ast = @parser.parse(
         mjml,
         keep_comments: merged[:keep_comments],
@@ -60,7 +78,19 @@ module MjmlRb
       Result.new(errors: [format_error(e.message)])
     end
 
-    private
+    def validate_options!(options)
+      unknown = options.keys - VALID_OPTION_KEYS
+      unless unknown.empty?
+        raise ArgumentError, "Unknown option(s): #{unknown.join(', ')}. Valid options are: #{VALID_OPTION_KEYS.join(', ')}"
+      end
+
+      if options.key?(:validation_level)
+        level = options[:validation_level].to_s
+        unless VALID_VALIDATION_LEVELS.include?(level)
+          raise ArgumentError, "Invalid validation_level: #{level.inspect}. Must be one of: #{VALID_VALIDATION_LEVELS.join(', ')}"
+        end
+      end
+    end
 
     def validate_if_needed(ast, options)
       return { errors: [], warnings: [] } if options[:validation_level].to_s == "skip"
