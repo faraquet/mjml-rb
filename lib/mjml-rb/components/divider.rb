@@ -112,15 +112,6 @@ module MjmlRb
         end
       end
 
-      def shorthand_value(parts, side)
-        case parts.length
-        when 1 then parts[0]
-        when 2, 3 then parts[1]
-        when 4 then side == :left ? parts[3] : parts[1]
-        else "0"
-        end
-      end
-
       def outlook_block(align, style, width)
         # Strip trailing px for the HTML width attribute
         width_int = width.to_i.to_s

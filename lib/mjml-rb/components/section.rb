@@ -80,12 +80,6 @@ module MjmlRb
         value.to_s.to_i
       end
 
-      def parse_border_width(border_str)
-        return 0 if border_str.nil? || border_str.to_s.strip.empty? || border_str.to_s.strip == "none"
-
-        border_str =~ /(\d+(?:\.\d+)?)\s*px/ ? $1.to_i : 0
-      end
-
       def parse_padding_value(str)
         return 0 if str.nil? || str.to_s.strip.empty?
 
