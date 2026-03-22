@@ -1,3 +1,5 @@
+[![Gem Version](https://badge.fury.io/rb/mjml-rb.svg)](https://badge.fury.io/rb/mjml-rb)
+
 # MJML Ruby Implementation
 
 > **Note:** This is an unofficial Ruby port of the MJML email framework,
