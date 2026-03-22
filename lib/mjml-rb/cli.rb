@@ -194,7 +194,10 @@ module MjmlRb
     end
 
     def emit_results(processed, output_mode, options)
-      processed.each { |item| emit_errors(item[:compiled], item[:file]) }
+      processed.each do |item|
+        emit_warnings(item[:compiled], item[:file])
+        emit_errors(item[:compiled], item[:file])
+      end
 
       invalid = processed.any? { |item| !item[:compiled].errors.empty? }
       if options[:validate].any? && invalid
@@ -211,6 +214,14 @@ module MjmlRb
       end
 
       invalid ? 2 : 0
+    end
+
+    def emit_warnings(result, file)
+      return if result.warnings.empty?
+      result.warnings.each do |warning|
+        prefix = file ? "File: #{file}\n" : ""
+        @stderr.puts("WARNING: #{prefix}#{warning[:formatted_message] || warning[:message]}")
+      end
     end
 
     def emit_errors(result, file)

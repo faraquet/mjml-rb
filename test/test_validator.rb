@@ -4,7 +4,8 @@ require_relative "../lib/mjml-rb"
 
 class ValidatorTest < Minitest::Test
   def validate(mjml)
-    MjmlRb::Validator.new.validate(mjml)
+    result = MjmlRb::Validator.new.validate(mjml, validation_level: "strict")
+    result[:errors]
   end
 
   def test_accepts_column_border_radius_port_case

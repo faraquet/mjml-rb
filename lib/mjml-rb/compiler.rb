@@ -39,16 +39,15 @@ module MjmlRb
         actual_path: merged[:actual_path]
       )
 
-      validation_errors = validate_if_needed(ast, merged)
-      return Result.new(errors: validation_errors) if strict_validation_failed?(merged, validation_errors)
+      validation = validate_if_needed(ast, merged)
+      return Result.new(errors: validation[:errors], warnings: validation[:warnings]) if strict_validation_failed?(merged, validation[:errors])
 
       html = @renderer.render(ast, merged)
-      result = Result.new(
+      Result.new(
         html: post_process(html, merged),
-        errors: validation_errors,
-        warnings: []
+        errors: validation[:errors],
+        warnings: validation[:warnings]
       )
-      result
     rescue Parser::ParseError => e
       Result.new(errors: [format_error(e.message, line: e.line)])
     rescue StandardError => e
@@ -58,7 +57,7 @@ module MjmlRb
     private
 
     def validate_if_needed(ast, options)
-      return [] if options[:validation_level].to_s == "skip"
+      return { errors: [], warnings: [] } if options[:validation_level].to_s == "skip"
       @validator.validate(ast, options)
     end
 
