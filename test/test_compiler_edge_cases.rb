@@ -41,7 +41,7 @@ class CompilerEdgeCasesTest < Minitest::Test
 
   # --- validation_level: "soft" ---
 
-  def test_soft_validation_reports_errors_but_still_renders
+  def test_soft_validation_reports_warnings_but_still_renders
     invalid_mjml = <<~MJML
       <mjml>
         <mj-body>
@@ -50,7 +50,8 @@ class CompilerEdgeCasesTest < Minitest::Test
       </mjml>
     MJML
     result = compile(invalid_mjml, validation_level: "soft")
-    refute_empty result.errors
+    refute_empty result.warnings
+    assert_empty result.errors
     assert_includes result.html, "<!doctype html>"
   end
 

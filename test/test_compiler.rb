@@ -86,8 +86,8 @@ class MJMLCompilerTest < Minitest::Test
 
     compiler = MjmlRb::Compiler.new(validation_level: "soft")
     result = compiler.compile(invalid)
-    refute_empty(result.errors)
-    assert_match(/not allowed inside <mj-body>/, result.errors.first[:message])
+    refute_empty(result.warnings)
+    assert_match(/not allowed inside <mj-body>/, result.warnings.first[:message])
   end
 
   def test_globally_merges_adjacent_outlook_conditionals

@@ -88,7 +88,8 @@ class SocialTest < Minitest::Test
   end
 
   def validate(mjml)
-    MjmlRb::Validator.new.validate(mjml)
+    result = MjmlRb::Validator.new.validate(mjml, validation_level: "strict")
+    result[:errors]
   end
 
   def test_social_accepts_table_layout_attribute

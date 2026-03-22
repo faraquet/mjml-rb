@@ -17,17 +17,30 @@ module MjmlRb
 
     def validate(mjml_or_ast, options = {})
       root = mjml_or_ast.is_a?(AstNode) ? mjml_or_ast : parse_ast(mjml_or_ast, options)
-      return [error("Root element must be <mjml>", tag_name: root&.tag_name)] unless root&.tag_name == "mjml"
+      unless root&.tag_name == "mjml"
+        return { errors: [error("Root element must be <mjml>", tag_name: root&.tag_name)], warnings: [] }
+      end
 
-      errors = []
-      errors << error("Missing <mj-body>", tag_name: "mjml") unless root.element_children.any? { |c| c.tag_name == "mj-body" }
-      walk(root, errors)
-      errors
+      issues = []
+      issues << error("Missing <mj-body>", tag_name: "mjml") unless root.element_children.any? { |c| c.tag_name == "mj-body" }
+      walk(root, issues)
+      classify_issues(issues, options)
     rescue Parser::ParseError => e
-      [error(e.message, line: e.line)]
+      { errors: [error(e.message, line: e.line)], warnings: [] }
     end
 
     private
+
+    # In "soft" mode validation issues are non-blocking warnings;
+    # in "strict" mode they are blocking errors.
+    def classify_issues(issues, options)
+      level = options.fetch(:validation_level, "soft").to_s
+      if level == "strict"
+        { errors: issues, warnings: [] }
+      else
+        { errors: [], warnings: issues }
+      end
+    end
 
     def parse_ast(mjml, options)
       @parser.parse(

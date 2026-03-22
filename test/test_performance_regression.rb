@@ -226,7 +226,7 @@ class TestPerformanceRegression < Minitest::Test
   end
 
   def test_validation_still_works_after_optimization
-    errors = MjmlRb::Validator.new.validate(<<~MJML)
+    result = MjmlRb::Validator.new.validate(<<~MJML, validation_level: "strict")
       <mjml>
         <mj-body>
           <mj-section>
@@ -238,11 +238,11 @@ class TestPerformanceRegression < Minitest::Test
       </mjml>
     MJML
 
-    assert_empty errors
+    assert_empty result[:errors]
   end
 
   def test_validation_catches_invalid_nesting
-    errors = MjmlRb::Validator.new.validate(<<~MJML)
+    result = MjmlRb::Validator.new.validate(<<~MJML, validation_level: "strict")
       <mjml>
         <mj-body>
           <mj-text>Wrong nesting</mj-text>
@@ -250,7 +250,7 @@ class TestPerformanceRegression < Minitest::Test
       </mjml>
     MJML
 
-    assert errors.any? { |e| e[:message].include?("not allowed") }
+    assert result[:errors].any? { |e| e[:message].include?("not allowed") }
   end
 
   # --- Parser regex pre-compilation ---

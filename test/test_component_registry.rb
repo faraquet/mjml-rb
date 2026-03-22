@@ -158,7 +158,7 @@ class ComponentRegistryTest < Minitest::Test
     MJML
 
     result = MjmlRb.mjml2html(mjml, validation_level: "soft")
-    assert result[:errors].any? { |e| e[:message].include?("unknown-attr") }
+    assert result[:warnings].any? { |w| w[:message].include?("unknown-attr") }
   end
 
   def test_custom_component_rejected_without_dependency_rule
@@ -178,7 +178,7 @@ class ComponentRegistryTest < Minitest::Test
     MJML
 
     result = MjmlRb.mjml2html(mjml, validation_level: "soft")
-    assert result[:errors].any? { |e| e[:message].include?("not allowed") }
+    assert result[:warnings].any? { |w| w[:message].include?("not allowed") }
   end
 
   private
