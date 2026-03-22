@@ -40,10 +40,6 @@ module MjmlRb
         "tb-selected-border-color" => "#ccc"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         a = DEFAULT_ATTRIBUTES.merge(attrs)
         children = carousel_images(node)

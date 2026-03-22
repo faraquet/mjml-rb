@@ -14,10 +14,6 @@ module MjmlRb
         "width" => "600px"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         return render_children(node, context, parent: parent) unless tag_name == "mj-body"
 

@@ -9,10 +9,6 @@ module MjmlRb
         "position" => "enum(file-start)"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         raw_inner(node)
       end

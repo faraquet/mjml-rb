@@ -27,7 +27,7 @@ module MjmlRb
         "vertical-align" => "enum(top,bottom,middle)"
       }.freeze
 
-      DEFAULTS = {
+      DEFAULT_ATTRIBUTES = {
         "align" => "left",
         "color" => "#000000",
         "font-family" => "Ubuntu, Helvetica, Arial, sans-serif",
@@ -36,12 +36,8 @@ module MjmlRb
         "padding" => "10px 25px"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
-        a = DEFAULTS.merge(attrs)
+        a = DEFAULT_ATTRIBUTES.merge(attrs)
         height = a["height"]
 
         outer_td_style = style_join(

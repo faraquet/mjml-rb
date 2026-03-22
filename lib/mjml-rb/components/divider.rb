@@ -19,7 +19,7 @@ module MjmlRb
         "align" => "enum(left,center,right)"
       }.freeze
 
-      DEFAULTS = {
+      DEFAULT_ATTRIBUTES = {
         "align" => "center",
         "border-color" => "#000000",
         "border-style" => "solid",
@@ -28,12 +28,8 @@ module MjmlRb
         "width" => "100%"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
-        a = DEFAULTS.merge(attrs)
+        a = DEFAULT_ATTRIBUTES.merge(attrs)
 
         outer_td_style = style_join(
           "background" => a["container-background-color"],

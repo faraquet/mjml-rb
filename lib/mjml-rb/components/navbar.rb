@@ -91,10 +91,6 @@ module MjmlRb
         end
       end
 
-      def tags
-        TAGS
-      end
-
       def head_style(breakpoint)
         lower_breakpoint = make_lower_breakpoint(breakpoint)
 
