@@ -59,7 +59,7 @@ class ParserIncludesTest < Minitest::Test
 
   # --- Missing include file ---
 
-  def test_missing_include_file_inserts_error_comment
+  def test_missing_include_file_collects_include_error
     Dir.mktmpdir do |dir|
       main = File.join(dir, "main.mjml")
       File.write(main, <<~MJML)
@@ -74,13 +74,9 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
-      body = find_child(ast, "mj-body")
-      section = find_child(body, "mj-section")
-      column = find_child(section, "mj-column")
-      raw = find_child(column, "mj-raw")
-      refute_nil raw
-      assert_includes raw.content, "mj-include fails to read file"
+      @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      refute_empty @parser.include_errors
+      assert @parser.include_errors.any? { |e| e[:message].include?("nonexistent.mjml") }
     end
   end
 

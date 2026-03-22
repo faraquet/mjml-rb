@@ -39,14 +39,20 @@ module MjmlRb
         actual_path: merged[:actual_path]
       )
 
+      include_issues = format_include_errors(@parser.include_errors)
       validation = validate_if_needed(ast, merged)
-      return Result.new(errors: validation[:errors], warnings: validation[:warnings]) if strict_validation_failed?(merged, validation[:errors])
+      include_validation = classify_include_issues(include_issues, merged)
+
+      all_errors = validation[:errors] + include_validation[:errors]
+      all_warnings = validation[:warnings] + include_validation[:warnings]
+
+      return Result.new(errors: all_errors, warnings: all_warnings) if strict_validation_failed?(merged, all_errors)
 
       html = @renderer.render(ast, merged)
       Result.new(
         html: post_process(html, merged),
-        errors: validation[:errors],
-        warnings: validation[:warnings]
+        errors: all_errors,
+        warnings: all_warnings
       )
     rescue Parser::ParseError => e
       Result.new(errors: [format_error(e.message, line: e.line)])
@@ -94,6 +100,23 @@ module MjmlRb
     def symbolize_keys(hash)
       hash.each_with_object({}) do |(k, v), memo|
         memo[k.to_s.tr("-", "_").to_sym] = v
+      end
+    end
+
+    def format_include_errors(include_errors)
+      Array(include_errors).map do |ie|
+        format_error(ie[:message], line: ie[:line])
+      end
+    end
+
+    def classify_include_issues(issues, options)
+      return { errors: [], warnings: [] } if issues.empty?
+
+      level = options[:validation_level].to_s
+      if level == "strict"
+        { errors: issues, warnings: [] }
+      else
+        { errors: [], warnings: issues }
       end
     end
 

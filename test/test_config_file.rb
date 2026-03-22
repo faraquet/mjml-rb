@@ -66,12 +66,13 @@ class ConfigFileTest < Minitest::Test
     end
   end
 
-  def test_load_handles_invalid_json_gracefully
+  def test_load_raises_on_invalid_json
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, ".mjmlrc"), "{ not valid json }")
 
-      result = MjmlRb::ConfigFile.load(dir)
-      assert_equal({}, result)
+      assert_raises(MjmlRb::ConfigFile::ConfigError) do
+        MjmlRb::ConfigFile.load(dir)
+      end
     end
   end
 
