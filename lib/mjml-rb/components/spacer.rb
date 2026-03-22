@@ -24,10 +24,6 @@ module MjmlRb
         "height" => "20px"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         a = self.class.default_attributes.merge(attrs)
         height = a["height"]

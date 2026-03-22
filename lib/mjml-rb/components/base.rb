@@ -14,13 +14,7 @@ module MjmlRb
         end
 
         def default_attributes
-          if const_defined?(:DEFAULT_ATTRIBUTES)
-            const_get(:DEFAULT_ATTRIBUTES)
-          elsif const_defined?(:DEFAULTS)
-            const_get(:DEFAULTS)
-          else
-            {}
-          end
+          const_defined?(:DEFAULT_ATTRIBUTES) ? const_get(:DEFAULT_ATTRIBUTES) : {}
         end
       end
 

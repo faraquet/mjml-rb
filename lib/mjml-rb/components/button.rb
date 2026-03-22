@@ -41,7 +41,7 @@ module MjmlRb
         "width" => "unit(px,%)"
       }.freeze
 
-      DEFAULTS = {
+      DEFAULT_ATTRIBUTES = {
         "align" => "center",
         "background-color" => "#414141",
         "border" => "none",
@@ -59,12 +59,8 @@ module MjmlRb
         "vertical-align" => "middle"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
-        a = DEFAULTS.merge(attrs)
+        a = DEFAULT_ATTRIBUTES.merge(attrs)
 
         bg_color = a["background-color"]
         inner_padding = a["inner-padding"]

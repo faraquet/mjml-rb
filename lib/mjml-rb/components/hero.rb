@@ -43,10 +43,6 @@ module MjmlRb
         "vertical-align" => "top"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         a = DEFAULT_ATTRIBUTES.merge(attrs)
         container_width = normalize_container_width(context[:container_width] || "600px")

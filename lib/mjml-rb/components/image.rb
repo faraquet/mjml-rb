@@ -37,7 +37,7 @@ module MjmlRb
         "usemap" => "string"
       }.freeze
 
-      DEFAULTS = {
+      DEFAULT_ATTRIBUTES = {
         "alt" => "",
         "align" => "center",
         "border" => "0",
@@ -46,10 +46,6 @@ module MjmlRb
         "target" => "_blank",
         "font-size" => "13px"
       }.freeze
-
-      def tags
-        TAGS
-      end
 
       def head_style(breakpoint)
         lower_breakpoint = make_lower_breakpoint(breakpoint)
@@ -67,7 +63,7 @@ module MjmlRb
       end
 
       def render(tag_name:, node:, context:, attrs:, parent:)
-        a = DEFAULTS.merge(attrs)
+        a = DEFAULT_ATTRIBUTES.merge(attrs)
 
         fluid = a["fluid-on-mobile"] == "true"
         full_width = a["full-width"] == "full-width"

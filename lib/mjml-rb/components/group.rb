@@ -16,10 +16,6 @@ module MjmlRb
         "direction" => "ltr"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         width_pct = context.delete(:_column_width_pct) || 100.0
         a = DEFAULT_ATTRIBUTES.merge(attrs)

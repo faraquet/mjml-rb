@@ -104,7 +104,7 @@ module MjmlRb
         .moz-text-html input.mj-accordion-checkbox + * .mj-accordion-ico { display:none; }
       CSS
 
-      DEFAULTS = {
+      DEFAULT_ATTRIBUTES = {
         "border" => "2px solid black",
         "font-family" => "Ubuntu, Helvetica, Arial, sans-serif",
         "icon-align" => "middle",
@@ -118,20 +118,16 @@ module MjmlRb
         "padding" => "10px 25px"
       }.freeze
 
-      TITLE_DEFAULTS = {
+      TITLE_DEFAULT_ATTRIBUTES = {
         "font-size" => "13px",
         "padding" => "16px"
       }.freeze
 
-      TEXT_DEFAULTS = {
+      TEXT_DEFAULT_ATTRIBUTES = {
         "font-size" => "13px",
         "line-height" => "1",
         "padding" => "16px"
       }.freeze
-
-      def tags
-        TAGS
-      end
 
       def head_style
         HEAD_STYLE
@@ -146,11 +142,11 @@ module MjmlRb
         when "mj-accordion"
           render_accordion(node, context, attrs)
         when "mj-accordion-element"
-          render_accordion_element(node, context, DEFAULTS.merge(attrs))
+          render_accordion_element(node, context, DEFAULT_ATTRIBUTES.merge(attrs))
         when "mj-accordion-title"
-          render_accordion_title(node, DEFAULTS.merge(attrs))
+          render_accordion_title(node, DEFAULT_ATTRIBUTES.merge(attrs))
         when "mj-accordion-text"
-          render_accordion_text(node, DEFAULTS.merge(attrs))
+          render_accordion_text(node, DEFAULT_ATTRIBUTES.merge(attrs))
         else
           render_children(node, context, parent: parent)
         end
@@ -159,7 +155,7 @@ module MjmlRb
       private
 
       def render_accordion(node, context, attrs)
-        accordion_attrs = DEFAULTS.merge(attrs)
+        accordion_attrs = DEFAULT_ATTRIBUTES.merge(attrs)
         outer_style = style_join(
           "padding" => accordion_attrs["padding"],
           "background-color" => accordion_attrs["container-background-color"]
@@ -225,7 +221,7 @@ module MjmlRb
       end
 
       def render_accordion_title(node, attrs)
-        title_attrs = TITLE_DEFAULTS.merge(attrs)
+        title_attrs = TITLE_DEFAULT_ATTRIBUTES.merge(attrs)
         td_style = style_join(
           "width" => "100%",
           "background-color" => title_attrs["background-color"],
@@ -262,7 +258,7 @@ module MjmlRb
       end
 
       def render_accordion_text(node, attrs)
-        text_attrs = TEXT_DEFAULTS.merge(attrs)
+        text_attrs = TEXT_DEFAULT_ATTRIBUTES.merge(attrs)
         td_style = style_join(
           "background" => text_attrs["background-color"],
           "font-size" => text_attrs["font-size"],

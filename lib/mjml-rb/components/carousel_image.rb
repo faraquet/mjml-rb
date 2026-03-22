@@ -23,10 +23,6 @@ module MjmlRb
         "target" => "_blank"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         render_item(
           node,

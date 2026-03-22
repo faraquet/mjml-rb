@@ -107,7 +107,7 @@ module MjmlRb
         icon-size icon-height icon-padding text-padding line-height text-decoration
       ].freeze
 
-      SOCIAL_DEFAULTS = {
+      SOCIAL_DEFAULT_ATTRIBUTES = {
         "align"           => "center",
         "border-radius"   => "3px",
         "color"           => "#333333",
@@ -120,7 +120,7 @@ module MjmlRb
         "text-decoration" => "none"
       }.freeze
 
-      ELEMENT_DEFAULTS = {
+      ELEMENT_DEFAULT_ATTRIBUTES = {
         "alt"             => "",
         "align"           => "left",
         "icon-position"   => "left",
@@ -136,17 +136,13 @@ module MjmlRb
         "vertical-align"  => "middle"
       }.freeze
 
-      def tags
-        TAGS
-      end
-
       def render(tag_name:, node:, context:, attrs:, parent:)
         case tag_name
         when "mj-social"
           render_social(node, context, attrs)
         when "mj-social-element"
           # Direct dispatch (no parent attrs merging) — fallback for standalone use
-          render_social_element(node, ELEMENT_DEFAULTS.merge(attrs))
+          render_social_element(node, ELEMENT_DEFAULT_ATTRIBUTES.merge(attrs))
         end
       end
 
@@ -155,7 +151,7 @@ module MjmlRb
       # ── mj-social ──────────────────────────────────────────────────────────
 
       def render_social(node, context, attrs)
-        a = SOCIAL_DEFAULTS.merge(attrs)
+        a = SOCIAL_DEFAULT_ATTRIBUTES.merge(attrs)
 
         outer_td_style = style_join(
           "background"     => a["container-background-color"],
@@ -211,7 +207,7 @@ module MjmlRb
         children_html = with_inherited_mj_class(context, node) do
           elements.map.with_index do |child, idx|
             child_attrs  = resolved_attributes(child, context)
-            merged_attrs = ELEMENT_DEFAULTS.merge(inherited).merge(child_attrs)
+            merged_attrs = ELEMENT_DEFAULT_ATTRIBUTES.merge(inherited).merge(child_attrs)
             el_html      = render_social_element(child, merged_attrs)
 
             outlook_td_open  = idx == 0 ? "<td>" : "</td><td>"
@@ -229,7 +225,7 @@ module MjmlRb
         children_html = with_inherited_mj_class(context, node) do
           elements.map do |child|
             child_attrs  = resolved_attributes(child, context)
-            merged_attrs = ELEMENT_DEFAULTS.merge(inherited).merge(child_attrs)
+            merged_attrs = ELEMENT_DEFAULT_ATTRIBUTES.merge(inherited).merge(child_attrs)
             render_social_element(child, merged_attrs)
           end.join
         end
