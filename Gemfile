@@ -2,4 +2,7 @@ source "https://rubygems.org"
 
 gemspec
 
-gem "minitest", group: :test
+group :test, :development do
+  gem "minitest"
+  gem "rake"
+end

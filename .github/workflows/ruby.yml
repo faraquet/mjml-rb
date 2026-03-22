@@ -26,7 +26,4 @@ jobs:
         bundler-cache: true
 
     - name: Run tests
-      run: |
-        for f in test/test_*.rb; do
-          bundle exec ruby -Ilib "$f"
-        done
+      run: bundle exec rake test
