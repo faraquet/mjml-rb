@@ -173,21 +173,6 @@ module MjmlRb
         "#{result.to_i}px"
       end
 
-      def shorthand_value(parts, side)
-        case parts.length
-        when 1 then parts[0]
-        when 2, 3 then parts[1]
-        when 4 then side == :left ? parts[3] : parts[1]
-        else "0"
-        end
-      end
-
-      def parse_border_width(border_str)
-        return 0 if border_str.nil? || border_str.strip == "none"
-
-        m = border_str.match(/(\d+(?:\.\d+)?)\s*px/)
-        m ? m[1].to_f : 0
-      end
     end
   end
 end

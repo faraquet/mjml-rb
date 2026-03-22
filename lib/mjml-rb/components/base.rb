@@ -1,6 +1,9 @@
+require_relative "css_helpers"
+
 module MjmlRb
   module Components
     class Base
+      include CssHelpers
       class << self
         def tags
           const_defined?(:TAGS) ? const_get(:TAGS) : []

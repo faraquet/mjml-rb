@@ -202,15 +202,6 @@ module MjmlRb
         end
       end
 
-      def shorthand_value(parts, side)
-        case parts.length
-        when 1 then parts[0]
-        when 2, 3 then parts[1]
-        when 4 then side == :left ? parts[3] : parts[1]
-        else "0"
-        end
-      end
-
       def make_lower_breakpoint(breakpoint)
         matched = breakpoint.to_s.match(/[0-9]+/)
         return breakpoint if matched.nil?
