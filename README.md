@@ -19,6 +19,8 @@ This gem provides a Ruby-first implementation of the main MJML tooling:
 - pure Ruby parser, AST, validator, and renderer
 - no Node.js runtime and no shelling out to the official npm renderer
 
+For full API documentation, compiler options, all component attributes, and custom component guides, see the **[Usage Guide](docs/USAGE.md)**.
+
 Remaining parity work is tracked in [npm ↔ Ruby Parity Audit](docs/PARITY_AUDIT.md).
 
 ## Compatibility
