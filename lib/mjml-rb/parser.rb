@@ -25,6 +25,15 @@ module MjmlRb
     VOID_TAG_OPEN_RE = /<(#{HTML_VOID_TAGS.join("|")})(\s[^<>]*?)?>/i.freeze
     LINE_ANNOTATION_RE = /(\n)|(<!\[CDATA\[.*?\]\]>)|(<(?:mj-[\w-]+|mjml)(?=[\s\/>]))/m.freeze
     BARE_AMPERSAND_RE = /&(?!(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);)/.freeze
+    ROOT_LEVEL_HEAD_TAGS = %w[
+      mj-attributes
+      mj-breakpoint
+      mj-html-attributes
+      mj-font
+      mj-preview
+      mj-style
+      mj-title
+    ].freeze
 
     class ParseError < StandardError
       attr_reader :line
@@ -49,6 +58,7 @@ module MjmlRb
 
       xml = annotate_line_numbers(sanitize_bare_ampersands(xml))
       doc = Document.new(xml)
+      normalize_root_head_elements(doc)
       element_to_ast(doc.root, keep_comments: opts[:keep_comments])
     rescue ParseException => e
       raise ParseError.new("XML parse error: #{e.message}")
@@ -173,6 +183,7 @@ module MjmlRb
 
     def extract_mjml_include_children(xml)
       include_doc = Document.new(sanitize_bare_ampersands(xml))
+      normalize_root_head_elements(include_doc)
       mjml_root = include_doc.root
       return [[], []] unless mjml_root&.name == "mjml"
 
@@ -217,6 +228,38 @@ module MjmlRb
         mjml_root.add(head)
       end
       head
+    end
+
+    def normalize_root_head_elements(doc)
+      mjml_root = doc.root
+      return unless mjml_root&.name == "mjml"
+
+      head_nodes = []
+      normalized_head_children = []
+      root_head_elements = []
+
+      mjml_root.children.each do |child|
+        next unless child.is_a?(Element)
+
+        if child.name == "mj-head"
+          head_nodes << child
+          child.children.each { |head_child| normalized_head_children << deep_clone(head_child) }
+        elsif ROOT_LEVEL_HEAD_TAGS.include?(child.name)
+          root_head_elements << child
+          normalized_head_children << deep_clone(child)
+        end
+      end
+
+      return if root_head_elements.empty? && head_nodes.length <= 1
+
+      head = head_nodes.first || ensure_head(doc)
+      return unless head
+
+      head.children.to_a.each { |child| head.delete(child) }
+      normalized_head_children.each { |child| head.add(child) }
+
+      root_head_elements.each { |child| mjml_root.delete(child) }
+      head_nodes.drop(1).each { |extra_head| mjml_root.delete(extra_head) }
     end
 
     def strip_xml_declaration(content)
