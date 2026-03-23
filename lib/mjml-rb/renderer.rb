@@ -343,13 +343,20 @@ module MjmlRb
 
       document = parse_html_document(html)
       rules, at_rules_css = parse_inline_css_rules(css_blocks.join("\n"))
+      merged_declarations_by_node = {}
+      touched_properties_by_node = Hash.new { |hash, node| hash[node] = Set.new }
 
       rules.each do |selector, declarations|
         next if selector.empty? || declarations.empty?
 
         select_nodes(document, selector).each do |node|
-          merge_inline_style!(node, declarations)
+          existing = merged_declarations_by_node[node] ||= parse_css_declarations(node["style"].to_s)
+          merge_inline_declarations!(existing, declarations, touched_properties_by_node[node])
         end
+      end
+
+      merged_declarations_by_node.each do |node, declarations|
+        finalize_inline_style!(node, declarations, touched_properties_by_node[node])
       end
 
       # Inject preserved @-rules (@media, @font-face, etc.) as a <style> block.
@@ -530,18 +537,21 @@ module MjmlRb
       end
     end
 
-    def merge_inline_style!(node, declarations)
-      existing = parse_css_declarations(node["style"].to_s)
+    def merge_inline_declarations!(existing, declarations, touched_properties)
       declarations.each do |property, value|
         merged = merge_css_declaration(existing[property], value)
         next if merged.equal?(existing[property])
 
         existing.delete(property)
         existing[property] = merged
+        touched_properties << property
       end
-      normalize_background_fallbacks!(node, existing)
-      sync_html_attributes!(node, existing)
-      node["style"] = serialize_css_declarations(existing)
+    end
+
+    def finalize_inline_style!(node, declarations, touched_properties)
+      normalize_background_fallbacks!(node, declarations)
+      sync_html_attributes!(node, declarations, touched_properties)
+      node["style"] = serialize_css_declarations(declarations)
     end
 
     def normalize_background_fallbacks!(node, declarations)
@@ -576,12 +586,14 @@ module MjmlRb
       "vertical-align" => "valign"
     }.freeze
 
-    def sync_html_attributes!(node, declarations)
+    def sync_html_attributes!(node, declarations, touched_properties = nil)
       tag = node.name.downcase
 
       # Sync width/height on TABLE, TD, TH, IMG
       if WIDTH_HEIGHT_ELEMENTS.include?(tag)
         %w[width height].each do |prop|
+          next if touched_properties && !touched_properties.include?(prop)
+
           css_value = declaration_value(declarations[prop])
           next if css_value.nil? || css_value.empty?
 
@@ -595,6 +607,8 @@ module MjmlRb
       # Sync style-to-attribute mappings on table elements
       if TABLE_ELEMENTS.include?(tag)
         STYLE_TO_ATTRIBUTE.each do |css_prop, html_attr|
+          next if touched_properties && !touched_properties.include?(css_prop)
+
           css_value = declaration_value(declarations[css_prop])
           next if css_value.nil? || css_value.empty?
 
@@ -646,9 +660,7 @@ module MjmlRb
 
     def serialize_css_declarations(declarations)
       declarations.map do |property, declaration|
-        value = declaration[:value]
-        value = "#{value} !important" if declaration[:important]
-        "#{property}: #{value}"
+        "#{property}: #{declaration[:value]}"
       end.join("; ")
     end
 

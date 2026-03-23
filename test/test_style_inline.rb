@@ -84,7 +84,7 @@ class MJMLStyleInlineTest < Minitest::Test
     assert(styles.any? { |style| style.include?("letter-spacing: 2px") })
   end
 
-  def test_mj_style_inline_preserves_important_declarations
+  def test_mj_style_inline_uses_important_for_precedence_without_serializing_it
     mjml = <<~MJML
       <mjml>
         <mj-head>
@@ -111,9 +111,10 @@ class MJMLStyleInlineTest < Minitest::Test
     document = Nokogiri::HTML(result.html)
     style = document.at_css(".card--header--content a")["style"].to_s
 
-    assert_includes(style, "display: inline !important")
+    assert_includes(style, "display: inline")
     assert_includes(style, "width: 100%")
     refute_includes(style, "display: block")
+    refute_includes(style, "!important")
   end
 
   def test_mj_style_inline_preserves_at_media_rules
@@ -243,8 +244,9 @@ class MJMLStyleInlineTest < Minitest::Test
     style = document.at_css("td.target")["style"].to_s
 
     assert_includes(style, "padding-bottom: 0")
-    assert_includes(style, "padding: 0 0 10px !important")
-    assert_operator(style.index("padding-bottom: 0"), :<, style.index("padding: 0 0 10px !important"))
+    assert_includes(style, "padding: 0 0 10px")
+    assert_operator(style.index("padding-bottom: 0"), :<, style.index("padding: 0 0 10px"))
+    refute_includes(style, "!important")
   end
 
   def test_inline_css_preserves_gradient_background_image_on_non_button_content
@@ -379,6 +381,34 @@ class MJMLStyleInlineTest < Minitest::Test
     refute_nil(img)
 
     assert_equal("100%", img["width"], "CSS width: 100% should sync as-is to HTML width attribute")
+  end
+
+  def test_inline_css_does_not_rewrite_img_width_attribute_when_width_was_not_inlined
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            * { font-family: Arial !important; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-image width="200px" src="photo.jpg" />
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    img = document.at_css("img[src='photo.jpg']")
+    refute_nil(img)
+
+    assert_equal("200", img["width"], "Unrelated inlined CSS should not overwrite mj-image width attribute")
   end
 
   def test_inline_css_syncs_bgcolor_on_td

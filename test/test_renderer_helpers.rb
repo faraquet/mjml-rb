@@ -221,7 +221,8 @@ class RendererHelpersTest < Minitest::Test
     }
     result = serialize_declarations(declarations)
     assert_includes result, "color: red"
-    assert_includes result, "font-size: 14px !important"
+    assert_includes result, "font-size: 14px"
+    refute_includes result, "!important"
   end
 
   def test_serialize_empty_declarations
