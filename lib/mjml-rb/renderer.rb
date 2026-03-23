@@ -342,7 +342,7 @@ module MjmlRb
       return html if css_blocks.empty?
 
       document = parse_html_document(html)
-      rules, at_rules_css = parse_inline_css_rules(css_blocks.join("\n"))
+      rules, = parse_inline_css_rules(css_blocks.join("\n"))
       merged_declarations_by_node = {}
       touched_properties_by_node = Hash.new { |hash, node| hash[node] = Set.new }
 
@@ -359,11 +359,6 @@ module MjmlRb
         finalize_inline_style!(node, declarations, touched_properties_by_node[node])
       end
 
-      # Inject preserved @-rules (@media, @font-face, etc.) as a <style> block.
-      # These rules cannot be inlined into style attributes but should be kept
-      # in the document for runtime application by email clients.
-      inject_preserved_at_rules(document, at_rules_css)
-
       document.to_html
     end
 
@@ -373,18 +368,6 @@ module MjmlRb
       else
         Nokogiri::HTML(html)
       end
-    end
-
-    def inject_preserved_at_rules(document, at_rules_css)
-      return if at_rules_css.nil? || at_rules_css.strip.empty?
-
-      head = document.at_css("head")
-      return unless head
-
-      style = Nokogiri::XML::Node.new("style", document)
-      style["type"] = "text/css"
-      style.content = at_rules_css.strip
-      head.add_child(style)
     end
 
     def select_nodes(document, selector)
@@ -549,27 +532,8 @@ module MjmlRb
     end
 
     def finalize_inline_style!(node, declarations, touched_properties)
-      normalize_background_fallbacks!(node, declarations)
       sync_html_attributes!(node, declarations, touched_properties)
       node["style"] = serialize_css_declarations(declarations)
-    end
-
-    def normalize_background_fallbacks!(node, declarations)
-      background_image = declaration_value(declarations["background-image"])
-      if background_image && !background_image.empty?
-        declarations.delete("background") if syncable_background?(declaration_value(declarations["background"]))
-        return
-      end
-
-      background_color = declaration_value(declarations["background-color"])
-      return if background_color.nil? || background_color.empty?
-
-      if syncable_background?(declaration_value(declarations["background"]))
-        declarations["background"] = {
-          value: background_color,
-          important: declarations.fetch("background-color", {}).fetch(:important, false)
-        }
-      end
     end
 
     # Sync HTML attributes from inlined CSS declarations.
@@ -596,6 +560,7 @@ module MjmlRb
 
           css_value = declaration_value(declarations[prop])
           next if css_value.nil? || css_value.empty?
+          next if tag == "img" && prop == "width" && css_value.include?("%")
 
           # Convert CSS px values to plain numbers for HTML attributes;
           # keep other values (auto, %) as-is.
@@ -629,24 +594,6 @@ module MjmlRb
       end
     end
 
-    def syncable_background?(value)
-      return true if value.nil? || value.empty?
-
-      normalized = value.downcase
-      !normalized.include?("url(") &&
-        !normalized.include?("gradient(") &&
-        !normalized.include?("/") &&
-        !normalized.include?(" no-repeat") &&
-        !normalized.include?(" repeat") &&
-        !normalized.include?(" fixed") &&
-        !normalized.include?(" scroll") &&
-        !normalized.include?(" center") &&
-        !normalized.include?(" top") &&
-        !normalized.include?(" bottom") &&
-        !normalized.include?(" left") &&
-        !normalized.include?(" right")
-    end
-
     def merge_css_declaration(existing, incoming)
       return incoming if existing.nil?
       return existing if existing[:important] && !incoming[:important]
@@ -659,9 +606,47 @@ module MjmlRb
     end
 
     def serialize_css_declarations(declarations)
-      declarations.map do |property, declaration|
+      ordered_css_declarations(declarations).map do |property, declaration|
         "#{property}: #{declaration[:value]}"
       end.join("; ")
+    end
+
+    SHORTHAND_LONGHAND_FAMILIES = {
+      "background" => /\Abackground-/,
+      "border" => /\Aborder(?:-(?!collapse|spacing)[a-z-]+)?\z/,
+      "border-radius" => /\Aborder-(?:top|bottom)-(?:left|right)-radius\z/,
+      "font" => /\Afont-/,
+      "list-style" => /\Alist-style-/,
+      "margin" => /\Amargin-(?:top|right|bottom|left)\z/,
+      "padding" => /\Apadding-(?:top|right|bottom|left)\z/
+    }.freeze
+
+    def ordered_css_declarations(declarations)
+      ordered = declarations.to_a
+
+      SHORTHAND_LONGHAND_FAMILIES.each do |shorthand, longhand_pattern|
+        family_indexes = ordered.each_index.select do |index|
+          property = ordered[index][0]
+          property == shorthand || property.match?(longhand_pattern)
+        end
+        next if family_indexes.length < 2
+
+        family_entries = family_indexes.map.with_index do |declaration_index, original_family_index|
+          [ordered[declaration_index], original_family_index]
+        end
+        next unless family_entries.any? { |((_, declaration), _)| declaration[:important] }
+        next unless family_entries.any? { |((_, declaration), _)| !declaration[:important] }
+
+        reordered_entries = family_entries.sort_by do |((_, declaration), original_family_index)|
+          [declaration[:important] ? 1 : 0, original_family_index]
+        end.map(&:first)
+
+        family_indexes.each_with_index do |declaration_index, reordered_index|
+          ordered[declaration_index] = reordered_entries[reordered_index]
+        end
+      end
+
+      ordered
     end
 
     def append_component_head_styles(document, context)

@@ -117,7 +117,7 @@ class MJMLStyleInlineTest < Minitest::Test
     refute_includes(style, "!important")
   end
 
-  def test_mj_style_inline_preserves_at_media_rules
+  def test_mj_style_inline_does_not_preserve_at_media_rules
     mjml = <<~MJML
       <mjml>
         <mj-head>
@@ -141,16 +141,12 @@ class MJMLStyleInlineTest < Minitest::Test
     result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
 
-    # The @media rule should be preserved as a <style> block in the document
-    assert_includes(result.html, "@media (max-width: 600px)")
-    assert_includes(result.html, ".mobile-hide")
-    assert_includes(result.html, "display: none !important")
-
-    # The regular rule should still be inlined
+    refute_includes(result.html, "@media (max-width: 600px)")
+    refute_includes(result.html, ".mobile-hide")
     assert_includes(result.html, "color: red")
   end
 
-  def test_mj_style_inline_preserves_at_font_face_rules
+  def test_mj_style_inline_does_not_preserve_at_font_face_rules
     mjml = <<~MJML
       <mjml>
         <mj-head>
@@ -175,12 +171,9 @@ class MJMLStyleInlineTest < Minitest::Test
     result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
 
-    # @font-face should be preserved in a <style> block
-    assert_includes(result.html, "@font-face")
-    assert_includes(result.html, "CustomFont")
-    assert_includes(result.html, "woff2")
+    refute_includes(result.html, "@font-face")
+    refute_includes(result.html, "woff2")
 
-    # The class rule should still be inlined
     document = Nokogiri::HTML(result.html)
     styles = document.css(".custom").map { |node| node["style"].to_s }
     assert(styles.any? { |style| style.include?("font-family: 'CustomFont', sans-serif") })
@@ -247,6 +240,36 @@ class MJMLStyleInlineTest < Minitest::Test
     assert_includes(style, "padding: 0 0 10px")
     assert_operator(style.index("padding-bottom: 0"), :<, style.index("padding: 0 0 10px"))
     refute_includes(style, "!important")
+  end
+
+  def test_mj_style_inline_serializes_padding_shorthand_before_padding_bottom_override
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .padding-bottom-none td.target { padding-bottom: 0 !important; }
+            .pricing-summary--table tr td.target { border-top: 1px solid #e6e6e6; padding: 3px 10px; font-size: 14px; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="pricing-summary--table padding-bottom-none">
+                <tr><td class="target">Cell</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    style = document.at_css("td.target")["style"].to_s
+
+    assert_operator(style.index("padding: 3px 10px"), :<, style.index("padding-bottom: 0"))
   end
 
   def test_inline_css_preserves_gradient_background_image_on_non_button_content
@@ -324,6 +347,45 @@ class MJMLStyleInlineTest < Minitest::Test
     refute_match(/background:\s*#00ada5/i, cell["style"].to_s)
   end
 
+  def test_inline_css_does_not_overwrite_existing_background_shorthand
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .btn table td,
+            .btn table td a {
+              background-color: white !important;
+              color: #00ada5 !important;
+            }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button css-class="btn" background-color="#414141" href="https://example.com">
+                Hello
+              </mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    button_cell = document.at_css("td[bgcolor='white']")
+    refute_nil(button_cell)
+    assert_includes(button_cell["style"].to_s, "background: #414141")
+    assert_includes(button_cell["style"].to_s, "background-color: white")
+
+    button_link = document.at_css("td[bgcolor='white'] a")
+    refute_nil(button_link)
+    assert_includes(button_link["style"].to_s, "background: #414141")
+    assert_includes(button_link["style"].to_s, "background-color: white")
+  end
+
   # ── HTML attribute syncing (Juice parity) ──────────────────────────────
 
   def test_inline_css_syncs_width_and_height_on_img
@@ -355,7 +417,7 @@ class MJMLStyleInlineTest < Minitest::Test
     assert_equal("24", img["height"], "CSS height: 24px should sync to HTML height attribute (without px)")
   end
 
-  def test_inline_css_syncs_width_percentage_on_img
+  def test_inline_css_does_not_sync_width_percentage_on_img
     mjml = <<~MJML
       <mjml>
         <mj-head>
@@ -380,7 +442,8 @@ class MJMLStyleInlineTest < Minitest::Test
     img = document.at_css("img[src='photo.jpg']")
     refute_nil(img)
 
-    assert_equal("100%", img["width"], "CSS width: 100% should sync as-is to HTML width attribute")
+    assert_equal("200", img["width"], "CSS width: 100% should remain in CSS and keep the existing pixel width attribute")
+    assert_includes(img["style"].to_s, "width: 100%")
   end
 
   def test_inline_css_does_not_rewrite_img_width_attribute_when_width_was_not_inlined
