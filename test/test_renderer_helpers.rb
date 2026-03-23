@@ -162,24 +162,38 @@ class RendererHelpersTest < Minitest::Test
   end
 
   def test_merge_important_existing_not_overridden_by_normal
-    existing = { value: "blue", important: true }
-    incoming = { value: "red", important: false }
+    existing = { value: "blue", important: true, source: :css }
+    incoming = { value: "red", important: false, source: :css }
     result = merge_declaration(existing, incoming)
     assert_equal "blue", result[:value]
   end
 
   def test_merge_important_incoming_overrides_important_existing
-    existing = { value: "blue", important: true }
-    incoming = { value: "red", important: true }
+    existing = { value: "blue", important: true, source: :css }
+    incoming = { value: "red", important: true, source: :css }
     result = merge_declaration(existing, incoming)
     assert_equal "red", result[:value]
   end
 
   def test_merge_normal_incoming_overrides_normal_existing
-    existing = { value: "blue", important: false }
-    incoming = { value: "red", important: false }
+    existing = { value: "blue", important: false, source: :css }
+    incoming = { value: "red", important: false, source: :css }
     result = merge_declaration(existing, incoming)
     assert_equal "red", result[:value]
+  end
+
+  def test_merge_inline_existing_not_overridden_by_normal_stylesheet
+    existing = { value: "15px", important: false, source: :inline }
+    incoming = { value: "30px", important: false, source: :css }
+    result = merge_declaration(existing, incoming)
+    assert_equal "15px", result[:value]
+  end
+
+  def test_merge_important_stylesheet_overrides_normal_inline
+    existing = { value: "15px", important: false, source: :inline }
+    incoming = { value: "30px", important: true, source: :css }
+    result = merge_declaration(existing, incoming)
+    assert_equal "30px", result[:value]
   end
 
   # --- serialize_css_declarations ---

@@ -474,6 +474,39 @@ class MJMLStyleInlineTest < Minitest::Test
     assert_equal("200", img["width"], "Unrelated inlined CSS should not overwrite mj-image width attribute")
   end
 
+  def test_inline_css_does_not_override_existing_inline_img_width
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .main-message img { width: 30px; display: inline-block; }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="main-message">
+                <p><img src="icon.png" style="width: 15px; height: 15px;" />Confirmed</p>
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    img = document.at_css("img[src='icon.png']")
+    refute_nil(img)
+
+    assert_includes(img["style"].to_s, "width: 15px")
+    assert_includes(img["style"].to_s, "display: inline-block")
+    refute_includes(img["style"].to_s, "width: 30px")
+    assert_equal("15", img["width"], "Final width attribute should follow the preserved inline width")
+  end
+
   def test_inline_css_syncs_bgcolor_on_td
     mjml = <<~MJML
       <mjml>

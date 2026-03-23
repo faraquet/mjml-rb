@@ -168,6 +168,8 @@ module MjmlRb
       HTML
 
       html = apply_inline_styles(html, context)
+      html = preserve_raw_tag_spacing(html)
+      html = strip_internal_raw_markers(html)
       html = merge_outlook_conditionals(html)
       before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
     end
@@ -350,7 +352,12 @@ module MjmlRb
         next if selector.empty? || declarations.empty?
 
         select_nodes(document, selector).each do |node|
-          existing = merged_declarations_by_node[node] ||= parse_css_declarations(node["style"].to_s)
+          existing = merged_declarations_by_node[node] ||= begin
+            source = node["data-mjml-raw"] == "true" ? :inline : :css
+            parsed = parse_css_declarations(node["style"].to_s, source: source)
+            touched_properties_by_node[node].merge(parsed.keys & HTML_ATTRIBUTE_SYNC_PROPERTIES.to_a) if source == :inline
+            parsed
+          end
           merge_inline_declarations!(existing, declarations, touched_properties_by_node[node])
         end
       end
@@ -507,7 +514,7 @@ module MjmlRb
       [a, b, c]
     end
 
-    def parse_css_declarations(declarations)
+    def parse_css_declarations(declarations, source: :css)
       declarations.split(";").each_with_object({}) do |entry, memo|
         property, value = entry.split(":", 2).map { |part| part&.strip }
         next if property.nil? || property.empty? || value.nil? || value.empty?
@@ -515,7 +522,8 @@ module MjmlRb
         important = value.match?(/\s*!important\s*\z/)
         memo[property] = {
           value: value.sub(/\s*!important\s*\z/, "").strip,
-          important: important
+          important: important,
+          source: source
         }
       end
     end
@@ -549,6 +557,7 @@ module MjmlRb
       "text-align" => "align",
       "vertical-align" => "valign"
     }.freeze
+    HTML_ATTRIBUTE_SYNC_PROPERTIES = Set.new((%w[width height] + STYLE_TO_ATTRIBUTE.keys)).freeze
 
     def sync_html_attributes!(node, declarations, touched_properties = nil)
       tag = node.name.downcase
@@ -596,6 +605,8 @@ module MjmlRb
 
     def merge_css_declaration(existing, incoming)
       return incoming if existing.nil?
+      return incoming if incoming[:important] && !existing[:important]
+      return existing if existing[:source] == :inline
       return existing if existing[:important] && !incoming[:important]
 
       incoming
@@ -743,7 +754,7 @@ module MjmlRb
       if node.respond_to?(:children)
         node.children.map do |child|
           if child.text?
-            escape_html(child.content.to_s)
+            serialize_text_content(escape_html(child.content.to_s))
           elsif child.comment?
             "<!--#{child.content}-->"
           else
@@ -762,7 +773,7 @@ module MjmlRb
       if node.respond_to?(:children)
         node.children.map do |child|
           if child.text?
-            child.content.to_s
+            serialize_text_content(child.content.to_s)
           elsif child.comment?
             "<!--#{child.content}-->"
           else
@@ -774,13 +785,50 @@ module MjmlRb
       end
     end
 
+    def annotate_raw_html(content)
+      return content if content.nil? || content.empty? || !content.include?("<")
+      content.gsub(/<(?!\/|!)([A-Za-z][\w:-]*)(\s[^<>]*?)?(\s*\/?)>/) do
+        tag_name = Regexp.last_match(1)
+        attrs = Regexp.last_match(2).to_s
+        closing = Regexp.last_match(3).to_s
+        "<#{tag_name}#{attrs} data-mjml-raw=\"true\"#{closing}>"
+      end
+    end
+
+    def strip_internal_raw_markers(html)
+      html.gsub(/\sdata-mjml-raw=(['"])true\1/, "")
+    end
+
+    def preserve_raw_tag_spacing(html)
+      html.gsub(
+        /(<[^>]+data-mjml-raw=(['"])true\2[^>]*>)([ \t]+)(<[^\/!][^>]+data-mjml-raw=(['"])true\5[^>]*>)/
+      ) do
+        "#{Regexp.last_match(1)}#{encode_whitespace_entities(Regexp.last_match(3))}#{Regexp.last_match(4)}"
+      end
+    end
+
+    def encode_whitespace_entities(text)
+      text.to_s.gsub(" ", "&#32;").gsub("\t", "&#9;")
+    end
+
     def serialize_node(node)
       attrs = node.attributes.map { |k, v| %( #{k}="#{escape_attr(v)}") }.join
       return "<#{node.tag_name}#{attrs} />" if node.children.empty? && html_void_tag?(node.tag_name)
       return "<#{node.tag_name}#{attrs}></#{node.tag_name}>" if node.children.empty?
 
-      inner = node.children.map { |child| child.text? ? child.content.to_s : serialize_node(child) }.join
+      inner = node.children.map { |child| child.text? ? serialize_text_content(child.content.to_s) : serialize_node(child) }.join
       "<#{node.tag_name}#{attrs}>#{inner}</#{node.tag_name}>"
+    end
+
+    def serialize_text_content(text)
+      value = text.to_s
+      return value unless significant_whitespace_text?(value)
+
+      value.gsub(" ", "&#32;").gsub("\t", "&#9;")
+    end
+
+    def significant_whitespace_text?(text)
+      !text.empty? && text.strip.empty? && !text.match?(/[\r\n]/)
     end
 
     def html_void_tag?(tag_name)

@@ -201,6 +201,29 @@ class TableTest < Minitest::Test
     assert_equal("color: #cc0000; font-family: inherit", link["style"])
   end
 
+  def test_mj_table_preserves_significant_spaces_between_inline_html_elements
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table>
+                <tr>
+                  <td>
+                    <p>As a <img src="x.png" width="30" style="width: 30px;" /> <strong>PLATINUM</strong> member</p>
+                  </td>
+                </tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+    assert_includes(result.html, '<img src="x.png" width="30" style="width: 30px" />&#32;<strong>PLATINUM</strong> member')
+  end
+
   private
 
   def extract_style_value(style, property)

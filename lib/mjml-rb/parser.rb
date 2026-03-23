@@ -337,6 +337,7 @@ module MjmlRb
       attrs = element.attributes.each_with_object({}) do |(name, val), h|
         h[name] = val unless name.start_with?("data-mjml-")
       end
+      attrs["data-mjml-raw"] = "true" unless element.name.start_with?("mj-") || element.name == "mjml"
 
       # For ending-tag elements whose content was wrapped in CDATA, store
       # the raw HTML directly as content instead of parsing structurally.
@@ -358,7 +359,10 @@ module MjmlRb
           memo << element_to_ast(child, keep_comments: keep_comments)
         when Text
           text = child.value
-          memo << AstNode.new(tag_name: "#text", content: text) unless text.strip.empty?
+          next if text.empty?
+          next if text.strip.empty? && ignorable_whitespace_text?(text, parent_element_name: element.name)
+
+          memo << AstNode.new(tag_name: "#text", content: text)
         when Comment
           memo << AstNode.new(tag_name: "#comment", content: child.string) if keep_comments
         end
@@ -371,6 +375,12 @@ module MjmlRb
         line: meta_line,
         file: meta_file
       )
+    end
+
+    def ignorable_whitespace_text?(text, parent_element_name:)
+      return true if parent_element_name.start_with?("mj-") || parent_element_name == "mjml"
+
+      text.match?(/[\r\n]/)
     end
   end
 end

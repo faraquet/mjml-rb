@@ -10,7 +10,7 @@ module MjmlRb
       }.freeze
 
       def render(tag_name:, node:, context:, attrs:, parent:)
-        raw_inner(node)
+        raw_inner_for_body(node)
       end
 
       def handle_head(node, context)
