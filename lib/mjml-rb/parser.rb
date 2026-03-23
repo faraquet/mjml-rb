@@ -18,7 +18,7 @@ module MjmlRb
     ].freeze
 
     # Pre-compiled regex patterns to avoid rebuilding on every call
-    ENDING_TAGS_CDATA_RE = /<(#{ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")})(\s[^<>]*?)?(?<!\/)>(.*?)<\/\1>/mi.freeze
+    ENDING_TAG_OPEN_RE = /<(#{ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")})(\s[^<>]*?)?(?<!\/)>/mi.freeze
 
     VOID_TAG_CLOSING_BR_RE = %r{</br\s*>}i.freeze
     VOID_TAG_CLOSING_OTHER_RE = /<\/(#{(HTML_VOID_TAGS - ["br"]).join("|")})\s*>/i.freeze
@@ -282,20 +282,74 @@ module MjmlRb
     end
 
     def wrap_ending_tags_in_cdata(content)
-      # Negative lookbehind (?<!\/) ensures self-closing tags like <mj-text ... /> are skipped
-      content.gsub(ENDING_TAGS_CDATA_RE) do
-        tag = Regexp.last_match(1)
-        attrs = Regexp.last_match(2).to_s
-        inner = Regexp.last_match(3).to_s
+      wrapped = +""
+      cursor = 0
+
+      while (match = ENDING_TAG_OPEN_RE.match(content, cursor))
+        tag = match[1]
+        attrs = match[2].to_s
+        wrapped << content[cursor...match.begin(0)]
+
+        closing_range = find_matching_ending_tag(content, tag, match.end(0))
+        unless closing_range
+          wrapped << match[0]
+          cursor = match.end(0)
+          next
+        end
+
+        inner = content[match.end(0)...closing_range.begin(0)]
         if inner.include?("<![CDATA[")
-          "<#{tag}#{attrs}>#{inner}</#{tag}>"
+          wrapped << "<#{tag}#{attrs}>#{inner}</#{tag}>"
         else
           # Pre-process content: normalize void tags and sanitize bare ampersands
           # before wrapping in CDATA, so the raw HTML is well-formed for output.
           prepared = sanitize_bare_ampersands(normalize_html_void_tags(inner))
-          "<#{tag}#{attrs}><![CDATA[#{escape_cdata(prepared)}]]></#{tag}>"
+          wrapped << "<#{tag}#{attrs}><![CDATA[#{escape_cdata(prepared)}]]></#{tag}>"
+        end
+
+        cursor = closing_range.end(0)
+      end
+
+      wrapped << content[cursor..] if cursor < content.length
+      wrapped
+    end
+
+    def find_matching_ending_tag(content, tag_name, cursor)
+      open_tag_re = /<#{Regexp.escape(tag_name)}(\s[^<>]*?)?(?<!\/)>/mi
+      close_tag_re = %r{</#{Regexp.escape(tag_name)}\s*>}i
+      depth = 1
+
+      while cursor < content.length
+        cdata_index = content.index("<![CDATA[", cursor)
+        open_match = open_tag_re.match(content, cursor)
+        close_match = close_tag_re.match(content, cursor)
+
+        candidates = []
+        candidates << [:cdata, cdata_index, nil] if cdata_index
+        candidates << [:open, open_match.begin(0), open_match] if open_match
+        candidates << [:close, close_match.begin(0), close_match] if close_match
+        return nil if candidates.empty?
+
+        kind, _, match = candidates.min_by { |candidate| candidate[1] }
+
+        case kind
+        when :cdata
+          cdata_end = content.index("]]>", cdata_index + 9)
+          return nil unless cdata_end
+
+          cursor = cdata_end + 3
+        when :open
+          depth += 1
+          cursor = match.end(0)
+        when :close
+          depth -= 1
+          return match if depth.zero?
+
+          cursor = match.end(0)
         end
       end
+
+      nil
     end
 
     def escape_cdata(content)
