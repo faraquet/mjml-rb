@@ -168,6 +168,8 @@ module MjmlRb
       HTML
 
       html = apply_inline_styles(html, context)
+      html = preserve_raw_tag_spacing(html)
+      html = strip_internal_raw_markers(html)
       html = merge_outlook_conditionals(html)
       before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
     end
@@ -342,20 +344,27 @@ module MjmlRb
       return html if css_blocks.empty?
 
       document = parse_html_document(html)
-      rules, at_rules_css = parse_inline_css_rules(css_blocks.join("\n"))
+      rules, = parse_inline_css_rules(css_blocks.join("\n"))
+      merged_declarations_by_node = {}
+      touched_properties_by_node = Hash.new { |hash, node| hash[node] = Set.new }
 
       rules.each do |selector, declarations|
         next if selector.empty? || declarations.empty?
 
         select_nodes(document, selector).each do |node|
-          merge_inline_style!(node, declarations)
+          existing = merged_declarations_by_node[node] ||= begin
+            source = node["data-mjml-raw"] == "true" ? :inline : :css
+            parsed = parse_css_declarations(node["style"].to_s, source: source)
+            touched_properties_by_node[node].merge(parsed.keys & HTML_ATTRIBUTE_SYNC_PROPERTIES.to_a) if source == :inline
+            parsed
+          end
+          merge_inline_declarations!(existing, declarations, touched_properties_by_node[node])
         end
       end
 
-      # Inject preserved @-rules (@media, @font-face, etc.) as a <style> block.
-      # These rules cannot be inlined into style attributes but should be kept
-      # in the document for runtime application by email clients.
-      inject_preserved_at_rules(document, at_rules_css)
+      merged_declarations_by_node.each do |node, declarations|
+        finalize_inline_style!(node, declarations, touched_properties_by_node[node])
+      end
 
       document.to_html
     end
@@ -366,18 +375,6 @@ module MjmlRb
       else
         Nokogiri::HTML(html)
       end
-    end
-
-    def inject_preserved_at_rules(document, at_rules_css)
-      return if at_rules_css.nil? || at_rules_css.strip.empty?
-
-      head = document.at_css("head")
-      return unless head
-
-      style = Nokogiri::XML::Node.new("style", document)
-      style["type"] = "text/css"
-      style.content = at_rules_css.strip
-      head.add_child(style)
     end
 
     def select_nodes(document, selector)
@@ -517,7 +514,7 @@ module MjmlRb
       [a, b, c]
     end
 
-    def parse_css_declarations(declarations)
+    def parse_css_declarations(declarations, source: :css)
       declarations.split(";").each_with_object({}) do |entry, memo|
         property, value = entry.split(":", 2).map { |part| part&.strip }
         next if property.nil? || property.empty? || value.nil? || value.empty?
@@ -525,41 +522,26 @@ module MjmlRb
         important = value.match?(/\s*!important\s*\z/)
         memo[property] = {
           value: value.sub(/\s*!important\s*\z/, "").strip,
-          important: important
+          important: important,
+          source: source
         }
       end
     end
 
-    def merge_inline_style!(node, declarations)
-      existing = parse_css_declarations(node["style"].to_s)
+    def merge_inline_declarations!(existing, declarations, touched_properties)
       declarations.each do |property, value|
         merged = merge_css_declaration(existing[property], value)
         next if merged.equal?(existing[property])
 
         existing.delete(property)
         existing[property] = merged
+        touched_properties << property
       end
-      normalize_background_fallbacks!(node, existing)
-      sync_html_attributes!(node, existing)
-      node["style"] = serialize_css_declarations(existing)
     end
 
-    def normalize_background_fallbacks!(node, declarations)
-      background_image = declaration_value(declarations["background-image"])
-      if background_image && !background_image.empty?
-        declarations.delete("background") if syncable_background?(declaration_value(declarations["background"]))
-        return
-      end
-
-      background_color = declaration_value(declarations["background-color"])
-      return if background_color.nil? || background_color.empty?
-
-      if syncable_background?(declaration_value(declarations["background"]))
-        declarations["background"] = {
-          value: background_color,
-          important: declarations.fetch("background-color", {}).fetch(:important, false)
-        }
-      end
+    def finalize_inline_style!(node, declarations, touched_properties)
+      sync_html_attributes!(node, declarations, touched_properties)
+      node["style"] = serialize_css_declarations(declarations)
     end
 
     # Sync HTML attributes from inlined CSS declarations.
@@ -575,15 +557,19 @@ module MjmlRb
       "text-align" => "align",
       "vertical-align" => "valign"
     }.freeze
+    HTML_ATTRIBUTE_SYNC_PROPERTIES = Set.new((%w[width height] + STYLE_TO_ATTRIBUTE.keys)).freeze
 
-    def sync_html_attributes!(node, declarations)
+    def sync_html_attributes!(node, declarations, touched_properties = nil)
       tag = node.name.downcase
 
       # Sync width/height on TABLE, TD, TH, IMG
       if WIDTH_HEIGHT_ELEMENTS.include?(tag)
         %w[width height].each do |prop|
+          next if touched_properties && !touched_properties.include?(prop)
+
           css_value = declaration_value(declarations[prop])
           next if css_value.nil? || css_value.empty?
+          next if tag == "img" && prop == "width" && css_value.include?("%")
 
           # Convert CSS px values to plain numbers for HTML attributes;
           # keep other values (auto, %) as-is.
@@ -595,6 +581,8 @@ module MjmlRb
       # Sync style-to-attribute mappings on table elements
       if TABLE_ELEMENTS.include?(tag)
         STYLE_TO_ATTRIBUTE.each do |css_prop, html_attr|
+          next if touched_properties && !touched_properties.include?(css_prop)
+
           css_value = declaration_value(declarations[css_prop])
           next if css_value.nil? || css_value.empty?
 
@@ -615,26 +603,10 @@ module MjmlRb
       end
     end
 
-    def syncable_background?(value)
-      return true if value.nil? || value.empty?
-
-      normalized = value.downcase
-      !normalized.include?("url(") &&
-        !normalized.include?("gradient(") &&
-        !normalized.include?("/") &&
-        !normalized.include?(" no-repeat") &&
-        !normalized.include?(" repeat") &&
-        !normalized.include?(" fixed") &&
-        !normalized.include?(" scroll") &&
-        !normalized.include?(" center") &&
-        !normalized.include?(" top") &&
-        !normalized.include?(" bottom") &&
-        !normalized.include?(" left") &&
-        !normalized.include?(" right")
-    end
-
     def merge_css_declaration(existing, incoming)
       return incoming if existing.nil?
+      return incoming if incoming[:important] && !existing[:important]
+      return existing if existing[:source] == :inline
       return existing if existing[:important] && !incoming[:important]
 
       incoming
@@ -645,11 +617,47 @@ module MjmlRb
     end
 
     def serialize_css_declarations(declarations)
-      declarations.map do |property, declaration|
-        value = declaration[:value]
-        value = "#{value} !important" if declaration[:important]
-        "#{property}: #{value}"
+      ordered_css_declarations(declarations).map do |property, declaration|
+        "#{property}: #{declaration[:value]}"
       end.join("; ")
+    end
+
+    SHORTHAND_LONGHAND_FAMILIES = {
+      "background" => /\Abackground-/,
+      "border" => /\Aborder(?:-(?!collapse|spacing)[a-z-]+)?\z/,
+      "border-radius" => /\Aborder-(?:top|bottom)-(?:left|right)-radius\z/,
+      "font" => /\Afont-/,
+      "list-style" => /\Alist-style-/,
+      "margin" => /\Amargin-(?:top|right|bottom|left)\z/,
+      "padding" => /\Apadding-(?:top|right|bottom|left)\z/
+    }.freeze
+
+    def ordered_css_declarations(declarations)
+      ordered = declarations.to_a
+
+      SHORTHAND_LONGHAND_FAMILIES.each do |shorthand, longhand_pattern|
+        family_indexes = ordered.each_index.select do |index|
+          property = ordered[index][0]
+          property == shorthand || property.match?(longhand_pattern)
+        end
+        next if family_indexes.length < 2
+
+        family_entries = family_indexes.map.with_index do |declaration_index, original_family_index|
+          [ordered[declaration_index], original_family_index]
+        end
+        next unless family_entries.any? { |((_, declaration), _)| declaration[:important] }
+        next unless family_entries.any? { |((_, declaration), _)| !declaration[:important] }
+
+        reordered_entries = family_entries.sort_by do |((_, declaration), original_family_index)|
+          [declaration[:important] ? 1 : 0, original_family_index]
+        end.map(&:first)
+
+        family_indexes.each_with_index do |declaration_index, reordered_index|
+          ordered[declaration_index] = reordered_entries[reordered_index]
+        end
+      end
+
+      ordered
     end
 
     def append_component_head_styles(document, context)
@@ -746,7 +754,7 @@ module MjmlRb
       if node.respond_to?(:children)
         node.children.map do |child|
           if child.text?
-            escape_html(child.content.to_s)
+            serialize_text_content(escape_html(child.content.to_s))
           elsif child.comment?
             "<!--#{child.content}-->"
           else
@@ -765,7 +773,7 @@ module MjmlRb
       if node.respond_to?(:children)
         node.children.map do |child|
           if child.text?
-            child.content.to_s
+            serialize_text_content(child.content.to_s)
           elsif child.comment?
             "<!--#{child.content}-->"
           else
@@ -777,13 +785,50 @@ module MjmlRb
       end
     end
 
+    def annotate_raw_html(content)
+      return content if content.nil? || content.empty? || !content.include?("<")
+      content.gsub(/<(?!\/|!)([A-Za-z][\w:-]*)(\s[^<>]*?)?(\s*\/?)>/) do
+        tag_name = Regexp.last_match(1)
+        attrs = Regexp.last_match(2).to_s
+        closing = Regexp.last_match(3).to_s
+        "<#{tag_name}#{attrs} data-mjml-raw=\"true\"#{closing}>"
+      end
+    end
+
+    def strip_internal_raw_markers(html)
+      html.gsub(/\sdata-mjml-raw=(['"])true\1/, "")
+    end
+
+    def preserve_raw_tag_spacing(html)
+      html.gsub(
+        /(<[^>]+data-mjml-raw=(['"])true\2[^>]*>)([ \t]+)(<[^\/!][^>]+data-mjml-raw=(['"])true\5[^>]*>)/
+      ) do
+        "#{Regexp.last_match(1)}#{encode_whitespace_entities(Regexp.last_match(3))}#{Regexp.last_match(4)}"
+      end
+    end
+
+    def encode_whitespace_entities(text)
+      text.to_s.gsub(" ", "&#32;").gsub("\t", "&#9;")
+    end
+
     def serialize_node(node)
       attrs = node.attributes.map { |k, v| %( #{k}="#{escape_attr(v)}") }.join
       return "<#{node.tag_name}#{attrs} />" if node.children.empty? && html_void_tag?(node.tag_name)
       return "<#{node.tag_name}#{attrs}></#{node.tag_name}>" if node.children.empty?
 
-      inner = node.children.map { |child| child.text? ? child.content.to_s : serialize_node(child) }.join
+      inner = node.children.map { |child| child.text? ? serialize_text_content(child.content.to_s) : serialize_node(child) }.join
       "<#{node.tag_name}#{attrs}>#{inner}</#{node.tag_name}>"
+    end
+
+    def serialize_text_content(text)
+      value = text.to_s
+      return value unless significant_whitespace_text?(value)
+
+      value.gsub(" ", "&#32;").gsub("\t", "&#9;")
+    end
+
+    def significant_whitespace_text?(text)
+      !text.empty? && text.strip.empty? && !text.match?(/[\r\n]/)
     end
 
     def html_void_tag?(tag_name)

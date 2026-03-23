@@ -143,7 +143,7 @@ module MjmlRb
           link_attrs["title"] = a["title"]
         end
 
-        content = raw_inner(node)
+        content = raw_inner_for_body(node)
         inner_tag = %(<#{tag}#{html_attrs(link_attrs)}>#{content}</#{tag}>)
         table = %(<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="#{table_style}"><tbody><tr><td#{html_attrs(td_attrs)}>#{inner_tag}</td></tr></tbody></table>)
 

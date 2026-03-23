@@ -72,7 +72,7 @@ module MjmlRb
           "height" => height
         )
 
-        content = raw_inner(node)
+        content = raw_inner_for_body(node)
         inner_div = %(<div style="#{div_style}">#{content}</div>)
 
         body = if height

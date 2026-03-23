@@ -162,54 +162,38 @@ class RendererHelpersTest < Minitest::Test
   end
 
   def test_merge_important_existing_not_overridden_by_normal
-    existing = { value: "blue", important: true }
-    incoming = { value: "red", important: false }
+    existing = { value: "blue", important: true, source: :css }
+    incoming = { value: "red", important: false, source: :css }
     result = merge_declaration(existing, incoming)
     assert_equal "blue", result[:value]
   end
 
   def test_merge_important_incoming_overrides_important_existing
-    existing = { value: "blue", important: true }
-    incoming = { value: "red", important: true }
+    existing = { value: "blue", important: true, source: :css }
+    incoming = { value: "red", important: true, source: :css }
     result = merge_declaration(existing, incoming)
     assert_equal "red", result[:value]
   end
 
   def test_merge_normal_incoming_overrides_normal_existing
-    existing = { value: "blue", important: false }
-    incoming = { value: "red", important: false }
+    existing = { value: "blue", important: false, source: :css }
+    incoming = { value: "red", important: false, source: :css }
     result = merge_declaration(existing, incoming)
     assert_equal "red", result[:value]
   end
 
-  # --- syncable_background? ---
-
-  def test_syncable_background_nil
-    assert syncable_background?(nil)
+  def test_merge_inline_existing_not_overridden_by_normal_stylesheet
+    existing = { value: "15px", important: false, source: :inline }
+    incoming = { value: "30px", important: false, source: :css }
+    result = merge_declaration(existing, incoming)
+    assert_equal "15px", result[:value]
   end
 
-  def test_syncable_background_empty
-    assert syncable_background?("")
-  end
-
-  def test_syncable_background_simple_color
-    assert syncable_background?("#ff0000")
-  end
-
-  def test_not_syncable_background_with_url
-    refute syncable_background?("url(image.png)")
-  end
-
-  def test_not_syncable_background_with_gradient
-    refute syncable_background?("linear-gradient(to right, #000, #fff)")
-  end
-
-  def test_not_syncable_background_with_position
-    refute syncable_background?("#ff0000 center top")
-  end
-
-  def test_not_syncable_background_with_repeat
-    refute syncable_background?("#ff0000 no-repeat")
+  def test_merge_important_stylesheet_overrides_normal_inline
+    existing = { value: "15px", important: false, source: :inline }
+    incoming = { value: "30px", important: true, source: :css }
+    result = merge_declaration(existing, incoming)
+    assert_equal "30px", result[:value]
   end
 
   # --- serialize_css_declarations ---
@@ -221,7 +205,19 @@ class RendererHelpersTest < Minitest::Test
     }
     result = serialize_declarations(declarations)
     assert_includes result, "color: red"
-    assert_includes result, "font-size: 14px !important"
+    assert_includes result, "font-size: 14px"
+    refute_includes result, "!important"
+  end
+
+  def test_serialize_places_padding_shorthand_before_padding_longhands
+    declarations = {
+      "padding-bottom" => { value: "0", important: true },
+      "background-color" => { value: "#fff", important: false },
+      "padding" => { value: "3px 10px", important: false }
+    }
+
+    result = serialize_declarations(declarations)
+    assert_operator result.index("padding: 3px 10px"), :<, result.index("padding-bottom: 0")
   end
 
   def test_serialize_empty_declarations
@@ -361,10 +357,6 @@ class RendererHelpersTest < Minitest::Test
 
   def merge_declaration(existing, incoming)
     @renderer.send(:merge_css_declaration, existing, incoming)
-  end
-
-  def syncable_background?(value)
-    @renderer.send(:syncable_background?, value)
   end
 
   def serialize_declarations(declarations)

@@ -18,13 +18,22 @@ module MjmlRb
     ].freeze
 
     # Pre-compiled regex patterns to avoid rebuilding on every call
-    ENDING_TAGS_CDATA_RE = /<(#{ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")})(\s[^<>]*?)?(?<!\/)>(.*?)<\/\1>/mi.freeze
+    ENDING_TAG_OPEN_RE = /<(#{ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")})(\s[^<>]*?)?(?<!\/)>/mi.freeze
 
     VOID_TAG_CLOSING_BR_RE = %r{</br\s*>}i.freeze
     VOID_TAG_CLOSING_OTHER_RE = /<\/(#{(HTML_VOID_TAGS - ["br"]).join("|")})\s*>/i.freeze
     VOID_TAG_OPEN_RE = /<(#{HTML_VOID_TAGS.join("|")})(\s[^<>]*?)?>/i.freeze
     LINE_ANNOTATION_RE = /(\n)|(<!\[CDATA\[.*?\]\]>)|(<(?:mj-[\w-]+|mjml)(?=[\s\/>]))/m.freeze
     BARE_AMPERSAND_RE = /&(?!(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);)/.freeze
+    ROOT_LEVEL_HEAD_TAGS = %w[
+      mj-attributes
+      mj-breakpoint
+      mj-html-attributes
+      mj-font
+      mj-preview
+      mj-style
+      mj-title
+    ].freeze
 
     class ParseError < StandardError
       attr_reader :line
@@ -49,6 +58,7 @@ module MjmlRb
 
       xml = annotate_line_numbers(sanitize_bare_ampersands(xml))
       doc = Document.new(xml)
+      normalize_root_head_elements(doc)
       element_to_ast(doc.root, keep_comments: opts[:keep_comments])
     rescue ParseException => e
       raise ParseError.new("XML parse error: #{e.message}")
@@ -173,6 +183,7 @@ module MjmlRb
 
     def extract_mjml_include_children(xml)
       include_doc = Document.new(sanitize_bare_ampersands(xml))
+      normalize_root_head_elements(include_doc)
       mjml_root = include_doc.root
       return [[], []] unless mjml_root&.name == "mjml"
 
@@ -219,6 +230,38 @@ module MjmlRb
       head
     end
 
+    def normalize_root_head_elements(doc)
+      mjml_root = doc.root
+      return unless mjml_root&.name == "mjml"
+
+      head_nodes = []
+      normalized_head_children = []
+      root_head_elements = []
+
+      mjml_root.children.each do |child|
+        next unless child.is_a?(Element)
+
+        if child.name == "mj-head"
+          head_nodes << child
+          child.children.each { |head_child| normalized_head_children << deep_clone(head_child) }
+        elsif ROOT_LEVEL_HEAD_TAGS.include?(child.name)
+          root_head_elements << child
+          normalized_head_children << deep_clone(child)
+        end
+      end
+
+      return if root_head_elements.empty? && head_nodes.length <= 1
+
+      head = head_nodes.first || ensure_head(doc)
+      return unless head
+
+      head.children.to_a.each { |child| head.delete(child) }
+      normalized_head_children.each { |child| head.add(child) }
+
+      root_head_elements.each { |child| mjml_root.delete(child) }
+      head_nodes.drop(1).each { |extra_head| mjml_root.delete(extra_head) }
+    end
+
     def strip_xml_declaration(content)
       content.sub(/\A<\?xml[^>]*\?>\s*/m, "")
     end
@@ -239,20 +282,74 @@ module MjmlRb
     end
 
     def wrap_ending_tags_in_cdata(content)
-      # Negative lookbehind (?<!\/) ensures self-closing tags like <mj-text ... /> are skipped
-      content.gsub(ENDING_TAGS_CDATA_RE) do
-        tag = Regexp.last_match(1)
-        attrs = Regexp.last_match(2).to_s
-        inner = Regexp.last_match(3).to_s
+      wrapped = +""
+      cursor = 0
+
+      while (match = ENDING_TAG_OPEN_RE.match(content, cursor))
+        tag = match[1]
+        attrs = match[2].to_s
+        wrapped << content[cursor...match.begin(0)]
+
+        closing_range = find_matching_ending_tag(content, tag, match.end(0))
+        unless closing_range
+          wrapped << match[0]
+          cursor = match.end(0)
+          next
+        end
+
+        inner = content[match.end(0)...closing_range.begin(0)]
         if inner.include?("<![CDATA[")
-          "<#{tag}#{attrs}>#{inner}</#{tag}>"
+          wrapped << "<#{tag}#{attrs}>#{inner}</#{tag}>"
         else
           # Pre-process content: normalize void tags and sanitize bare ampersands
           # before wrapping in CDATA, so the raw HTML is well-formed for output.
           prepared = sanitize_bare_ampersands(normalize_html_void_tags(inner))
-          "<#{tag}#{attrs}><![CDATA[#{escape_cdata(prepared)}]]></#{tag}>"
+          wrapped << "<#{tag}#{attrs}><![CDATA[#{escape_cdata(prepared)}]]></#{tag}>"
+        end
+
+        cursor = closing_range.end(0)
+      end
+
+      wrapped << content[cursor..] if cursor < content.length
+      wrapped
+    end
+
+    def find_matching_ending_tag(content, tag_name, cursor)
+      open_tag_re = /<#{Regexp.escape(tag_name)}(\s[^<>]*?)?(?<!\/)>/mi
+      close_tag_re = %r{</#{Regexp.escape(tag_name)}\s*>}i
+      depth = 1
+
+      while cursor < content.length
+        cdata_index = content.index("<![CDATA[", cursor)
+        open_match = open_tag_re.match(content, cursor)
+        close_match = close_tag_re.match(content, cursor)
+
+        candidates = []
+        candidates << [:cdata, cdata_index, nil] if cdata_index
+        candidates << [:open, open_match.begin(0), open_match] if open_match
+        candidates << [:close, close_match.begin(0), close_match] if close_match
+        return nil if candidates.empty?
+
+        kind, _, match = candidates.min_by { |candidate| candidate[1] }
+
+        case kind
+        when :cdata
+          cdata_end = content.index("]]>", cdata_index + 9)
+          return nil unless cdata_end
+
+          cursor = cdata_end + 3
+        when :open
+          depth += 1
+          cursor = match.end(0)
+        when :close
+          depth -= 1
+          return match if depth.zero?
+
+          cursor = match.end(0)
         end
       end
+
+      nil
     end
 
     def escape_cdata(content)
@@ -337,6 +434,7 @@ module MjmlRb
       attrs = element.attributes.each_with_object({}) do |(name, val), h|
         h[name] = val unless name.start_with?("data-mjml-")
       end
+      attrs["data-mjml-raw"] = "true" unless element.name.start_with?("mj-") || element.name == "mjml"
 
       # For ending-tag elements whose content was wrapped in CDATA, store
       # the raw HTML directly as content instead of parsing structurally.
@@ -358,7 +456,10 @@ module MjmlRb
           memo << element_to_ast(child, keep_comments: keep_comments)
         when Text
           text = child.value
-          memo << AstNode.new(tag_name: "#text", content: text) unless text.strip.empty?
+          next if text.empty?
+          next if text.strip.empty? && ignorable_whitespace_text?(text, parent_element_name: element.name)
+
+          memo << AstNode.new(tag_name: "#text", content: text)
         when Comment
           memo << AstNode.new(tag_name: "#comment", content: child.string) if keep_comments
         end
@@ -371,6 +472,12 @@ module MjmlRb
         line: meta_line,
         file: meta_file
       )
+    end
+
+    def ignorable_whitespace_text?(text, parent_element_name:)
+      return true if parent_element_name.start_with?("mj-") || parent_element_name == "mjml"
+
+      text.match?(/[\r\n]/)
     end
   end
 end

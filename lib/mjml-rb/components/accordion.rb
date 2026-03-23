@@ -173,7 +173,7 @@ module MjmlRb
             when "mj-accordion-element"
               render_accordion_element(child, context, accordion_attrs)
             when "mj-raw"
-              raw_inner(child)
+              raw_inner_for_body(child)
             else
               render_node(child, context, parent: "mj-accordion")
             end
@@ -210,7 +210,7 @@ module MjmlRb
               child_attrs = attrs.merge(resolved_attributes(child, context))
               content << render_accordion_text(child, child_attrs)
             when "mj-raw"
-              content << raw_inner(child)
+              content << raw_inner_for_body(child)
             end
           end
         end
@@ -249,7 +249,7 @@ module MjmlRb
           "width" => "100%",
           "border-bottom" => title_attrs["border"] || DEFAULTS["border"]
         )
-        title_content = node ? raw_inner(node) : ""
+        title_content = node ? raw_inner_for_body(node) : ""
         title_cell = %(<td style="#{td_style}">#{title_content}</td>)
         icon_cell = %(<td class="mj-accordion-ico" style="#{td2_style}"><img src="#{escape_attr(title_attrs["icon-wrapped-url"] || DEFAULTS["icon-wrapped-url"])}" alt="#{escape_attr(title_attrs["icon-wrapped-alt"] || DEFAULTS["icon-wrapped-alt"])}" class="mj-accordion-more" style="#{icon_style}" /><img src="#{escape_attr(title_attrs["icon-unwrapped-url"] || DEFAULTS["icon-unwrapped-url"])}" alt="#{escape_attr(title_attrs["icon-unwrapped-alt"] || DEFAULTS["icon-unwrapped-alt"])}" class="mj-accordion-less" style="#{icon_style}" /></td>)
         cells = title_attrs["icon-position"] == "left" ? "#{icon_cell}#{title_cell}" : "#{title_cell}#{icon_cell}"
@@ -277,7 +277,7 @@ module MjmlRb
           "width" => "100%",
           "border-bottom" => text_attrs["border"] || DEFAULTS["border"]
         )
-        content = node ? raw_inner(node) : ""
+        content = node ? raw_inner_for_body(node) : ""
         css_class = text_attrs["css-class"] ? %( class="#{escape_attr(text_attrs["css-class"])}") : ""
 
         %(<div class="mj-accordion-content"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="#{table_style}"><tbody><tr><td#{css_class} style="#{td_style}">#{content}</td></tr></tbody></table></div>)

@@ -74,6 +74,28 @@ class ParserTest < Minitest::Test
     assert_includes button.content, "<b>here</b>"
   end
 
+  def test_nested_same_ending_tags_preserve_full_outer_content
+    mjml = <<~MJML
+      <mjml><mj-body><mj-section><mj-column>
+        <mj-text>
+          <div>Outer</div>
+          <mj-section><mj-column><mj-text>Inner</mj-text></mj-column></mj-section>
+        </mj-text>
+      </mj-column></mj-section></mj-body></mjml>
+    MJML
+
+    ast = @parser.parse(mjml)
+    body = ast.element_children.find { |c| c.tag_name == "mj-body" }
+    section = body.element_children.find { |c| c.tag_name == "mj-section" }
+    column = section.element_children.find { |c| c.tag_name == "mj-column" }
+    text = column.element_children.find { |c| c.tag_name == "mj-text" }
+
+    refute_nil text
+    assert_includes text.content, "<div>Outer</div>"
+    assert_includes text.content, "<mj-section>"
+    assert_includes text.content, "<mj-text>Inner</mj-text>"
+  end
+
   # --- HTML void tags ---
 
   def test_void_tags_are_self_closed

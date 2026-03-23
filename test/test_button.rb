@@ -114,7 +114,7 @@ class ButtonTest < Minitest::Test
     assert_includes(result.html, 'Buy Now')
   end
 
-  def test_button_inlined_background_color_updates_fallback_background
+  def test_button_inlined_background_color_preserves_existing_background_shorthand
     result = compile(<<~MJML)
       <mjml>
         <mj-head>
@@ -142,10 +142,10 @@ class ButtonTest < Minitest::Test
 
     assert_empty(result.errors)
     assert_includes(result.html, 'bgcolor="white"')
-    assert_includes(result.html, 'background: white')
     assert_includes(result.html, 'background-color: white')
     refute_includes(result.html, 'bgcolor="#414141"')
-    refute_includes(result.html, 'background: #414141')
+    assert_includes(result.html, 'background: #414141')
+    refute_includes(result.html, 'background: white')
   end
 
   def test_button_inlined_gradient_preserves_background_image
@@ -179,8 +179,8 @@ class ButtonTest < Minitest::Test
     refute_nil(link)
 
     style = link["style"].to_s
+    assert_includes(style, "background: #00ada5")
     assert_includes(style, "background-color: #00ada5")
     assert_includes(style, "background-image: linear-gradient(to bottom, #00ada5, #009089)")
-    refute_match(/background:\s*#00ada5/i, style)
   end
 end

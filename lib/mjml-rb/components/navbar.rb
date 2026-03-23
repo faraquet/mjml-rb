@@ -205,7 +205,7 @@ module MjmlRb
           "style" => anchor_style
         }
 
-        content = raw_inner(node)
+        content = raw_inner_for_body(node)
         link = %(<a#{html_attrs(link_attrs)}>#{content}</a>)
         return link unless parent == "mj-navbar"
 
