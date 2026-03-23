@@ -603,7 +603,7 @@ module MjmlRb
             "overflow"         => (has_border_radius ? "hidden" : nil),
             "margin"           => "0px auto",
             "margin-top"       => wrapper_gap,
-            "max-width"        => (full_width ? nil : "#{container_px}px")
+            "max-width"        => "#{container_px}px"
           }.merge(full_width ? {} : background_styles)
         )
 

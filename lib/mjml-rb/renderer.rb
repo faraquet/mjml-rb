@@ -545,6 +545,12 @@ module MjmlRb
     end
 
     def normalize_background_fallbacks!(node, declarations)
+      background_image = declaration_value(declarations["background-image"])
+      if background_image && !background_image.empty?
+        declarations.delete("background") if syncable_background?(declaration_value(declarations["background"]))
+        return
+      end
+
       background_color = declaration_value(declarations["background-color"])
       return if background_color.nil? || background_color.empty?
 

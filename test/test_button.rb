@@ -1,4 +1,5 @@
 require "minitest/autorun"
+require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
@@ -145,5 +146,41 @@ class ButtonTest < Minitest::Test
     assert_includes(result.html, 'background-color: white')
     refute_includes(result.html, 'bgcolor="#414141"')
     refute_includes(result.html, 'background: #414141')
+  end
+
+  def test_button_inlined_gradient_preserves_background_image
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .btn a {
+              background-color: #00ada5;
+              background-image: linear-gradient(to bottom, #00ada5, #009089);
+              color: white;
+            }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-button css-class="btn" background-color="#00ada5" href="https://example.com">
+                Book your stay
+              </mj-button>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    link = document.at_css('a[href="https://example.com"]')
+    refute_nil(link)
+
+    style = link["style"].to_s
+    assert_includes(style, "background-color: #00ada5")
+    assert_includes(style, "background-image: linear-gradient(to bottom, #00ada5, #009089)")
+    refute_match(/background:\s*#00ada5/i, style)
   end
 end

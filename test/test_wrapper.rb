@@ -198,11 +198,40 @@ class WrapperTest < Minitest::Test
     # The inner div's style should not contain background-url
     # (background goes on the outer table for full-width)
     if inner_div
+      assert_includes(inner_div["style"].to_s, "max-width:600px")
       refute_includes(inner_div["style"].to_s, "background-url")
     end
 
     # VML should use mso-width-percent:1000 for full-width
     assert_includes(result.html, "mso-width-percent:1000")
+  end
+
+  def test_full_width_wrapper_keeps_inner_max_width_for_standard_child_sections
+    result = compile(<<~MJML)
+      <mjml>
+        <mj-body>
+          <mj-wrapper full-width="full-width" background-color="#101e3c">
+            <mj-section background-color="#ffffff" padding-left="15px" padding-right="15px">
+              <mj-column width="70%">
+                <mj-text>Hello</mj-text>
+              </mj-column>
+            </mj-section>
+          </mj-wrapper>
+        </mj-body>
+      </mjml>
+    MJML
+
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    outer_table = document.at_css("body > div > table")
+    refute_nil(outer_table)
+
+    inner_div = outer_table.at_xpath("./tbody/tr/td/div")
+    refute_nil(inner_div)
+    assert_includes(inner_div["style"].to_s, "margin:0px auto")
+    assert_includes(inner_div["style"].to_s, "max-width:600px")
+    refute_includes(inner_div["style"].to_s, "background:#101e3c")
   end
 
   def test_full_width_wrapper_forces_child_full_width_sections_back_to_standard_width

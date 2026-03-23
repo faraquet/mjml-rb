@@ -247,6 +247,81 @@ class MJMLStyleInlineTest < Minitest::Test
     assert_operator(style.index("padding-bottom: 0"), :<, style.index("padding: 0 0 10px !important"))
   end
 
+  def test_inline_css_preserves_gradient_background_image_on_non_button_content
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .gradient div {
+              background-color: #00ada5;
+              background-image: linear-gradient(to bottom, #00ada5, #009089);
+            }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text css-class="gradient">Hello</mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    node = document.at_css(".gradient + div") || document.at_css(".gradient")
+
+    if node.nil? || !node["style"].to_s.include?("background-image")
+      node = document.css("div").find do |el|
+        el["style"].to_s.include?("background-image: linear-gradient")
+      end
+    end
+
+    refute_nil(node)
+
+    style = node["style"].to_s
+    assert_includes(style, "background-color: #00ada5")
+    assert_includes(style, "background-image: linear-gradient(to bottom, #00ada5, #009089)")
+    refute_match(/background:\s*#00ada5/i, style)
+  end
+
+  def test_inline_css_keeps_background_attribute_sync_for_url_background_images
+    mjml = <<~MJML
+      <mjml>
+        <mj-head>
+          <mj-style inline="inline">
+            .with-bg td {
+              background-color: #00ada5;
+              background-image: url(https://example.com/bg.png);
+            }
+          </mj-style>
+        </mj-head>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-table css-class="with-bg">
+                <tr><td>Cell</td></tr>
+              </mj-table>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+
+    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+    assert_empty(result.errors)
+
+    document = Nokogiri::HTML(result.html)
+    cell = document.at_css(".with-bg td[background='https://example.com/bg.png']")
+    refute_nil(cell)
+    assert_equal("#00ada5", cell["bgcolor"])
+    assert_includes(cell["style"].to_s, "background-image: url(https://example.com/bg.png)")
+    refute_match(/background:\s*#00ada5/i, cell["style"].to_s)
+  end
+
   # ── HTML attribute syncing (Juice parity) ──────────────────────────────
 
   def test_inline_css_syncs_width_and_height_on_img
