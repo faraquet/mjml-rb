@@ -4,7 +4,6 @@ PATH
     mjml-rb (0.4.4)
       css_parser (>= 1.17)
       nokogiri (>= 1.13)
-      rexml (>= 3.2.5)
 
 GEM
   remote: https://rubygems.org/
@@ -31,7 +30,6 @@ GEM
     public_suffix (7.0.5)
     racc (1.8.1)
     rake (13.3.1)
-    rexml (3.4.4)
 
 PLATFORMS
   aarch64-linux
@@ -60,7 +58,6 @@ CHECKSUMS
   public_suffix (7.0.5) sha256=1a8bb08f1bbea19228d3bed6e5ed908d1cb4f7c2726d18bd9cadf60bc676f623
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rake (13.3.1) sha256=8c9e89d09f66a26a01264e7e3480ec0607f0c497a861ef16063604b1b08eb19c
-  rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
 
 BUNDLED WITH
   4.0.3
