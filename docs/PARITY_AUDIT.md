@@ -19,7 +19,7 @@ Last updated 2026-03-15.
 |---|---|---|---|
 | Parse → validate → render flow | `MJMLParser` → `MJMLValidator` → `processing(mjBody)` | `Parser#parse` → `Validator#validate` → `Renderer#render` | Match |
 | Validation levels (skip/soft/strict) | All three; strict throws `ValidationError` | All three; strict returns early with errors | Match |
-| CSS inlining (`mj-style inline`) | Uses **Juice** library with `juiceOptions`, `juicePreserveTags` | Custom Nokogiri-based inliner with specificity sort; Juice attribute syncing replicated (`widthElements`, `heightElements`, `styleToAttribute`, `tableElements`) | Partial |
+| CSS inlining (`mj-style inline`) | Uses **Juice** library with `juiceOptions`, `juicePreserveTags` | Custom Nokogiri-based inliner using `css_parser` gem for CSS parsing and specificity; Juice attribute syncing replicated (`widthElements`, `heightElements`, `styleToAttribute`, `tableElements`) | Partial |
 | `mj-html-attributes` application | **Cheerio** (`xmlMode: true, decodeEntities: false`), applied **before** skeleton on body content | **Nokogiri** (`Nokogiri::HTML::DocumentFragment`), applied **before** skeleton on body content | Partial |
 | Pipeline ordering | minify conditionals → html-attributes → skeleton → Juice → merge conditionals | minify conditionals → html-attributes → skeleton → inline CSS → merge conditionals → prepend before_doctype | Match |
 | Outlook conditional minification | `minifyOutlookConditionnals()` strips whitespace between tags inside `<!--[if …]>` blocks *before* skeleton | Applied to body content before skeleton generation | Match |
@@ -51,23 +51,23 @@ The HTML document scaffold (`skeleton.js` vs `build_html_document`) is very clos
 
 | Feature | npm (`mjml-parser-xml/src/index.js`) | Ruby (`parser.rb`) | Status |
 |---|---|---|---|
-| XML parsing library | `htmlparser2` (lenient, HTML-aware) | `REXML` (strict XML) | Partial |
-| Bare ampersand handling | `htmlparser2` handles natively (`decodeEntities: false`) | Custom `sanitize_bare_ampersands` pre-processing | Match |
-| Ending-tag CDATA wrapping | Upstream relies on `htmlparser2` preserving raw HTML for `endingTag` components | Custom `wrap_ending_tags_in_cdata` regex | Match |
+| XML parsing library | `htmlparser2` (lenient, HTML-aware) | `Nokogiri::XML` (strict XML) | Partial |
+| Bare ampersand handling | `htmlparser2` handles natively (`decodeEntities: false`) | Custom `sanitize_bare_ampersands` pre-processing (needed for XML compliance) | Match |
+| Ending-tag CDATA wrapping | Upstream relies on `htmlparser2` preserving raw HTML for `endingTag` components | Custom `wrap_ending_tags_in_cdata` regex (needed for XML compliance) | Match |
 | `mj-include` — MJML type | Recursive expansion | Recursive expansion | Match |
 | `mj-include` — HTML type | Wraps in `mj-raw` | Wraps in `mj-raw` with CDATA | Match |
 | `mj-include` — CSS type | Collects and injects into `mj-head` as `mj-style` | Same behavior | Match |
 | `mj-include` — `css-inline="inline"` | Supported | Supported | Match |
 | Circular include detection | Tracks `filePath` set | Tracks `included_in` array | Match |
 | Missing file handling | Collects error comment instead of crashing | Same behavior | Match |
-| Line number tracking | `htmlparser2` provides `startIndex`, converted to line/col | Synthetic `data-mjml-line` injection before parsing | Match |
+| Line number tracking | `htmlparser2` provides `startIndex`, converted to line/col | Nokogiri's native `node.line` | Match |
 | File path tracking | Annotations during include expansion | `data-mjml-file` annotations during include expansion | Match |
 | `globalAttributes` on AST nodes | `rawAttrs` vs resolved `attributes` distinction | No `rawAttrs` / `globalAttributes` separation — all merged at resolve time | Partial |
 | `preprocessors` support | Array of transform functions | Array of callable objects | Match |
 
 ### Parser Notes
 
-- The Ruby parser uses REXML which is a strict XML parser. The `htmlparser2` library in npm is much more lenient with malformed HTML. Edge cases with broken/unclosed tags may fail in Ruby but succeed in npm.
+- The Ruby parser uses Nokogiri::XML which is a strict XML parser. The `htmlparser2` library in npm is much more lenient with malformed HTML. Edge cases with broken/unclosed tags may fail in Ruby but succeed in npm.
 - The `rawAttrs` / `globalAttributes` distinction on AST nodes exists in npm but not in Ruby. Ruby resolves attributes at render time via `resolved_attributes()` in the renderer, which effectively produces the same merge order (`mj-all` defaults → `mj-class` attrs → tag defaults → class defaults → node attrs`).
 - **Comment handling**: npm wraps HTML comments as `mj-raw` nodes with `content: "<!--...-->"`. Ruby preserves them as `#comment` AST nodes. This means comments inside body content may render differently.
 - **Boolean conversion**: npm converts `"true"`/`"false"` attribute strings to actual booleans (`convertBooleans` option). Ruby keeps them as strings. Component code should handle both forms.
@@ -287,8 +287,8 @@ Options to address:
 ### Entity Handling
 
 - npm's `htmlparser2` with `decodeEntities: false` preserves HTML entities as-is
-- Ruby's REXML decodes entities during parsing; the CDATA wrapping approach for ending-tag components preserves raw HTML including entities
-- For non-ending-tag components, entities like `&amp;` may be decoded by REXML and re-encoded differently
+- Ruby's Nokogiri::XML decodes entities during parsing; the CDATA wrapping approach for ending-tag components preserves raw HTML including entities
+- For non-ending-tag components, entities like `&amp;` may be decoded by Nokogiri and re-encoded differently
 - The `sanitize_bare_ampersands` pre-processing handles the most common case (bare `&` in email content)
 
 ### Whitespace

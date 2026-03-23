@@ -4,7 +4,7 @@ module MjmlRb
   module Dependencies
     # Components whose content is treated as raw HTML in NPM (endingTag = true).
     # The parser preserves their inner markup as-is; the validator skips child
-    # element checks because REXML structurally parses what NPM treats as text.
+    # element checks because the XML parser structurally parses what NPM treats as text.
     ENDING_TAGS = Set.new(%w[
       mj-accordion-text
       mj-accordion-title
