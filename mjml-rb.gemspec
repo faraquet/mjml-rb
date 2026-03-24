@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Ruby implementation of the MJML toolchain"
   spec.description = "Ruby-first MJML compiler API and CLI with compatibility-focused behavior."
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.0"
+  spec.required_ruby_version = ">= 3.3"
 
   spec.homepage = "https://github.com/faraquet/mjml-rb"
   spec.files = Dir.chdir(__dir__) do
