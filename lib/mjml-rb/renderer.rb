@@ -1,4 +1,5 @@
 require "cgi"
+require "css_parser"
 require "nokogiri"
 require "set"
 require_relative "components/accordion"
@@ -417,115 +418,53 @@ module MjmlRb
     end
 
     def parse_inline_css_rules(css)
-      stripped_css = strip_css_comments(css.to_s)
-      plain_css, at_rules_css = extract_css_at_rules(stripped_css)
+      parser = CssParser::Parser.new
+      parser.add_block!(css.to_s)
 
-      rules = plain_css.scan(/([^{}]+)\{([^{}]+)\}/m).flat_map do |selector_group, declarations|
-        selectors = selector_group.split(",").map(&:strip).reject(&:empty?)
-        declaration_map = parse_css_declarations(declarations)
-        selectors.map { |selector| [selector, declaration_map] }
+      rules = []
+      parser.each_rule_set do |rule_set, media_types|
+        # Only inline rules not inside @media blocks; css_parser stores
+        # top-level rules under the :all media type.
+        next unless media_types == [:all]
+
+        rule_set.each_selector do |selector, declarations_str, specificity|
+          selector = selector.strip
+          # Skip @-rules like @font-face that css_parser yields as selectors
+          next if selector.start_with?("@")
+
+          declaration_map = parse_css_declarations(declarations_str)
+          rules << [selector, declaration_map, specificity]
+        end
       end
 
       # Sort rules by specificity (ascending). With the "last wins" merge
       # strategy, higher-specificity rules applied later correctly override
       # lower-specificity ones — matching CSS cascade behavior.
-      sorted = rules.each_with_index
-                    .sort_by { |(selector, _), idx| [css_specificity(selector), idx] }
-                    .map(&:first)
+      sorted = rules.sort_by.with_index { |(_, _, spec), idx| [spec, idx] }
+                    .map { |sel, decl, _| [sel, decl] }
 
-      [sorted, at_rules_css]
+      [sorted, ""]
     end
 
-    def strip_css_comments(css)
-      css.gsub(%r{/\*.*?\*/}m, "")
-    end
-
-    # Separates @-rules (@media, @font-face, etc.) from plain CSS selectors.
-    # Returns [plain_css, at_rules_css]. The at_rules_css can be injected as a
-    # <style> block since @-rules cannot be inlined into style attributes.
-    def extract_css_at_rules(css)
-      plain = +""
-      at_rules = +""
-      index = 0
-
-      while index < css.length
-        if css[index] == "@"
-          brace_index = css.index("{", index)
-          semicolon_index = css.index(";", index)
-
-          # Simple @-rules like @import or @charset end with semicolon
-          if semicolon_index && (brace_index.nil? || semicolon_index < brace_index)
-            at_rules << css[index..semicolon_index] << "\n"
-            index = semicolon_index + 1
-            next
-          end
-
-          # Block @-rules like @media, @font-face have nested braces
-          if brace_index
-            depth = 1
-            cursor = brace_index + 1
-            while cursor < css.length && depth.positive?
-              depth += 1 if css[cursor] == "{"
-              depth -= 1 if css[cursor] == "}"
-              cursor += 1
-            end
-            at_rules << css[index...cursor] << "\n"
-            index = cursor
-            next
-          end
-        end
-
-        plain << css[index]
-        index += 1
-      end
-
-      [plain, at_rules]
-    end
-
-    # Calculates CSS specificity as a comparable [a, b, c] tuple:
-    #   a = number of ID selectors (#id)
-    #   b = number of class selectors (.class), attribute selectors ([attr]),
-    #       and pseudo-classes (:hover, :lang())
-    #   c = number of type selectors (div, p) and pseudo-elements (::before)
     def css_specificity(selector)
-      s = selector.to_s
-
-      # a: ID selectors
-      a = s.scan(/#[\w-]+/).length
-
-      # b: class selectors + attribute selectors + pseudo-classes
-      b = s.scan(/\.[\w-]+/).length +
-          s.scan(/\[[^\]]*\]/).length +
-          s.scan(/:(?!:)[\w-]+/).length
-
-      # c: type selectors + pseudo-elements
-      # Strip everything except element names and combinators
-      cleaned = s
-        .gsub(/#[\w-]+/, "")                           # remove IDs
-        .gsub(/\.[\w-]+/, "")                           # remove classes
-        .gsub(/\[[^\]]*\]/, "")                         # remove attribute selectors
-        .gsub(/:[\w-]+(?:\([^)]*\))?/, "")              # remove pseudo-classes
-        .gsub(/::[\w-]+/, "")                           # remove pseudo-elements (counted separately)
-        .gsub(/[>+~]/, " ")                             # combinators → spaces
-        .gsub(/\*/, "")                                 # universal selector has no specificity
-      c = cleaned.split.reject(&:empty?).length +
-          s.scan(/::[\w-]+/).length
-
-      [a, b, c]
+      CssParser.calculate_specificity(selector.to_s)
     end
 
     def parse_css_declarations(declarations, source: :css)
-      declarations.split(";").each_with_object({}) do |entry, memo|
-        property, value = entry.split(":", 2).map { |part| part&.strip }
+      return {} if declarations.nil? || declarations.to_s.strip.empty?
+
+      rule_set = CssParser::RuleSet.new(block: declarations.to_s)
+      result = {}
+      rule_set.each_declaration do |property, value, important|
         next if property.nil? || property.empty? || value.nil? || value.empty?
 
-        important = value.match?(/\s*!important\s*\z/)
-        memo[property] = {
-          value: value.sub(/\s*!important\s*\z/, "").strip,
+        result[property] = {
+          value: value,
           important: important,
           source: source
         }
       end
+      result
     end
 
     def merge_inline_declarations!(existing, declarations, touched_properties)

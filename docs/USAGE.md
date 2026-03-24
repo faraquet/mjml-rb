@@ -3,7 +3,7 @@
 A pure-Ruby MJML compiler — no Node.js required. Compiles [MJML v4](https://mjml.io/) markup into responsive HTML email.
 
 - **Ruby**: >= 3.0
-- **Dependencies**: nokogiri (>= 1.13), rexml (>= 3.2.5)
+- **Dependencies**: css_parser (>= 1.17), nokogiri (>= 1.13)
 - **License**: MIT
 
 ---

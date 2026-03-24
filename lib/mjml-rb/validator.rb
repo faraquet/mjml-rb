@@ -77,8 +77,8 @@ module MjmlRb
     end
 
     def validate_allowed_children(node, errors)
-      # Ending-tag components treat content as raw HTML; REXML still parses
-      # children structurally, so skip child validation for those tags.
+      # Ending-tag components treat content as raw HTML; the XML parser still
+      # parses children structurally, so skip child validation for those tags.
       return if MjmlRb.component_registry.ending_tags.include?(node.tag_name)
 
       allowed = MjmlRb.component_registry.dependency_rules[node.tag_name]

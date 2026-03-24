@@ -151,6 +151,162 @@ class ParserTest < Minitest::Test
     refute_nil ast
   end
 
+  # --- HTML named entity replacement ---
+
+  def test_nbsp_entity_is_parsed
+    mjml = <<~MJML
+      <mjml><mj-body><mj-section><mj-column>
+        <mj-text>Hello&nbsp;World</mj-text>
+      </mj-column></mj-section></mj-body></mjml>
+    MJML
+    ast = @parser.parse(mjml)
+    text = walk_to_first(ast, "mj-text")
+    refute_nil text
+    assert_includes text.content, "Hello"
+    assert_includes text.content, "World"
+  end
+
+  def test_multiple_nbsp_entities_in_one_element
+    mjml = <<~MJML
+      <mjml><mj-body><mj-section><mj-column>
+        <mj-text>A&nbsp;B&nbsp;C&nbsp;D</mj-text>
+      </mj-column></mj-section></mj-body></mjml>
+    MJML
+    ast = @parser.parse(mjml)
+    text = walk_to_first(ast, "mj-text")
+    refute_nil text
+    # All four words should survive parsing
+    %w[A B C D].each { |w| assert_includes text.content, w }
+  end
+
+  def test_common_html_entities_are_parsed
+    mjml = <<~MJML
+      <mjml><mj-body><mj-section><mj-column>
+        <mj-text>&copy; 2024 &mdash; All&nbsp;rights &laquo;reserved&raquo;</mj-text>
+      </mj-column></mj-section></mj-body></mjml>
+    MJML
+    # Should not raise - all HTML entities converted to numeric equivalents
+    ast = @parser.parse(mjml)
+    text = walk_to_first(ast, "mj-text")
+    refute_nil text
+    assert_includes text.content, "2024"
+    assert_includes text.content, "rights"
+    assert_includes text.content, "reserved"
+  end
+
+  def test_html_entities_converted_to_numeric_equivalents
+    # Verify that HTML entities are converted to their numeric form
+    parser = MjmlRb::Parser.new
+    content = "Hello&nbsp;World &copy; &mdash;"
+    converted = parser.send(:replace_html_entities, content)
+    assert_equal "Hello&#160;World &#169; &#8212;", converted
+  end
+
+  def test_xml_predefined_entities_are_not_replaced
+    parser = MjmlRb::Parser.new
+    content = "&amp; &lt; &gt; &quot; &apos;"
+    converted = parser.send(:replace_html_entities, content)
+    assert_equal "&amp; &lt; &gt; &quot; &apos;", converted
+  end
+
+  def test_numeric_entities_are_not_replaced
+    parser = MjmlRb::Parser.new
+    content = "&#160; &#x20; &#xA0;"
+    converted = parser.send(:replace_html_entities, content)
+    assert_equal "&#160; &#x20; &#xA0;", converted
+  end
+
+  def test_unknown_named_entity_is_left_as_is
+    parser = MjmlRb::Parser.new
+    content = "&notarealentity;"
+    converted = parser.send(:replace_html_entities, content)
+    assert_equal "&notarealentity;", converted
+  end
+
+  def test_mixed_html_and_xml_entities
+    mjml = <<~MJML
+      <mjml><mj-body><mj-section><mj-column>
+        <mj-text>A &amp; B &nbsp; C &lt; D &copy; E</mj-text>
+      </mj-column></mj-section></mj-body></mjml>
+    MJML
+    ast = @parser.parse(mjml)
+    text = walk_to_first(ast, "mj-text")
+    refute_nil text
+  end
+
+  def test_html_entities_in_non_ending_tag_attributes
+    mjml = <<~MJML
+      <mjml><mj-body>
+        <mj-section background-color="#ffffff">
+          <mj-column>
+            <mj-text>Test</mj-text>
+          </mj-column>
+        </mj-section>
+      </mj-body></mjml>
+    MJML
+    ast = @parser.parse(mjml)
+    refute_nil ast
+  end
+
+  def test_html_entities_outside_cdata_wrapped_tags
+    # Entities in mj-section (not an ending tag, so not CDATA-wrapped)
+    # should still be handled by the entity replacement
+    mjml = '<mjml><mj-body><mj-section data-label="test&nbsp;section"><mj-column><mj-text>Hi</mj-text></mj-column></mj-section></mj-body></mjml>'
+    ast = @parser.parse(mjml)
+    refute_nil ast
+    body = ast.element_children.find { |c| c.tag_name == "mj-body" }
+    section = body.element_children.find { |c| c.tag_name == "mj-section" }
+    # The attribute value should contain the non-breaking space character
+    assert_includes section.attributes["data-label"], "test"
+    assert_includes section.attributes["data-label"], "section"
+  end
+
+  def test_greek_letter_entities
+    parser = MjmlRb::Parser.new
+    content = "&Alpha; &beta; &Omega;"
+    converted = parser.send(:replace_html_entities, content)
+    assert_equal "&#913; &#946; &#937;", converted
+  end
+
+  def test_currency_and_symbol_entities
+    parser = MjmlRb::Parser.new
+    content = "&euro; &trade; &reg; &bull;"
+    converted = parser.send(:replace_html_entities, content)
+    assert_equal "&#8364; &#8482; &#174; &#8226;", converted
+  end
+
+  def test_entity_replacement_in_realistic_email_template
+    mjml = <<~MJML
+      <mjml>
+        <mj-body>
+          <mj-section>
+            <mj-column>
+              <mj-text>
+                Booking&nbsp;confirmed &mdash; ref&nbsp;#12345
+              </mj-text>
+              <mj-text>
+                &copy;&nbsp;2024 HalalBooking&reg;
+              </mj-text>
+              <mj-text>
+                Price: &euro;199&nbsp;per&nbsp;night &bull; Check-in: 3&nbsp;PM
+              </mj-text>
+            </mj-column>
+          </mj-section>
+        </mj-body>
+      </mjml>
+    MJML
+    ast = @parser.parse(mjml)
+    body = ast.element_children.find { |c| c.tag_name == "mj-body" }
+    section = body.element_children.find { |c| c.tag_name == "mj-section" }
+    column = section.element_children.find { |c| c.tag_name == "mj-column" }
+    texts = column.element_children.select { |c| c.tag_name == "mj-text" }
+    assert_equal 3, texts.length
+    assert_includes texts[0].content, "Booking"
+    assert_includes texts[0].content, "confirmed"
+    assert_includes texts[1].content, "2024"
+    assert_includes texts[2].content, "199"
+  end
+
   # --- Comments ---
 
   def test_comments_preserved_when_keep_comments_true
@@ -256,5 +412,18 @@ class ParserTest < Minitest::Test
     refute_nil body
     title = head.element_children.find { |c| c.tag_name == "mj-title" }
     refute_nil title
+  end
+
+  private
+
+  # Walk the AST depth-first and return the first node matching the given tag name.
+  def walk_to_first(node, tag_name)
+    return node if node.tag_name == tag_name
+
+    node.children.each do |child|
+      found = walk_to_first(child, tag_name)
+      return found if found
+    end
+    nil
   end
 end

@@ -8,62 +8,58 @@ class RendererHelpersTest < Minitest::Test
   end
 
   # --- css_specificity ---
+  # css_parser returns integer specificity where IDs=100, classes=10, elements=1
 
   def test_specificity_element_selector
-    assert_equal [0, 0, 1], specificity("p")
+    assert_equal 1, specificity("p")
   end
 
   def test_specificity_class_selector
-    assert_equal [0, 1, 0], specificity(".foo")
+    assert_equal 10, specificity(".foo")
   end
 
   def test_specificity_id_selector
-    assert_equal [1, 0, 0], specificity("#bar")
+    assert_equal 100, specificity("#bar")
   end
 
   def test_specificity_combined
-    # #id .class element = [1, 1, 1]
-    assert_equal [1, 1, 1], specificity("#bar .foo p")
+    assert_equal 111, specificity("#bar .foo p")
   end
 
   def test_specificity_multiple_classes
-    assert_equal [0, 2, 0], specificity(".foo.bar")
+    assert_equal 20, specificity(".foo.bar")
   end
 
   def test_specificity_attribute_selector
-    assert_equal [0, 1, 0], specificity("[type=text]")
+    assert_equal 10, specificity("[type=text]")
   end
 
   def test_specificity_pseudo_class
-    assert_equal [0, 1, 1], specificity("a:hover")
+    assert_equal 11, specificity("a:hover")
   end
 
   def test_specificity_pseudo_element
-    # The implementation counts ::before as both a pseudo-class (:before via single-colon regex)
-    # and a pseudo-element (::before), resulting in [0, 1, 2] not [0, 0, 2].
-    # This is acceptable since the relative ordering is still correct for cascade purposes.
-    assert_equal [0, 1, 2], specificity("p::before")
+    assert_equal 2, specificity("p::before")
   end
 
   def test_specificity_universal_selector
-    assert_equal [0, 0, 0], specificity("*")
+    assert_equal 0, specificity("*")
   end
 
   def test_specificity_complex_selector
-    # .container .item a = [0, 2, 1]
-    assert_equal [0, 2, 1], specificity(".container .item a")
+    assert_equal 21, specificity(".container .item a")
   end
 
   def test_specificity_child_combinator
-    assert_equal [0, 0, 2], specificity("div > p")
+    assert_equal 2, specificity("div > p")
   end
 
   def test_specificity_sibling_combinator
-    assert_equal [0, 0, 2], specificity("h1 + p")
+    assert_equal 2, specificity("h1 + p")
   end
 
   def test_specificity_lang_pseudo_class
-    assert_equal [0, 1, 0], specificity(":lang(en)")
+    assert_equal 10, specificity(":lang(en)")
   end
 
   # --- parse_inline_css_rules ---
@@ -109,49 +105,41 @@ class RendererHelpersTest < Minitest::Test
     assert_equal "#id", selectors[2]
   end
 
-  # --- extract_css_at_rules ---
+  # --- parse_inline_css_rules skips @-rules ---
 
-  def test_extract_at_media
-    plain, at_rules = extract_at_rules("@media (max-width: 600px) { .x { display: none; } } .y { color: red; }")
-    assert_includes at_rules, "@media"
-    assert_includes at_rules, "display: none"
-    assert_includes plain, ".y"
-    refute_includes plain, "@media"
+  def test_parse_skips_at_media
+    rules, _ = parse_css("@media (max-width: 600px) { .x { display: none; } } .y { color: red; }")
+    selectors = rules.map(&:first)
+    assert_includes selectors, ".y"
+    refute selectors.any? { |s| s.include?("@media") }
+    refute_includes selectors, ".x"
   end
 
-  def test_extract_at_font_face
-    plain, at_rules = extract_at_rules("@font-face { font-family: 'Custom'; src: url('f.woff2'); } p { color: red; }")
-    assert_includes at_rules, "@font-face"
-    assert_includes at_rules, "Custom"
-    assert_includes plain, "p { color: red; }"
+  def test_parse_skips_at_font_face
+    rules, _ = parse_css("@font-face { font-family: 'Custom'; src: url('f.woff2'); } p { color: red; }")
+    selectors = rules.map(&:first)
+    assert_includes selectors, "p"
+    refute selectors.any? { |s| s.include?("@font-face") }
   end
 
-  def test_extract_at_import
-    plain, at_rules = extract_at_rules("@import url('styles.css'); p { color: red; }")
-    assert_includes at_rules, "@import"
-    assert_includes plain, "p { color: red; }"
+  def test_parse_handles_no_at_rules
+    rules, _ = parse_css(".a { color: red; } .b { color: blue; }")
+    selectors = rules.map(&:first)
+    assert_includes selectors, ".a"
+    assert_includes selectors, ".b"
   end
 
-  def test_extract_no_at_rules
-    plain, at_rules = extract_at_rules(".a { color: red; } .b { color: blue; }")
-    assert_includes plain, ".a"
-    assert_includes plain, ".b"
-    assert_equal "", at_rules.strip
+  # --- css_parser strips comments automatically ---
+
+  def test_parse_strips_single_line_comment
+    rules, _ = parse_css("p { /* comment */ color: red; }")
+    assert_equal "red", rules.first[1]["color"][:value]
   end
 
-  # --- strip_css_comments ---
-
-  def test_strip_single_line_comment
-    result = strip_comments("p { /* comment */ color: red; }")
-    refute_includes result, "comment"
-    assert_includes result, "color: red"
-  end
-
-  def test_strip_multiline_comment
+  def test_parse_strips_multiline_comment
     css = "p {\n/* multi\nline\ncomment */\ncolor: red;\n}"
-    result = strip_comments(css)
-    refute_includes result, "multi"
-    assert_includes result, "color: red"
+    rules, _ = parse_css(css)
+    assert_equal "red", rules.first[1]["color"][:value]
   end
 
   # --- merge_css_declaration ---
@@ -345,14 +333,6 @@ class RendererHelpersTest < Minitest::Test
 
   def parse_css(css)
     @renderer.send(:parse_inline_css_rules, css)
-  end
-
-  def extract_at_rules(css)
-    @renderer.send(:extract_css_at_rules, css)
-  end
-
-  def strip_comments(css)
-    @renderer.send(:strip_css_comments, css)
   end
 
   def merge_declaration(existing, incoming)

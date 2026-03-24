@@ -75,7 +75,7 @@ Error handling is intentionally forgiving:
 
 ## Parsing Layer
 
-`MjmlRb::Parser` converts MJML source into an `AstNode` tree using `REXML`.
+`MjmlRb::Parser` converts MJML source into an `AstNode` tree using `Nokogiri::XML`.
 
 ### Pre-parse normalization
 
