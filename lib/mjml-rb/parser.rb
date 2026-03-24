@@ -1,7 +1,6 @@
 require "nokogiri"
 
 require_relative "ast_node"
-require_relative "html_entities"
 
 module MjmlRb
   class Parser
@@ -363,12 +362,13 @@ module MjmlRb
     # XML equivalents (e.g. &#160;, &#169;).  XML only defines five named
     # entities (amp, lt, gt, quot, apos); all other named references from
     # HTML must be converted to numeric form for the XML parser to accept them.
+    # Uses Nokogiri's built-in HTML entity lookup table.
     def replace_html_entities(content)
       content.gsub(/&([a-zA-Z][a-zA-Z0-9]*);/) do |match|
         name = ::Regexp.last_match(1)
         next match if XML_PREDEFINED_ENTITIES.include?(name)
 
-        codepoint = HTML_ENTITIES[name]
+        codepoint = Nokogiri::HTML::NamedCharacters[name]
         codepoint ? "&##{codepoint};" : match
       end
     end
