@@ -1,6 +1,7 @@
 require "nokogiri"
 
 require_relative "ast_node"
+require_relative "html_entities"
 
 module MjmlRb
   class Parser
@@ -54,6 +55,7 @@ module MjmlRb
       xml = expand_includes(xml, opts) unless opts[:ignore_includes]
 
       xml = sanitize_bare_ampersands(xml)
+      xml = replace_html_entities(xml)
       doc = Nokogiri::XML(xml) { |config| config.strict }
       normalize_root_head_elements(doc)
       element_to_ast(doc.root, keep_comments: opts[:keep_comments])
@@ -357,6 +359,22 @@ module MjmlRb
       content.gsub(BARE_AMPERSAND_RE, "&amp;")
     end
 
+    # Replace HTML named entities (e.g. &nbsp;, &copy;) with their numeric
+    # XML equivalents (e.g. &#160;, &#169;).  XML only defines five named
+    # entities (amp, lt, gt, quot, apos); all other named references from
+    # HTML must be converted to numeric form for the XML parser to accept them.
+    def replace_html_entities(content)
+      content.gsub(/&([a-zA-Z][a-zA-Z0-9]*);/) do |match|
+        name = ::Regexp.last_match(1)
+        next match if XML_PREDEFINED_ENTITIES.include?(name)
+
+        codepoint = HTML_ENTITIES[name]
+        codepoint ? "&##{codepoint};" : match
+      end
+    end
+
+    XML_PREDEFINED_ENTITIES = %w[amp lt gt quot apos].freeze
+
     # Recursively marks Nokogiri elements from included files with data-mjml-file.
     # Only sets the attribute on elements that don't already have it (preserving
     # deeper include annotations from recursive expansion).
@@ -439,7 +457,7 @@ module MjmlRb
     # Errors are collected but do not raise; the final strict parse in #parse
     # will surface any real issues.
     def parse_xml(xml)
-      Nokogiri::XML(xml)
+      Nokogiri::XML(replace_html_entities(xml))
     end
 
     def ignorable_whitespace_text?(text, parent_element_name:)
