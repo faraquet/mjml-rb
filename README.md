@@ -24,6 +24,8 @@ A pure-Ruby MJML v4 compiler — no Node.js required.
 
 ## Installation
 
+`mjml-rb` requires Ruby 3.3 or newer.
+
 ```ruby
 # Gemfile
 gem "mjml-rb"
