@@ -292,22 +292,30 @@ class RendererHelpersTest < Minitest::Test
     assert_includes result, "&amp;"
   end
 
-  # --- html_void_tag? ---
+  # --- Nokogiri native void tag handling ---
+  # Nokogiri's to_html / inner_html natively self-closes void elements
+  # and keeps non-void elements with explicit close tags.
 
-  def test_html_void_tag_br
-    assert @renderer.send(:html_void_tag?, "br")
+  def test_nokogiri_self_closes_br
+    fragment = Nokogiri::HTML::DocumentFragment.parse("<div><br></div>")
+    assert_match %r{<br\s*/?>}, fragment.at("div").inner_html
   end
 
-  def test_html_void_tag_img
-    assert @renderer.send(:html_void_tag?, "img")
+  def test_nokogiri_self_closes_img
+    fragment = Nokogiri::HTML::DocumentFragment.parse('<div><img src="x.png"></div>')
+    html = fragment.at("div").inner_html
+    assert_match %r{<img\s}, html
+    refute_match %r{</img>}, html
   end
 
-  def test_html_void_tag_div_is_not_void
-    refute @renderer.send(:html_void_tag?, "div")
+  def test_nokogiri_does_not_self_close_div
+    fragment = Nokogiri::HTML::DocumentFragment.parse("<div><div></div></div>")
+    assert_includes fragment.at("div").inner_html, "</div>"
   end
 
-  def test_html_void_tag_case_insensitive
-    assert @renderer.send(:html_void_tag?, "BR")
+  def test_nokogiri_does_not_self_close_td
+    fragment = Nokogiri::HTML::DocumentFragment.parse("<table><tr><td></td></tr></table>")
+    assert_includes fragment.at("tr").inner_html, "</td>"
   end
 
   # --- hash_or_empty ---
