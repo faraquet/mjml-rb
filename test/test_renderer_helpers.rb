@@ -292,24 +292,6 @@ class RendererHelpersTest < Minitest::Test
     assert_includes result, "&amp;"
   end
 
-  # --- html_void_tag? ---
-
-  def test_html_void_tag_br
-    assert @renderer.send(:html_void_tag?, "br")
-  end
-
-  def test_html_void_tag_img
-    assert @renderer.send(:html_void_tag?, "img")
-  end
-
-  def test_html_void_tag_div_is_not_void
-    refute @renderer.send(:html_void_tag?, "div")
-  end
-
-  def test_html_void_tag_case_insensitive
-    assert @renderer.send(:html_void_tag?, "BR")
-  end
-
   # --- hash_or_empty ---
 
   def test_hash_or_empty_with_hash

@@ -26,8 +26,6 @@ require_relative "components/spacer"
 
 module MjmlRb
   class Renderer
-    HTML_VOID_TAGS = Set.new(%w[area base br col embed hr img input link meta param source track wbr]).freeze
-
     DEFAULT_FONTS = {
       "Open Sans" => "https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,700",
       "Droid Sans" => "https://fonts.googleapis.com/css?family=Droid+Sans:300,400,500,700",
@@ -690,16 +688,8 @@ module MjmlRb
     end
 
     def html_inner(node)
-      if node.respond_to?(:children)
-        node.children.map do |child|
-          if child.text?
-            serialize_text_content(escape_html(child.content.to_s))
-          elsif child.comment?
-            "<!--#{child.content}-->"
-          else
-            serialize_node(child)
-          end
-        end.join
+      if node.respond_to?(:inner_html)
+        node.inner_html
       else
         escape_html(node.text_content)
       end
@@ -712,11 +702,9 @@ module MjmlRb
       if node.respond_to?(:children)
         node.children.map do |child|
           if child.text?
-            serialize_text_content(child.content.to_s)
-          elsif child.comment?
-            "<!--#{child.content}-->"
+            child.content.to_s
           else
-            serialize_node(child)
+            child.to_html
           end
         end.join
       else
@@ -748,30 +736,6 @@ module MjmlRb
 
     def encode_whitespace_entities(text)
       text.to_s.gsub(" ", "&#32;").gsub("\t", "&#9;")
-    end
-
-    def serialize_node(node)
-      attrs = node.attributes.map { |k, v| %( #{k}="#{escape_attr(v)}") }.join
-      return "<#{node.tag_name}#{attrs} />" if node.children.empty? && html_void_tag?(node.tag_name)
-      return "<#{node.tag_name}#{attrs}></#{node.tag_name}>" if node.children.empty?
-
-      inner = node.children.map { |child| child.text? ? serialize_text_content(child.content.to_s) : serialize_node(child) }.join
-      "<#{node.tag_name}#{attrs}>#{inner}</#{node.tag_name}>"
-    end
-
-    def serialize_text_content(text)
-      value = text.to_s
-      return value unless significant_whitespace_text?(value)
-
-      value.gsub(" ", "&#32;").gsub("\t", "&#9;")
-    end
-
-    def significant_whitespace_text?(text)
-      !text.empty? && text.strip.empty? && !text.match?(/[\r\n]/)
-    end
-
-    def html_void_tag?(tag_name)
-      HTML_VOID_TAGS.include?(tag_name.to_s.downcase)
     end
 
     def style_join(hash)
