@@ -16,7 +16,7 @@ module MjmlRb
     end
 
     def validate(mjml_or_ast, options = {})
-      root = mjml_or_ast.is_a?(AstNode) ? mjml_or_ast : parse_ast(mjml_or_ast, options)
+      root = mjml_or_ast.is_a?(Nokogiri::XML::Node) ? mjml_or_ast : parse_ast(mjml_or_ast, options)
       unless root&.tag_name == "mjml"
         return { errors: [error("Root element must be <mjml>", tag_name: root&.tag_name)], warnings: [] }
       end
@@ -97,7 +97,7 @@ module MjmlRb
     def validate_required_attributes(node, errors)
       required = REQUIRED_BY_TAG[node.tag_name] || []
       required.each do |attr|
-        next if node.attributes.key?(attr)
+        next if node.has_attribute?(attr)
 
         errors << error("Attribute `#{attr}` is required for <#{node.tag_name}>",
                         tag_name: node.tag_name, line: node.line, file: node.file)
@@ -108,7 +108,7 @@ module MjmlRb
       allowed_attributes = allowed_attributes_for(node.tag_name)
       return if allowed_attributes.empty?
 
-      node.attributes.each_key do |attribute_name|
+      string_attrs(node).each_key do |attribute_name|
         next if allowed_attributes.key?(attribute_name)
         next if GLOBAL_ALLOWED_ATTRIBUTES.include?(attribute_name)
 
@@ -121,7 +121,7 @@ module MjmlRb
       allowed_attributes = allowed_attributes_for(node.tag_name)
       return if allowed_attributes.empty?
 
-      node.attributes.each do |attribute_name, attribute_value|
+      string_attrs(node).each do |attribute_name, attribute_value|
         next if GLOBAL_ALLOWED_ATTRIBUTES.include?(attribute_name)
 
         expected_type = allowed_attributes[attribute_name]
@@ -216,6 +216,17 @@ module MjmlRb
         else pattern == tag_name
         end
       end
+    end
+
+    INTERNAL_ATTRIBUTES = %w[data-mjml-file data-mjml-ending-tag data-mjml-raw].freeze
+
+    def string_attrs(node)
+      result = {}
+      node.attributes.each do |name, attr|
+        next if INTERNAL_ATTRIBUTES.include?(name)
+        result[name] = attr.respond_to?(:value) ? attr.value : attr.to_s
+      end
+      result
     end
 
     def error(message, line: nil, tag_name: nil, file: nil)

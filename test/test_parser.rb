@@ -16,15 +16,15 @@ class ParserTest < Minitest::Test
     refute_nil body
   end
 
-  def test_parse_returns_ast_node
+  def test_parse_returns_nokogiri_node
     ast = @parser.parse("<mjml><mj-body></mj-body></mjml>")
-    assert_instance_of MjmlRb::AstNode, ast
+    assert_kind_of Nokogiri::XML::Node, ast
   end
 
   def test_parse_preserves_attributes
     ast = @parser.parse('<mjml><mj-body background-color="#ffffff"></mj-body></mjml>')
     body = ast.element_children.find { |c| c.tag_name == "mj-body" }
-    assert_equal "#ffffff", body.attributes["background-color"]
+    assert_equal "#ffffff", body["background-color"]
   end
 
   # --- Text content ---
@@ -257,8 +257,8 @@ class ParserTest < Minitest::Test
     body = ast.element_children.find { |c| c.tag_name == "mj-body" }
     section = body.element_children.find { |c| c.tag_name == "mj-section" }
     # The attribute value should contain the non-breaking space character
-    assert_includes section.attributes["data-label"], "test"
-    assert_includes section.attributes["data-label"], "section"
+    assert_includes section["data-label"], "test"
+    assert_includes section["data-label"], "section"
   end
 
   def test_greek_letter_entities

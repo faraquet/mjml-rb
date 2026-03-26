@@ -1,6 +1,6 @@
 require "nokogiri"
 
-require_relative "ast_node"
+require_relative "node_compat"
 
 module MjmlRb
   class Parser
@@ -57,7 +57,8 @@ module MjmlRb
       xml = replace_html_entities(xml)
       doc = Nokogiri::XML(xml) { |config| config.strict }
       normalize_root_head_elements(doc)
-      element_to_ast(doc.root, keep_comments: opts[:keep_comments])
+      prepare_node(doc.root, keep_comments: opts[:keep_comments])
+      doc.root
     rescue Nokogiri::XML::SyntaxError => e
       raise ParseError.new("XML parse error: #{e.message}")
     end
@@ -402,55 +403,37 @@ module MjmlRb
       raise Errno::ENOENT, include_path
     end
 
-    def element_to_ast(element, keep_comments:)
+    def prepare_node(element, keep_comments:)
       raise ParseError, "Missing XML root element" unless element
 
-      # Extract metadata annotations (added by annotate_include_source)
-      # and strip them from the public attributes hash.
-      # Line numbers come from Nokogiri's native node.line.
-      meta_line = element.line
-      meta_file = element["data-mjml-file"]
-      attrs = {}
-      element.attributes.each do |name, attr|
-        attrs[name] = attr.value unless name.start_with?("data-mjml-")
+      # Mark non-mj elements for raw HTML handling
+      unless element.name.start_with?("mj-") || element.name == "mjml"
+        element["data-mjml-raw"] = "true"
       end
-      attrs["data-mjml-raw"] = "true" unless element.name.start_with?("mj-") || element.name == "mjml"
 
-      # For ending-tag elements whose content was wrapped in CDATA, store
-      # the raw HTML directly as content instead of parsing structurally.
+      # For ending-tag elements whose content was wrapped in CDATA,
+      # mark them so raw_inner knows to extract content directly.
       if ENDING_TAGS_FOR_CDATA.include?(element.name)
-        raw_content = element.children.select { |c| c.cdata? || c.text? }.map(&:content).join
-        return AstNode.new(
-          tag_name: element.name,
-          attributes: attrs,
-          children: [],
-          content: raw_content.empty? ? nil : raw_content,
-          line: meta_line,
-          file: meta_file
-        )
+        element["data-mjml-ending-tag"] = "true"
+        return
       end
 
-      children = element.children.each_with_object([]) do |child, memo|
+      # Strip ignorable whitespace text nodes, unwanted comments,
+      # and recurse into element children.
+      element.children.to_a.each do |child|
         if child.element?
-          memo << element_to_ast(child, keep_comments: keep_comments)
+          prepare_node(child, keep_comments: keep_comments)
         elsif child.text? || child.cdata?
           text = child.content
-          next if text.empty?
-          next if text.strip.empty? && ignorable_whitespace_text?(text, parent_element_name: element.name)
-
-          memo << AstNode.new(tag_name: "#text", content: text)
+          if text.empty? || (text.strip.empty? && ignorable_whitespace_text?(text, parent_element_name: element.name))
+            child.remove
+          end
         elsif child.comment?
-          memo << AstNode.new(tag_name: "#comment", content: child.content) if keep_comments
+          child.remove unless keep_comments
+        else
+          child.remove
         end
       end
-
-      AstNode.new(
-        tag_name: element.name,
-        attributes: attrs,
-        children: children,
-        line: meta_line,
-        file: meta_file
-      )
     end
 
     # Lenient XML parse used during include expansion and intermediate steps.

@@ -616,7 +616,7 @@ class ValidatorTest < Minitest::Test
     assert_equal 6, src_error[:line]
   end
 
-  def test_ast_nodes_have_line_numbers
+  def test_nodes_have_line_numbers
     parser = MjmlRb::Parser.new
     ast = parser.parse(<<~MJML)
       <mjml>
@@ -663,9 +663,9 @@ class ValidatorTest < Minitest::Test
                     .element_children.first  # mj-text
 
     assert_equal "mj-text", text_node.tag_name
-    assert_equal "left", text_node.attributes["align"]
-    refute text_node.attributes.key?("data-mjml-line"), "data-mjml-line should be stripped from attributes"
-    refute text_node.attributes.key?("data-mjml-file"), "data-mjml-file should be stripped from attributes"
+    assert_equal "left", text_node["align"]
+    # data-mjml-* attributes exist on the Nokogiri node but are filtered out
+    # by node_string_attributes / string_attrs helpers used by components and validator.
     assert text_node.line, "mj-text should have a line number via the line field"
   end
 end

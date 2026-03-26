@@ -8,7 +8,7 @@ class TestPerformanceRegression < Minitest::Test
     MjmlRb::Compiler.new(validation_level: "skip", **opts).compile(mjml)
   end
 
-  # --- AstNode#element_children memoization ---
+  # --- element_children ---
 
   def test_element_children_returns_same_result_on_repeated_calls
     ast = MjmlRb::Parser.new.parse(<<~MJML)
@@ -319,7 +319,7 @@ class TestPerformanceRegression < Minitest::Test
     MJML
 
     # text_content should aggregate all text nodes
-    content = ast.text_content
+    content = ast.content
     assert_kind_of String, content
   end
 

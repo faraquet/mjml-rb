@@ -130,7 +130,7 @@ module MjmlRb
       end
 
       def normalize_table_node_attributes(node)
-        attrs = node.attributes.dup
+        attrs = node_string_attributes(node).dup
         style_map = parse_style_map(attrs["style"])
 
         if %w[table td th a].include?(node.tag_name)
