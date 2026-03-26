@@ -237,7 +237,7 @@ module MjmlRb
 
       def render_social_element(node, attrs)
         a        = attrs # already merged with defaults by caller
-        net_name = node.attributes["name"]
+        net_name = node["name"]
         network  = SOCIAL_NETWORKS[net_name] || {}
 
         # Resolve href: if network has a share-url, substitute [[URL]] with the raw href
@@ -325,7 +325,7 @@ module MjmlRb
         HTML
 
         # Content cell (text)
-        content = node.text_content.strip
+        content = node.content.strip
         content_cell = if content.empty?
                          ""
                        else

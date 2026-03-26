@@ -76,6 +76,10 @@ module MjmlRb
       def html_attrs(hash)
         renderer.send(:html_attrs, hash)
       end
+
+      def node_string_attributes(node)
+        renderer.send(:node_string_attributes, node)
+      end
     end
   end
 end

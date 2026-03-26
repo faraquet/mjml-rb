@@ -50,7 +50,7 @@ file notifications.
 `MjmlRb::Compiler` is the orchestrator. `Compiler#compile` follows this flow:
 
 1. Merge default options with call-specific options.
-2. Parse MJML into an `AstNode` tree.
+2. Parse MJML into a Nokogiri XML node tree.
 3. Run validation unless `validation_level` is `skip`.
 4. Stop early when strict validation fails.
 5. Render HTML from the AST.
@@ -75,7 +75,7 @@ Error handling is intentionally forgiving:
 
 ## Parsing Layer
 
-`MjmlRb::Parser` converts MJML source into an `AstNode` tree using `Nokogiri::XML`.
+`MjmlRb::Parser` converts MJML source into a Nokogiri XML node tree.
 
 ### Pre-parse normalization
 
@@ -104,17 +104,21 @@ for MJML or HTML but not strict XML.
 Include expansion is implemented inside the parser rather than in the renderer,
 so downstream stages always operate on a single expanded document tree.
 
-### AST shape
+### Node tree
 
-`MjmlRb::AstNode` is the uniform tree structure used by validation and
-rendering.
+The parser returns the root `Nokogiri::XML::Node` directly. A small
+`MjmlRb::NodeCompat` module is prepended to `Nokogiri::XML::Node` to add
+convenience methods (`tag_name` as an alias for `name`, and `file` to read
+the `data-mjml-file` annotation).
 
-- Element nodes store `tag_name`, `attributes`, `children`, and `line`.
-- Text nodes are represented with `tag_name == "#text"`.
-- Comment nodes are represented with `tag_name == "#comment"`.
+- Element nodes are `Nokogiri::XML::Element` instances.
+- Text nodes respond to `text?` and store their content in `content`.
+- Comment nodes respond to `comment?`.
+- Ending-tag components (e.g. `mj-text`, `mj-button`) are marked with a
+  `data-mjml-ending-tag` attribute; their raw HTML is preserved as CDATA children.
 
-The AST is intentionally small and generic. Component behavior is not embedded
-in the node type; it is provided later by the renderer and validator.
+Component behavior is not embedded in the node type; it is provided later by
+the renderer and validator.
 
 ## Validation Layer
 

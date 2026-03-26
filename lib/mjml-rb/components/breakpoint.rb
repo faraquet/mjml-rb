@@ -18,7 +18,7 @@ module MjmlRb
       end
 
       def handle_head(node, context)
-        width = node.attributes["width"].to_s.strip
+        width = node["width"].to_s.strip
         context[:breakpoint] = width unless width.empty?
       end
     end

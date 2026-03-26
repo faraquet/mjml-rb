@@ -97,7 +97,7 @@ Supports Slim and Haml via `config.mjml_rb.rails_template_language = :slim`. See
 MJML string → Parser → AST → Validator → Renderer → HTML
 ```
 
-1. **Parser** — normalizes source, expands `mj-include`, builds `AstNode` tree
+1. **Parser** — normalizes source, expands `mj-include`, produces a Nokogiri XML node tree
 2. **Validator** — checks structure, hierarchy, and attribute types
 3. **Renderer** — resolves head metadata, applies defaults, emits responsive HTML
 

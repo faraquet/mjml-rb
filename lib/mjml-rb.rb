@@ -1,6 +1,6 @@
 require_relative "mjml-rb/version"
 require_relative "mjml-rb/result"
-require_relative "mjml-rb/ast_node"
+require_relative "mjml-rb/node_compat"
 require_relative "mjml-rb/dependencies"
 require_relative "mjml-rb/component_registry"
 require_relative "mjml-rb/config_file"

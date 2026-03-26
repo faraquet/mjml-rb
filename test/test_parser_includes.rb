@@ -184,7 +184,7 @@ class ParserIncludesTest < Minitest::Test
       head = find_child(ast, "mj-head")
       style = find_child(head, "mj-style")
       refute_nil style
-      assert_equal "inline", style.attributes["inline"]
+      assert_equal "inline", style["inline"]
     end
   end
 

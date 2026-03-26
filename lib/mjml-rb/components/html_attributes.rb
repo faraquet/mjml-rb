@@ -32,16 +32,16 @@ module MjmlRb
         node.element_children.each do |selector|
           next unless selector.tag_name == "mj-selector"
 
-          path = selector.attributes["path"].to_s.strip
+          path = selector["path"].to_s.strip
           next if path.empty?
 
           custom_attrs = selector.element_children.each_with_object({}) do |child, memo|
             next unless child.tag_name == "mj-html-attribute"
 
-            name = child.attributes["name"].to_s.strip
+            name = child["name"].to_s.strip
             next if name.empty?
 
-            memo[name] = child.text_content
+            memo[name] = child.content
           end
           next if custom_attrs.empty?
 

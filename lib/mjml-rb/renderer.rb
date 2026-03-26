@@ -70,9 +70,9 @@ module MjmlRb
 
       context = build_context(head, options)
       context[:before_doctype] = root_file_start_raw(document)
-      context[:lang] = options[:lang] || document.attributes["lang"] || "und"
-      context[:dir] = options[:dir] || document.attributes["dir"] || "auto"
-      context[:force_owa_desktop] = document.attributes["owa"] == "desktop"
+      context[:lang] = options[:lang] || document["lang"] || "und"
+      context[:dir] = options[:dir] || document["dir"] || "auto"
+      context[:force_owa_desktop] = document["owa"] == "desktop"
       context[:printer_support] = options[:printer_support] || options[:printerSupport]
       context[:column_widths] = {}
       append_component_head_styles(document, context)
@@ -225,7 +225,7 @@ module MjmlRb
       return [100] if total == 0
 
       widths = columns.map do |col|
-        w = col.attributes["width"]
+        w = col["width"]
         if w && w.to_s =~ /(\d+(?:\.\d+)?)\s*%/
           $1.to_f
         elsif w && w.to_s =~ /(\d+(?:\.\d+)?)\s*px/
@@ -668,7 +668,7 @@ module MjmlRb
       attrs.merge!(context[:global_defaults] || {})
       attrs.merge!(context[:tag_defaults][node.tag_name] || {})
 
-      node_classes = node.attributes["mj-class"].to_s.split(/\s+/).reject(&:empty?)
+      node_classes = node["mj-class"].to_s.split(/\s+/).reject(&:empty?)
       class_attrs = node_classes.each_with_object({}) do |klass, memo|
         mj_class_attrs = (context[:classes] || {})[klass] || {}
         if memo["css-class"] && mj_class_attrs["css-class"]
@@ -683,33 +683,29 @@ module MjmlRb
         attrs.merge!(((context[:classes_default] || {})[klass] || {})[node.tag_name] || {})
       end
 
-      attrs.merge!(node.attributes)
+      attrs.merge!(node_string_attributes(node))
       attrs
     end
 
     def html_inner(node)
-      if node.respond_to?(:inner_html)
-        node.inner_html
-      else
-        escape_html(node.text_content)
-      end
+      node.inner_html
     end
 
     def raw_inner(node)
-      # For ending-tag nodes whose content was preserved as raw HTML by the parser
-      return node.content if node.element? && node.content
-
-      if node.respond_to?(:children)
-        node.children.map do |child|
-          if child.text?
-            child.content.to_s
-          else
-            child.to_html
-          end
-        end.join
-      else
-        node.text_content
+      # For ending-tag nodes whose content was preserved as raw HTML by the parser.
+      # The parser marks these with data-mjml-ending-tag; their children are CDATA
+      # nodes containing the raw HTML content.
+      if node.element? && node["data-mjml-ending-tag"]
+        return node.children.select { |c| c.cdata? || c.text? }.map(&:content).join
       end
+
+      node.children.map do |child|
+        if child.text?
+          child.content.to_s
+        else
+          child.to_html
+        end
+      end.join
     end
 
     def annotate_raw_html(content)
@@ -755,7 +751,7 @@ module MjmlRb
 
     def with_inherited_mj_class(context, node)
       previous = context[:inherited_mj_class]
-      current = node.attributes["mj-class"]
+      current = node["mj-class"]
       context[:inherited_mj_class] = (current && !current.empty?) ? current : previous
       yield
     ensure
@@ -765,7 +761,7 @@ module MjmlRb
     def root_file_start_raw(document)
       document.element_children.filter_map do |child|
         next unless child.tag_name == "mj-raw"
-        next unless child.attributes["position"] == "file-start"
+        next unless child["position"] == "file-start"
 
         raw_inner(child)
       end.join("\n")
@@ -776,6 +772,20 @@ module MjmlRb
 
       result << node.tag_name
       node.children.each { |child| collect_tag_names(child, result) if child.respond_to?(:children) }
+      result
+    end
+
+    # Internal-only attributes set by the parser for metadata tracking.
+    # These are excluded from the public attributes hash; data-mjml-raw
+    # is intentionally kept because it is used by the rendering pipeline.
+    INTERNAL_ATTRIBUTES = %w[data-mjml-file data-mjml-ending-tag].freeze
+
+    def node_string_attributes(node)
+      result = {}
+      node.attributes.each do |name, attr|
+        next if INTERNAL_ATTRIBUTES.include?(name)
+        result[name] = attr.respond_to?(:value) ? attr.value : attr.to_s
+      end
       result
     end
 

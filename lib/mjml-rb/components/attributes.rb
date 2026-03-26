@@ -23,16 +23,16 @@ module MjmlRb
         attributes_node.element_children.each do |child|
           case child.tag_name
           when "mj-all"
-            context[:global_defaults].merge!(child.attributes)
+            context[:global_defaults].merge!(node_string_attributes(child))
           when "mj-class"
-            name = child.attributes["name"]
+            name = child["name"]
             next unless name
 
             context[:classes][name] ||= {}
-            context[:classes][name].merge!(child.attributes.reject { |key, _| key == "name" })
+            context[:classes][name].merge!(node_string_attributes(child).reject { |key, _| key == "name" })
 
             defaults = child.element_children.each_with_object({}) do |class_child, memo|
-              memo[class_child.tag_name] = class_child.attributes
+              memo[class_child.tag_name] = node_string_attributes(class_child)
             end
             next if defaults.empty?
 
@@ -40,7 +40,7 @@ module MjmlRb
             context[:classes_default][name].merge!(defaults)
           else
             context[:tag_defaults][child.tag_name] ||= {}
-            context[:tag_defaults][child.tag_name].merge!(child.attributes)
+            context[:tag_defaults][child.tag_name].merge!(node_string_attributes(child))
           end
         end
       end
