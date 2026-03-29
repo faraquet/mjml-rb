@@ -2,15 +2,6 @@
 
 # MJML Ruby Implementation
 
-> **Note:** This is an unofficial Ruby port of the MJML email framework,
-> not affiliated with or endorsed by the MJML team.
-> All 22 MJML v4 components are implemented and tested against npm MJML v4.18.0.
-> Output may differ from the npm renderer in cosmetic ways (whitespace, attribute ordering)
-> but renders identically across email clients.
-> We recommend testing your templates when migrating from the npm renderer.
-> This is a **fully open source project** — feedback, bug reports, test cases,
-> and pull requests are welcome!
-
 A pure-Ruby MJML v4 compiler — no Node.js required.
 
 - Library API compatible with `mjml2html`
@@ -104,6 +95,14 @@ MJML string → Parser → AST → Validator → Renderer → HTML
 For the full internal walkthrough, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Remaining parity work is tracked in [npm ↔ Ruby Parity Audit](docs/PARITY_AUDIT.md).
+
+## Contributing
+
+This is a fully open source project — feedback, bug reports, test cases, and pull requests are welcome! Feel free to use it in your projects and let me know how it goes.
+
+## Disclaimer
+
+This is an unofficial Ruby port of the MJML email framework, not affiliated with or endorsed by the MJML team. All 22 MJML v4 components are implemented and tested against npm MJML v4.18.0. Output may differ from the npm renderer in cosmetic ways (whitespace, attribute ordering) but renders identically across email clients.
 
 ## License
 
