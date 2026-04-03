@@ -1,11 +1,16 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class DividerTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/divider")
+
   def compile(mjml, **opts)
     MjmlRb::Compiler.new(**opts).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_divider_renders_with_defaults
@@ -21,8 +26,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "border-top:solid 4px #000000"
-    assert_includes result.html, "margin:0px auto"
+    assert_equal expected("renders_with_defaults"), result.html
   end
 
   def test_divider_custom_border_attributes
@@ -42,7 +46,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "border-top:dashed 2px #ff0000"
+    assert_equal expected("custom_border_attributes"), result.html
   end
 
   def test_divider_custom_width
@@ -58,7 +62,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "width:50%"
+    assert_equal expected("custom_width"), result.html
   end
 
   def test_divider_left_alignment
@@ -74,8 +78,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'align="left"'
-    assert_includes result.html, "margin:0px"
+    assert_equal expected("left_alignment"), result.html
   end
 
   def test_divider_right_alignment
@@ -91,8 +94,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'align="right"'
-    assert_includes result.html, "margin:0px 0px 0px auto"
+    assert_equal expected("right_alignment"), result.html
   end
 
   def test_divider_container_background_color
@@ -108,7 +110,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "background:#eeeeee"
+    assert_equal expected("container_background_color"), result.html
   end
 
   def test_divider_custom_padding
@@ -124,7 +126,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "padding:20px 30px"
+    assert_equal expected("custom_padding"), result.html
   end
 
   def test_divider_outlook_block
@@ -140,8 +142,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "<!--[if mso | IE]>"
-    assert_includes result.html, "height:0;line-height:0;"
+    assert_equal expected("outlook_block"), result.html
   end
 
   def test_divider_css_class
@@ -157,7 +158,7 @@ class DividerTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'class="my-divider"'
+    assert_equal expected("css_class"), result.html
   end
 
   def test_divider_passes_strict_validation

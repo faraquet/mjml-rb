@@ -1,11 +1,16 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class ButtonTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/button")
+
   def compile(mjml, **opts)
     MjmlRb::Compiler.new(**opts).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_button_component_renders_with_href
@@ -20,25 +25,8 @@ class ButtonTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    assert_empty(result.errors)
-    # Outer wrapper
-    assert_includes(result.html, 'align="center"')
-    assert_includes(result.html, 'word-break:break-word')
-    # Inner button table
-    assert_includes(result.html, 'border-collapse:separate')
-    assert_includes(result.html, 'line-height:100%')
-    # Inner td with bgcolor
-    assert_includes(result.html, 'bgcolor="#414141"')
-    assert_includes(result.html, 'border-radius:3px')
-    assert_includes(result.html, 'cursor:auto')
-    assert_includes(result.html, 'mso-padding-alt:10px 25px')
-    # Link
-    assert_includes(result.html, 'href="https://example.com"')
-    assert_includes(result.html, 'target="_blank"')
-    assert_includes(result.html, 'display:inline-block')
-    assert_includes(result.html, 'mso-padding-alt:0px')
-    assert_includes(result.html, 'Click me')
+    assert_empty result.errors
+    assert_equal expected("renders_with_href"), result.html
   end
 
   def test_button_href_query_params_are_escaped_once
@@ -55,13 +43,8 @@ class ButtonTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    assert_empty(result.errors)
-    assert_includes(
-      result.html,
-      'href="https://example.com/booking?utm_source=email&amp;utm_medium=transactional&amp;utm_campaign=spring"'
-    )
-    refute_includes(result.html, "&amp;amp;")
+    assert_empty result.errors
+    assert_equal expected("href_query_params_escaped"), result.html
   end
 
   def test_button_component_renders_without_href_as_p_tag
@@ -76,11 +59,8 @@ class ButtonTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    assert_empty(result.errors)
-    assert_includes(result.html, '<p ')
-    refute_includes(result.html, '<a ')
-    assert_includes(result.html, 'No link')
+    assert_empty result.errors
+    assert_equal expected("without_href_as_p_tag"), result.html
   end
 
   def test_button_component_respects_custom_attributes
@@ -102,16 +82,8 @@ class ButtonTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    assert_empty(result.errors)
-    assert_includes(result.html, 'bgcolor="#ff0000"')
-    assert_includes(result.html, 'background:#ff0000')
-    assert_includes(result.html, 'color:#000000')
-    assert_includes(result.html, 'font-size:16px')
-    assert_includes(result.html, 'border-radius:8px')
-    assert_includes(result.html, 'padding:15px 30px')
-    assert_includes(result.html, 'target="_self"')
-    assert_includes(result.html, 'Buy Now')
+    assert_empty result.errors
+    assert_equal expected("custom_attributes"), result.html
   end
 
   def test_button_inlined_background_color_preserves_existing_background_shorthand
@@ -139,13 +111,8 @@ class ButtonTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    assert_empty(result.errors)
-    assert_includes(result.html, 'bgcolor="white"')
-    assert_includes(result.html, 'background-color: white')
-    refute_includes(result.html, 'bgcolor="#414141"')
-    assert_includes(result.html, 'background: #414141')
-    refute_includes(result.html, 'background: white')
+    assert_empty result.errors
+    assert_equal expected("inlined_background_color"), result.html
   end
 
   def test_button_inlined_gradient_preserves_background_image
@@ -171,16 +138,7 @@ class ButtonTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    link = document.at_css('a[href="https://example.com"]')
-    refute_nil(link)
-
-    style = link["style"].to_s
-    assert_includes(style, "background: #00ada5")
-    assert_includes(style, "background-color: #00ada5")
-    assert_includes(style, "background-image: linear-gradient(to bottom, #00ada5, #009089)")
+    assert_empty result.errors
+    assert_equal expected("inlined_gradient"), result.html
   end
 end

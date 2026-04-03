@@ -3,8 +3,14 @@ require "minitest/autorun"
 require_relative "../lib/mjml-rb"
 
 class GroupTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/group")
+
   def compile(mjml, validation_level: "strict")
     MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_group_renders_columns_using_group_width_for_child_calculations
@@ -26,16 +32,7 @@ class GroupTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    html = result.html
-    assert_includes(html, 'background-color:#eeeeee')
-    assert_includes(html, 'class="mj-column-per-50 mj-outlook-group-fix"')
-    assert_includes(html, 'style="vertical-align:top;width:100px"')
-    assert_includes(html, 'style="vertical-align:top;width:200px"')
-    assert_includes(html, 'src="https://example.com/one.jpg"')
-    assert_includes(html, 'src="https://example.com/two.jpg"')
-    assert_includes(html, 'width="100"')
-    assert_includes(html, 'width="200"')
+    assert_equal expected("group_width_child_calculations"), result.html
   end
 
   def test_group_validates_supported_attributes_in_strict_mode
@@ -75,6 +72,6 @@ class GroupTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal(2, result.html.scan('class="mj-column-per-50 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:50%"').length)
+    assert_equal expected("columns_side_by_side"), result.html
   end
 end

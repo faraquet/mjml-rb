@@ -1,11 +1,16 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class TableTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/table")
+
   def compile(mjml, validation_level: "strict")
     MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_table_preserves_cellspacing_and_uses_separate_border_collapse
@@ -33,13 +38,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    table = document.at_css("td.my-table > table")
-
-    refute_nil(table)
-    assert_equal("10", table["cellspacing"])
-    assert_equal("separate", extract_style_value(table["style"], "border-collapse"))
+    assert_equal expected("cellspacing"), result.html
   end
 
   def test_table_width_matches_upstream_cases
@@ -81,12 +80,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    tables = document.css("td.table > table")
-
-    assert_equal(%w[100% 500 80% auto], tables.map { |table| table["width"] })
-    assert_equal(%w[100% 500px 80% auto], tables.map { |table| extract_style_value(table["style"], "width") })
+    assert_equal expected("width"), result.html
   end
 
   def test_table_supports_font_weight_in_strict_mode
@@ -107,13 +101,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    table = document.at_css("td.report-table > table")
-
-    refute_nil(table)
-    assert_includes(table["style"].to_s, "font-weight:700")
-    assert_includes(table["style"].to_s, "table-layout:fixed")
+    assert_equal expected("font_weight"), result.html
   end
 
   def test_mj_table_allows_tr_children_in_strict_mode
@@ -133,8 +121,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "<tr><td style=\"font-family: inherit\">A</td></tr>")
-    assert_includes(result.html, "<tr><td style=\"font-family: inherit\">B</td></tr>")
+    assert_equal expected("tr_children"), result.html
   end
 
   def test_mj_table_normalizes_raw_html_table_children
@@ -163,13 +150,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'class="padding--none--this"')
-    assert_includes(result.html, 'font-family:inherit')
-    assert_includes(result.html, '<table width="100%"')
-    assert_includes(result.html, 'style="font-family: inherit; width: 100%"')
-    assert_includes(result.html, '<td style="width: 60px; padding-right: 10px; font-family: inherit" width="60">A</td>')
-    assert_includes(result.html, '<td style="vertical-align: middle; font-size: 15px; font-family: inherit" valign="middle">B</td>')
-    assert_includes(result.html, '<td style="text-align: right; font-family: inherit" align="right">C</td>')
+    assert_equal expected("nested_html"), result.html
   end
 
   def test_mj_table_normalization_preserves_nested_links_with_inherited_font_family
@@ -192,13 +173,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    link = document.at_css("td.link-table a")
-
-    refute_nil(link)
-    assert_equal("https://example.com", link["href"])
-    assert_equal("color: #cc0000; font-family: inherit", link["style"])
+    assert_equal expected("nested_links"), result.html
   end
 
   def test_mj_table_preserves_significant_spaces_between_inline_html_elements
@@ -221,13 +196,6 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, '<img src="x.png" width="30" style="width: 30px" />&#32;<strong>PLATINUM</strong> member')
-  end
-
-  private
-
-  def extract_style_value(style, property)
-    entry = style.to_s.split(";").map(&:strip).find { |item| item.start_with?("#{property}:") }
-    entry&.split(":", 2)&.last&.strip
+    assert_equal expected("inline_spaces"), result.html
   end
 end

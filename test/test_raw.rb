@@ -3,8 +3,18 @@ require "minitest/autorun"
 require_relative "../lib/mjml-rb"
 
 class MJMLRawTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/raw")
+
+  def compile(mjml)
+    MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   def test_mj_raw_allows_html_children_in_strict_mode
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-body>
           <mj-section>
@@ -16,14 +26,12 @@ class MJMLRawTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, '<meta name="x-test" content="1" />')
-    assert_includes(result.html, "<style>.x{color:red;}</style>")
+    assert_equal expected("html_children_strict"), result.html
   end
 
   def test_mj_raw_in_head_is_emitted_at_end_of_head
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-raw><meta name="x-head" content="1" /></mj-raw>
@@ -38,13 +46,12 @@ class MJMLRawTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-    assert_match(%r{<style type="text/css">.*</style>\s*<meta name="x-head" content="1" />\s*</head>}m, result.html)
+    assert_equal expected("head_raw"), result.html
   end
 
   def test_mj_raw_file_start_is_emitted_before_doctype
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-raw position="file-start">before doctype</mj-raw>
         <mj-body>
@@ -57,8 +64,7 @@ class MJMLRawTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-    assert_match(/\Abefore doctype\s*<!doctype html>/m, result.html)
+    assert_equal expected("file_start"), result.html
   end
 end

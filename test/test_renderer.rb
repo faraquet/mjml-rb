@@ -1,83 +1,42 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class RendererTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/renderer")
+
   def compile(mjml, **opts)
     MjmlRb::Compiler.new(**opts).compile(mjml)
   end
 
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   # --- Basic document structure ---
 
-  def test_renders_doctype
+  def test_renders_minimal_body
     result = compile(<<~MJML)
       <mjml><mj-body></mj-body></mjml>
     MJML
-    assert_includes result.html, "<!doctype html>"
-  end
-
-  def test_renders_html_tag_with_xmlns
-    result = compile(<<~MJML)
-      <mjml><mj-body></mj-body></mjml>
-    MJML
-    assert_includes result.html, 'xmlns="http://www.w3.org/1999/xhtml"'
-    assert_includes result.html, 'xmlns:v="urn:schemas-microsoft-com:vml"'
-    assert_includes result.html, 'xmlns:o="urn:schemas-microsoft-com:office:office"'
-  end
-
-  def test_renders_meta_tags
-    result = compile(<<~MJML)
-      <mjml><mj-body></mj-body></mjml>
-    MJML
-    assert_includes result.html, 'content="text/html; charset=UTF-8"'
-    assert_includes result.html, 'content="width=device-width, initial-scale=1"'
-  end
-
-  def test_renders_outlook_document_settings
-    result = compile(<<~MJML)
-      <mjml><mj-body></mj-body></mjml>
-    MJML
-    assert_includes result.html, "o:OfficeDocumentSettings"
-    assert_includes result.html, "o:AllowPNG"
-  end
-
-  def test_renders_outlook_group_fix
-    result = compile(<<~MJML)
-      <mjml><mj-body></mj-body></mjml>
-    MJML
-    assert_includes result.html, "mj-outlook-group-fix"
-  end
-
-  def test_renders_document_reset_css
-    result = compile(<<~MJML)
-      <mjml><mj-body></mj-body></mjml>
-    MJML
-    assert_includes result.html, "#outlook a { padding:0; }"
-    assert_includes result.html, "-webkit-text-size-adjust:100%"
+    assert_empty result.errors
+    assert_equal expected("minimal_body"), result.html
   end
 
   # --- Language attributes ---
-
-  def test_default_lang_is_und
-    result = compile(<<~MJML)
-      <mjml><mj-body></mj-body></mjml>
-    MJML
-    assert_includes result.html, 'lang="und"'
-  end
 
   def test_custom_lang_from_mjml_attribute
     result = compile(<<~MJML)
       <mjml lang="en"><mj-body></mj-body></mjml>
     MJML
-    assert_includes result.html, 'lang="en"'
+    assert_equal expected("custom_lang"), result.html
   end
 
   def test_custom_dir_from_mjml_attribute
     result = compile(<<~MJML)
       <mjml dir="rtl"><mj-body></mj-body></mjml>
     MJML
-    assert_includes result.html, 'dir="rtl"'
+    assert_equal expected("custom_dir"), result.html
   end
 
   # --- Title ---
@@ -89,14 +48,7 @@ class RendererTest < Minitest::Test
         <mj-body></mj-body>
       </mjml>
     MJML
-    assert_includes result.html, "<title>My Email</title>"
-  end
-
-  def test_renders_empty_title_by_default
-    result = compile(<<~MJML)
-      <mjml><mj-body></mj-body></mjml>
-    MJML
-    assert_includes result.html, "<title></title>"
+    assert_equal expected("title"), result.html
   end
 
   # --- Preview text ---
@@ -108,9 +60,7 @@ class RendererTest < Minitest::Test
         <mj-body></mj-body>
       </mjml>
     MJML
-    assert_includes result.html, "Preview text here"
-    assert_includes result.html, "display:none"
-    assert_includes result.html, "max-height:0px"
+    assert_equal expected("preview_text"), result.html
   end
 
   # --- Body background ---
@@ -121,7 +71,7 @@ class RendererTest < Minitest::Test
         <mj-body background-color="#f4f4f4"></mj-body>
       </mjml>
     MJML
-    assert_includes result.html, "background-color:#f4f4f4"
+    assert_equal expected("body_background_color"), result.html
   end
 
   # --- Font handling ---
@@ -138,8 +88,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_includes result.html, "fonts.googleapis.com"
-    assert_includes result.html, "Open+Sans"
+    assert_equal expected("google_font"), result.html
   end
 
   def test_does_not_include_unused_fonts
@@ -154,7 +103,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    refute_includes result.html, "fonts.googleapis.com"
+    assert_equal expected("no_google_font"), result.html
   end
 
   # --- Media queries ---
@@ -169,7 +118,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_includes result.html, "min-width:480px"
+    assert_equal expected("media_queries"), result.html
   end
 
   def test_custom_breakpoint
@@ -183,7 +132,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_includes result.html, "min-width:600px"
+    assert_equal expected("custom_breakpoint"), result.html
   end
 
   # --- Missing mj-body raises ---
@@ -203,7 +152,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_includes result.html, "<!-- my comment -->"
+    assert_equal expected("comments_kept"), result.html
   end
 
   def test_comments_stripped_when_keep_comments_false
@@ -214,7 +163,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    refute_includes result.html, "<!-- my comment -->"
+    assert_equal expected("comments_stripped"), result.html
   end
 
   # --- Post-processing ---
@@ -227,8 +176,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    # Minified output should not have multi-space gaps
-    refute_match(/>\s{2,}</, result.html)
+    assert_equal expected("minified"), result.html
   end
 
   def test_beautify_option
@@ -239,8 +187,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    # Beautified output has newlines between tags
-    assert_includes result.html, ">\n<"
+    assert_equal expected("beautified"), result.html
   end
 
   # --- Outlook conditional merging ---
@@ -256,7 +203,6 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    # Adjacent conditionals should be merged (no endif immediately followed by if)
-    refute_match(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/, result.html)
+    assert_equal expected("outlook_merged"), result.html
   end
 end

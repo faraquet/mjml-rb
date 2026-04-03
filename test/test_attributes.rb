@@ -3,8 +3,18 @@ require "minitest/autorun"
 require_relative "../lib/mjml-rb"
 
 class MJMLAttributesTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/attributes")
+
+  def compile(mjml)
+    MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   def test_mj_attributes_supports_nested_mj_class_defaults_for_descendants
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-attributes>
@@ -23,16 +33,12 @@ class MJMLAttributesTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, 'class="promo-root"')
-    assert_includes(result.html, 'font-size:20px')
-    assert_includes(result.html, 'color:#ff0000')
-    assert_includes(result.html, 'Promo text')
+    assert_equal expected("nested_mj_class"), result.html
   end
 
   def test_mj_attributes_uses_nearest_mj_class_for_descendant_defaults
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-attributes>
@@ -54,9 +60,7 @@ class MJMLAttributesTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, 'color:#0000ff')
-    refute_includes(result.html, 'color:#ff0000')
+    assert_equal expected("nearest_mj_class"), result.html
   end
 end

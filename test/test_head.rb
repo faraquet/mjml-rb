@@ -3,8 +3,14 @@ require "minitest/autorun"
 require_relative "../lib/mjml-rb"
 
 class HeadTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/head")
+
   def compile(mjml, validation_level: "soft")
     MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_head_component_handles_core_head_children
@@ -28,12 +34,7 @@ class HeadTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "<title>Head Title</title>")
-    assert_includes(result.html, "Preview text")
-    assert_includes(result.html, 'href="https://fonts.example.test/cairo.css"')
-    assert_includes(result.html, '@import url(https://fonts.example.test/cairo.css);')
-    assert_includes(result.html, ".caps { text-transform: uppercase; }")
-    assert_includes(result.html, '<meta name="x-head" content="1" />')
+    assert_equal expected("core_head_children"), result.html
   end
 
   def test_custom_font_is_not_emitted_when_unused
@@ -53,7 +54,7 @@ class HeadTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    refute_includes(result.html, 'https://fonts.example.test/cairo.css')
+    assert_equal expected("custom_font_unused"), result.html
   end
 
   def test_image_mobile_head_style_uses_active_breakpoint
@@ -73,7 +74,7 @@ class HeadTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "@media only screen and (max-width:319px)")
+    assert_equal expected("image_mobile_breakpoint"), result.html
   end
 
   def test_root_level_preview_before_head_is_normalized_and_rendered
@@ -94,8 +95,7 @@ class HeadTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "<title>Root Preview Test</title>")
-    assert_includes(result.html, "Preview text before head")
+    assert_equal expected("root_level_preview"), result.html
   end
 
   def test_root_level_head_tags_are_accepted_without_explicit_head
