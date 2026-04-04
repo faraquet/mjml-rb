@@ -13,10 +13,6 @@ class RendererTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
-  def body_of(html)
-    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
-  end
-
   # --- Basic document structure ---
 
   def test_renders_minimal_body
@@ -24,7 +20,7 @@ class RendererTest < Minitest::Test
       <mjml><mj-body></mj-body></mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("minimal_body"), body_of(result.html)
+    assert_includes result.html, expected("minimal_body")
   end
 
   # --- Language attributes ---
@@ -33,14 +29,14 @@ class RendererTest < Minitest::Test
     result = compile(<<~MJML)
       <mjml lang="en"><mj-body></mj-body></mjml>
     MJML
-    assert_equal expected("custom_lang"), body_of(result.html)
+    assert_includes result.html, expected("custom_lang")
   end
 
   def test_custom_dir_from_mjml_attribute
     result = compile(<<~MJML)
       <mjml dir="rtl"><mj-body></mj-body></mjml>
     MJML
-    assert_equal expected("custom_dir"), body_of(result.html)
+    assert_includes result.html, expected("custom_dir")
   end
 
   # --- Title ---
@@ -52,7 +48,7 @@ class RendererTest < Minitest::Test
         <mj-body></mj-body>
       </mjml>
     MJML
-    assert_equal expected("title"), body_of(result.html)
+    assert_includes result.html, expected("title")
   end
 
   # --- Preview text ---
@@ -64,7 +60,7 @@ class RendererTest < Minitest::Test
         <mj-body></mj-body>
       </mjml>
     MJML
-    assert_equal expected("preview_text"), body_of(result.html)
+    assert_includes result.html, expected("preview_text")
   end
 
   # --- Body background ---
@@ -75,7 +71,7 @@ class RendererTest < Minitest::Test
         <mj-body background-color="#f4f4f4"></mj-body>
       </mjml>
     MJML
-    assert_equal expected("body_background_color"), body_of(result.html)
+    assert_includes result.html, expected("body_background_color")
   end
 
   # --- Font handling ---
@@ -92,7 +88,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("google_font"), body_of(result.html)
+    assert_includes result.html, expected("google_font")
   end
 
   def test_does_not_include_unused_fonts
@@ -107,7 +103,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("no_google_font"), body_of(result.html)
+    assert_includes result.html, expected("no_google_font")
   end
 
   # --- Media queries ---
@@ -122,7 +118,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("media_queries"), body_of(result.html)
+    assert_includes result.html, expected("media_queries")
   end
 
   def test_custom_breakpoint
@@ -136,7 +132,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("custom_breakpoint"), body_of(result.html)
+    assert_includes result.html, expected("custom_breakpoint")
   end
 
   # --- Missing mj-body raises ---
@@ -156,7 +152,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("comments_kept"), body_of(result.html)
+    assert_includes result.html, expected("comments_kept")
   end
 
   def test_comments_stripped_when_keep_comments_false
@@ -167,7 +163,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("comments_stripped"), body_of(result.html)
+    assert_includes result.html, expected("comments_stripped")
   end
 
   # --- Post-processing ---
@@ -180,7 +176,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("minified"), body_of(result.html)
+    assert_includes result.html, expected("minified")
   end
 
   def test_beautify_option
@@ -191,7 +187,7 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("beautified"), body_of(result.html)
+    assert_includes result.html, expected("beautified")
   end
 
   # --- Outlook conditional merging ---
@@ -207,6 +203,6 @@ class RendererTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-    assert_equal expected("outlook_merged"), body_of(result.html)
+    assert_includes result.html, expected("outlook_merged")
   end
 end

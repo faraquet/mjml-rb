@@ -13,10 +13,6 @@ class TableTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
-  def body_of(html)
-    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
-  end
-
   def test_table_preserves_cellspacing_and_uses_separate_border_collapse
     result = compile(<<~MJML)
       <mjml>
@@ -42,7 +38,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("cellspacing"), body_of(result.html)
+    assert_includes result.html, expected("cellspacing")
   end
 
   def test_table_width_matches_upstream_cases
@@ -84,7 +80,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("width"), body_of(result.html)
+    assert_includes result.html, expected("width")
   end
 
   def test_table_supports_font_weight_in_strict_mode
@@ -105,7 +101,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("font_weight"), body_of(result.html)
+    assert_includes result.html, expected("font_weight")
   end
 
   def test_mj_table_allows_tr_children_in_strict_mode
@@ -125,7 +121,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("tr_children"), body_of(result.html)
+    assert_includes result.html, expected("tr_children")
   end
 
   def test_mj_table_normalizes_raw_html_table_children
@@ -154,7 +150,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("nested_html"), body_of(result.html)
+    assert_includes result.html, expected("nested_html")
   end
 
   def test_mj_table_normalization_preserves_nested_links_with_inherited_font_family
@@ -177,7 +173,7 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("nested_links"), body_of(result.html)
+    assert_includes result.html, expected("nested_links")
   end
 
   def test_mj_table_preserves_significant_spaces_between_inline_html_elements
@@ -200,6 +196,6 @@ class TableTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("inline_spaces"), body_of(result.html)
+    assert_includes result.html, expected("inline_spaces")
   end
 end

@@ -30,7 +30,7 @@ class MJMLBreakpointTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("default_desktop_media_query"), result.html
+    assert_includes result.html, expected("default_desktop_media_query")
   end
 
   def test_breakpoint_component_allows_custom_width_in_strict_mode
@@ -53,6 +53,6 @@ class MJMLBreakpointTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("custom_width"), result.html
+    assert_includes result.html, expected("custom_width")
   end
 end

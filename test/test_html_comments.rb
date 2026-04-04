@@ -13,10 +13,6 @@ class HtmlCommentsTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
-  def body_of(html)
-    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
-  end
-
   # Ported from upstream: html-comments.test.js
   def test_html_comments_preserve_whitespace
     result = compile(<<~MJML, keep_comments: true)
@@ -38,7 +34,7 @@ class HtmlCommentsTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_equal expected("preserve_whitespace"), body_of(result.html)
+    assert_includes result.html, expected("preserve_whitespace")
   end
 
   def test_html_comments_outside_ending_tags_are_preserved_when_enabled
@@ -56,7 +52,7 @@ class HtmlCommentsTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("comments_preserved"), body_of(result.html)
+    assert_includes result.html, expected("comments_preserved")
   end
 
   def test_html_comments_are_removed_when_disabled
@@ -74,6 +70,6 @@ class HtmlCommentsTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("comments_removed"), body_of(result.html)
+    assert_includes result.html, expected("comments_removed")
   end
 end

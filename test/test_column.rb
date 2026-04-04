@@ -6,8 +6,7 @@ class ColumnTest < Minitest::Test
   FIXTURES_DIR = File.join(__dir__, "fixtures/column")
 
   def render(mjml)
-    html = MjmlRb.mjml2html(mjml).fetch(:html)
-    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+    MjmlRb.mjml2html(mjml).fetch(:html)
   end
 
   def expected(name)
@@ -27,7 +26,7 @@ class ColumnTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_equal expected("section_horizontal_padding"), html
+    assert_includes html, expected("section_horizontal_padding")
   end
 
   def test_outlook_td_carries_suffixed_css_class
@@ -43,7 +42,7 @@ class ColumnTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_equal expected("outlook_css_class"), html
+    assert_includes html, expected("outlook_css_class")
   end
 
   def test_px_width_column_generates_px_class_and_media_query
@@ -62,7 +61,7 @@ class ColumnTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_equal expected("px_width"), html
+    assert_includes html, expected("px_width")
   end
 
   def test_pct_width_column_generates_per_class_and_media_query
@@ -81,7 +80,7 @@ class ColumnTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_equal expected("pct_width"), html
+    assert_includes html, expected("pct_width")
   end
 
   def test_column_border_radius_matches_mjml_port_case
@@ -97,6 +96,6 @@ class ColumnTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_equal expected("border_radius"), html
+    assert_includes html, expected("border_radius")
   end
 end

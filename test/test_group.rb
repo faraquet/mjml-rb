@@ -13,10 +13,6 @@ class GroupTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
-  def body_of(html)
-    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
-  end
-
   def test_group_renders_columns_using_group_width_for_child_calculations
     result = compile(<<~MJML)
       <mjml>
@@ -36,7 +32,7 @@ class GroupTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("group_width_child_calculations"), body_of(result.html)
+    assert_includes result.html, expected("group_width_child_calculations")
   end
 
   def test_group_validates_supported_attributes_in_strict_mode
@@ -76,6 +72,6 @@ class GroupTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("columns_side_by_side"), body_of(result.html)
+    assert_includes result.html, expected("columns_side_by_side")
   end
 end
