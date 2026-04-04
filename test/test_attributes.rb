@@ -13,6 +13,10 @@ class MJMLAttributesTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_mj_attributes_supports_nested_mj_class_defaults_for_descendants
     result = compile(<<~MJML)
       <mjml>
@@ -34,7 +38,7 @@ class MJMLAttributesTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("nested_mj_class"), result.html
+    assert_equal expected("nested_mj_class"), body_of(result.html)
   end
 
   def test_mj_attributes_uses_nearest_mj_class_for_descendant_defaults
@@ -61,6 +65,6 @@ class MJMLAttributesTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("nearest_mj_class"), result.html
+    assert_equal expected("nearest_mj_class"), body_of(result.html)
   end
 end

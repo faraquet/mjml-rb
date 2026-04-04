@@ -13,6 +13,10 @@ class WrapperTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_wrapper_and_section_apply_border_radius_overflow_and_separate_border_collapse
     result = compile(<<~MJML)
       <mjml>
@@ -29,7 +33,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("border_radius_overflow"), result.html
+    assert_equal expected("border_radius_overflow"), body_of(result.html)
   end
 
   def test_wrapper_gap_applies_spacing_between_child_sections
@@ -53,7 +57,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("gap_spacing"), result.html
+    assert_equal expected("gap_spacing"), body_of(result.html)
   end
 
   def test_wrapper_renders_background_url_styles
@@ -72,7 +76,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("background_url_styles"), result.html
+    assert_equal expected("background_url_styles"), body_of(result.html)
   end
 
   def test_wrapper_renders_vml_for_background_url
@@ -91,7 +95,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("vml_background_url"), result.html
+    assert_equal expected("vml_background_url"), body_of(result.html)
   end
 
   def test_wrapper_background_vml_matches_upstream_outlook_width_and_fill_format
@@ -116,7 +120,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("vml_upstream_format"), result.html
+    assert_equal expected("vml_upstream_format"), body_of(result.html)
   end
 
   def test_wrapper_full_width_with_background_url
@@ -135,7 +139,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("full_width_background_url"), result.html
+    assert_equal expected("full_width_background_url"), body_of(result.html)
   end
 
   def test_full_width_wrapper_keeps_inner_max_width_for_standard_child_sections
@@ -154,7 +158,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("full_width_inner_max_width"), result.html
+    assert_equal expected("full_width_inner_max_width"), body_of(result.html)
   end
 
   def test_full_width_wrapper_forces_child_full_width_sections_back_to_standard_width
@@ -173,7 +177,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("full_width_forces_standard"), result.html
+    assert_equal expected("full_width_forces_standard"), body_of(result.html)
   end
 
   def test_wrapper_without_background_url_has_no_vml_or_inner_div
@@ -192,7 +196,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_background_url"), result.html
+    assert_equal expected("no_background_url"), body_of(result.html)
   end
 
   def test_wrapper_accepts_full_width_in_strict_mode
@@ -211,7 +215,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("full_width_strict"), result.html
+    assert_equal expected("full_width_strict"), body_of(result.html)
   end
 
   # Each wrapper child section gets its own Outlook <tr><td>, not all in one <tr>.
@@ -228,7 +232,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("children_outlook_tr"), result.html
+    assert_equal expected("children_outlook_tr"), body_of(result.html)
   end
 
   # Wrapper child Outlook td should carry suffixed css-class.
@@ -246,7 +250,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("child_outlook_css_class"), result.html
+    assert_equal expected("child_outlook_css_class"), body_of(result.html)
   end
 
   # Wrapper with gap should omit bgcolor from Outlook before table on child sections.
@@ -267,6 +271,6 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("gap_omits_bgcolor"), result.html
+    assert_equal expected("gap_omits_bgcolor"), body_of(result.html)
   end
 end

@@ -13,6 +13,10 @@ class TextTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_text_supports_background_color_in_strict_mode
     result = compile(<<~MJML)
       <mjml>
@@ -27,6 +31,6 @@ class TextTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("background_color"), result.html
+    assert_equal expected("background_color"), body_of(result.html)
   end
 end

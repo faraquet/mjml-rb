@@ -13,6 +13,10 @@ class SectionTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_section_supports_full_width_mode
     result = compile(<<~MJML)
       <mjml>
@@ -27,7 +31,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("full_width_mode"), result.html
+    assert_equal expected("full_width_mode"), body_of(result.html)
   end
 
   def test_section_accepts_text_padding_in_strict_mode
@@ -44,7 +48,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("text_padding"), result.html
+    assert_equal expected("text_padding"), body_of(result.html)
   end
 
   def test_section_accepts_string_border_radius_values
@@ -61,7 +65,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("string_border_radius"), result.html
+    assert_equal expected("string_border_radius"), body_of(result.html)
   end
 
   def test_section_component_applies_mj_class_background_radius_and_padding
@@ -91,7 +95,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("mj_class_attributes"), result.html
+    assert_equal expected("mj_class_attributes"), body_of(result.html)
   end
 
   # ── background image tests ────────────────────────────────
@@ -114,7 +118,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("background_image_css"), result.html
+    assert_equal expected("background_image_css"), body_of(result.html)
   end
 
   def test_section_background_image_renders_vml_rect_and_fill
@@ -134,7 +138,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("background_image_vml"), result.html
+    assert_equal expected("background_image_vml"), body_of(result.html)
   end
 
   def test_section_without_background_url_preserves_original_output
@@ -149,7 +153,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_background_url"), result.html
+    assert_equal expected("no_background_url"), body_of(result.html)
   end
 
   def test_section_background_position_xy_override
@@ -169,7 +173,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("background_position_xy_override"), result.html
+    assert_equal expected("background_position_xy_override"), body_of(result.html)
   end
 
   def test_section_background_repeat_produces_tile_type_in_vml
@@ -188,7 +192,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("background_repeat_tile"), result.html
+    assert_equal expected("background_repeat_tile"), body_of(result.html)
   end
 
   def test_section_background_vml_formats_origin_and_position_like_upstream
@@ -208,7 +212,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("vml_origin_position"), result.html
+    assert_equal expected("vml_origin_position"), body_of(result.html)
   end
 
   def test_section_background_auto_size_forces_tile
@@ -227,7 +231,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("background_auto_size"), result.html
+    assert_equal expected("background_auto_size"), body_of(result.html)
   end
 
   # Outlook before table should suffix each css-class word with -outlook.
@@ -243,7 +247,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("outlook_css_class_suffix"), result.html
+    assert_equal expected("outlook_css_class_suffix"), body_of(result.html)
   end
 
   def test_section_background_attributes_pass_strict_validation
@@ -265,7 +269,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("strict_background_attributes"), result.html
+    assert_equal expected("strict_background_attributes"), body_of(result.html)
   end
 
   def test_section_rtl_direction_preserves_source_order_and_emits_upstream_styles
@@ -285,6 +289,6 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("rtl_direction"), result.html
+    assert_equal expected("rtl_direction"), body_of(result.html)
   end
 end

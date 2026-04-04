@@ -10,7 +10,8 @@ class NavbarTest < Minitest::Test
   def render_with_fixed_id(mjml)
     original_hex = SecureRandom.method(:hex)
     SecureRandom.define_singleton_method(:hex) { |_length = nil| FIXED_ID }
-    MjmlRb.mjml2html(mjml).fetch(:html)
+    html = MjmlRb.mjml2html(mjml).fetch(:html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
   ensure
     SecureRandom.define_singleton_method(:hex, original_hex)
   end

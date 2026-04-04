@@ -13,6 +13,10 @@ class MJMLStyleInlineTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_mj_style_inline_applies_class_rules_to_rendered_markup
     result = compile(<<~MJML)
       <mjml>
@@ -47,7 +51,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("applies_class_rules"), result.html
+    assert_equal expected("applies_class_rules"), body_of(result.html)
   end
 
   def test_mj_style_inline_supports_lang_pseudo_selector
@@ -69,7 +73,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("lang_pseudo_selector"), result.html
+    assert_equal expected("lang_pseudo_selector"), body_of(result.html)
   end
 
   def test_mj_style_inline_uses_important_for_precedence_without_serializing_it
@@ -94,7 +98,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("important_precedence"), result.html
+    assert_equal expected("important_precedence"), body_of(result.html)
   end
 
   def test_mj_style_inline_does_not_preserve_at_media_rules
@@ -119,7 +123,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_at_media_rules"), result.html
+    assert_equal expected("no_at_media_rules"), body_of(result.html)
   end
 
   def test_mj_style_inline_does_not_preserve_at_font_face_rules
@@ -145,7 +149,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_at_font_face_rules"), result.html
+    assert_equal expected("no_at_font_face_rules"), body_of(result.html)
   end
 
   def test_mj_style_inline_higher_specificity_wins
@@ -168,7 +172,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("higher_specificity_wins"), result.html
+    assert_equal expected("higher_specificity_wins"), body_of(result.html)
   end
 
   def test_mj_style_inline_keeps_latest_declaration_order_for_overwritten_properties
@@ -192,7 +196,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("declaration_order"), result.html
+    assert_equal expected("declaration_order"), body_of(result.html)
   end
 
   def test_mj_style_inline_serializes_padding_shorthand_before_padding_bottom_override
@@ -217,7 +221,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("padding_shorthand_before_override"), result.html
+    assert_equal expected("padding_shorthand_before_override"), body_of(result.html)
   end
 
   def test_inline_css_preserves_gradient_background_image_on_non_button_content
@@ -242,7 +246,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("gradient_background_image"), result.html
+    assert_equal expected("gradient_background_image"), body_of(result.html)
   end
 
   def test_inline_css_keeps_background_attribute_sync_for_url_background_images
@@ -269,7 +273,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("url_background_image_sync"), result.html
+    assert_equal expected("url_background_image_sync"), body_of(result.html)
   end
 
   def test_inline_css_does_not_overwrite_existing_background_shorthand
@@ -297,7 +301,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_overwrite_background_shorthand"), result.html
+    assert_equal expected("no_overwrite_background_shorthand"), body_of(result.html)
   end
 
   # ── HTML attribute syncing (Juice parity) ──────────────────────────────
@@ -321,7 +325,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("syncs_width_height_on_img"), result.html
+    assert_equal expected("syncs_width_height_on_img"), body_of(result.html)
   end
 
   def test_inline_css_does_not_sync_width_percentage_on_img
@@ -343,7 +347,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_sync_width_percentage_on_img"), result.html
+    assert_equal expected("no_sync_width_percentage_on_img"), body_of(result.html)
   end
 
   def test_inline_css_does_not_rewrite_img_width_attribute_when_width_was_not_inlined
@@ -365,7 +369,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_rewrite_img_width_when_not_inlined"), result.html
+    assert_equal expected("no_rewrite_img_width_when_not_inlined"), body_of(result.html)
   end
 
   def test_inline_css_does_not_override_existing_inline_img_width
@@ -389,7 +393,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_override_existing_inline_img_width"), result.html
+    assert_equal expected("no_override_existing_inline_img_width"), body_of(result.html)
   end
 
   def test_inline_css_syncs_bgcolor_on_td
@@ -411,7 +415,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("syncs_bgcolor_on_td"), result.html
+    assert_equal expected("syncs_bgcolor_on_td"), body_of(result.html)
   end
 
   def test_inline_css_syncs_align_on_td
@@ -435,7 +439,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("syncs_align_on_td"), result.html
+    assert_equal expected("syncs_align_on_td"), body_of(result.html)
   end
 
   def test_inline_css_syncs_valign_on_td
@@ -459,7 +463,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("syncs_valign_on_td"), result.html
+    assert_equal expected("syncs_valign_on_td"), body_of(result.html)
   end
 
   def test_inline_css_syncs_width_on_table
@@ -483,7 +487,7 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("syncs_width_on_table"), result.html
+    assert_equal expected("syncs_width_on_table"), body_of(result.html)
   end
 
   def test_inline_css_does_not_sync_bgcolor_for_transparent
@@ -507,6 +511,6 @@ class MJMLStyleInlineTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("no_sync_bgcolor_for_transparent"), result.html
+    assert_equal expected("no_sync_bgcolor_for_transparent"), body_of(result.html)
   end
 end

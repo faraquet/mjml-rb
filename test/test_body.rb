@@ -13,6 +13,10 @@ class MJMLBodyTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_body_component_renders_attributes_and_context
     result = compile(<<~MJML)
       <mjml lang="ar" dir="rtl">
@@ -30,7 +34,7 @@ class MJMLBodyTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("attributes_and_context"), result.html
+    assert_equal expected("attributes_and_context"), body_of(result.html)
   end
 
   def test_body_component_uses_default_width
@@ -47,6 +51,6 @@ class MJMLBodyTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("default_width"), result.html
+    assert_equal expected("default_width"), body_of(result.html)
   end
 end

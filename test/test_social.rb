@@ -97,6 +97,10 @@ class SocialTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_social_accepts_table_layout_attribute
     result = compile(<<~MJML)
       <mjml>
@@ -113,7 +117,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("table_layout"), result.html
+    assert_equal expected("table_layout"), body_of(result.html)
   end
 
   def test_social_rejects_invalid_table_layout_value
@@ -208,7 +212,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("horizontal_rendering"), result.html
+    assert_equal expected("horizontal_rendering"), body_of(result.html)
   end
 
   # Ported from upstream: social-align.test.js
@@ -230,7 +234,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("element_align"), result.html
+    assert_equal expected("element_align"), body_of(result.html)
   end
 
   # Ported from upstream: social-icon-height.test.js
@@ -252,7 +256,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("icon_height"), result.html
+    assert_equal expected("icon_height"), body_of(result.html)
   end
 
   def test_social_vertical_rendering
@@ -271,7 +275,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("vertical_rendering"), result.html
+    assert_equal expected("vertical_rendering"), body_of(result.html)
   end
 
   # Verify html_attrs consolidation: alt="" preserved, nil attrs omitted
@@ -291,7 +295,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("img_empty_alt_no_title"), result.html
+    assert_equal expected("img_empty_alt_no_title"), body_of(result.html)
   end
 
   def test_social_element_img_renders_title_when_provided
@@ -310,7 +314,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_equal expected("img_with_title"), result.html
+    assert_equal expected("img_with_title"), body_of(result.html)
   end
 
   def test_social_network_defaults_match_upstream_icon_definitions

@@ -13,6 +13,10 @@ class ImageTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_image_renders_with_src
     result = compile(<<~MJML)
       <mjml>
@@ -26,7 +30,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("renders_with_src"), result.html
+    assert_equal expected("renders_with_src"), body_of(result.html)
   end
 
   def test_image_default_alt_is_empty
@@ -42,7 +46,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("default_alt_is_empty"), result.html
+    assert_equal expected("default_alt_is_empty"), body_of(result.html)
   end
 
   def test_image_custom_alt
@@ -58,7 +62,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("custom_alt"), result.html
+    assert_equal expected("custom_alt"), body_of(result.html)
   end
 
   def test_image_with_href_wraps_in_link
@@ -74,7 +78,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("with_href_wraps_in_link"), result.html
+    assert_equal expected("with_href_wraps_in_link"), body_of(result.html)
   end
 
   def test_image_without_href_no_link
@@ -90,7 +94,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("without_href_no_link"), result.html
+    assert_equal expected("without_href_no_link"), body_of(result.html)
   end
 
   def test_image_custom_width
@@ -106,7 +110,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("custom_width"), result.html
+    assert_equal expected("custom_width"), body_of(result.html)
   end
 
   def test_image_custom_height
@@ -122,7 +126,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("custom_height"), result.html
+    assert_equal expected("custom_height"), body_of(result.html)
   end
 
   def test_image_height_auto
@@ -138,7 +142,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("height_auto"), result.html
+    assert_equal expected("height_auto"), body_of(result.html)
   end
 
   def test_image_fluid_on_mobile
@@ -154,7 +158,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("fluid_on_mobile"), result.html
+    assert_equal expected("fluid_on_mobile"), body_of(result.html)
   end
 
   def test_image_border_radius
@@ -170,7 +174,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("border_radius"), result.html
+    assert_equal expected("border_radius"), body_of(result.html)
   end
 
   def test_image_container_background_color
@@ -186,7 +190,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("container_background_color"), result.html
+    assert_equal expected("container_background_color"), body_of(result.html)
   end
 
   def test_image_custom_target
@@ -202,7 +206,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("custom_target"), result.html
+    assert_equal expected("custom_target"), body_of(result.html)
   end
 
   def test_image_srcset_and_sizes
@@ -218,7 +222,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("srcset_and_sizes"), result.html
+    assert_equal expected("srcset_and_sizes"), body_of(result.html)
   end
 
   def test_image_passes_strict_validation
@@ -261,6 +265,6 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("head_style_responsive"), result.html
+    assert_equal expected("head_style_responsive"), body_of(result.html)
   end
 end

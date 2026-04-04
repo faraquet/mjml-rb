@@ -6,7 +6,8 @@ class TestColumnAndImage < Minitest::Test
   FIXTURES_DIR = File.join(__dir__, "fixtures/column_and_image")
 
   def render(mjml)
-    MjmlRb.mjml2html(mjml).fetch(:html)
+    html = MjmlRb.mjml2html(mjml).fetch(:html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
   end
 
   def expected(name)

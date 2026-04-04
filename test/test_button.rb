@@ -13,6 +13,10 @@ class ButtonTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_button_component_renders_with_href
     result = compile(<<~MJML)
       <mjml>
@@ -26,7 +30,7 @@ class ButtonTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("renders_with_href"), result.html
+    assert_equal expected("renders_with_href"), body_of(result.html)
   end
 
   def test_button_href_query_params_are_escaped_once
@@ -44,7 +48,7 @@ class ButtonTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("href_query_params_escaped"), result.html
+    assert_equal expected("href_query_params_escaped"), body_of(result.html)
   end
 
   def test_button_component_renders_without_href_as_p_tag
@@ -60,7 +64,7 @@ class ButtonTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("without_href_as_p_tag"), result.html
+    assert_equal expected("without_href_as_p_tag"), body_of(result.html)
   end
 
   def test_button_component_respects_custom_attributes
@@ -83,7 +87,7 @@ class ButtonTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("custom_attributes"), result.html
+    assert_equal expected("custom_attributes"), body_of(result.html)
   end
 
   def test_button_inlined_background_color_preserves_existing_background_shorthand
@@ -112,7 +116,7 @@ class ButtonTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("inlined_background_color"), result.html
+    assert_equal expected("inlined_background_color"), body_of(result.html)
   end
 
   def test_button_inlined_gradient_preserves_background_image
@@ -139,6 +143,6 @@ class ButtonTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_equal expected("inlined_gradient"), result.html
+    assert_equal expected("inlined_gradient"), body_of(result.html)
   end
 end

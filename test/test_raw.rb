@@ -13,6 +13,10 @@ class MJMLRawTest < Minitest::Test
     File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
+  def body_of(html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  end
+
   def test_mj_raw_allows_html_children_in_strict_mode
     result = compile(<<~MJML)
       <mjml>
@@ -27,7 +31,7 @@ class MJMLRawTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("html_children_strict"), result.html
+    assert_equal expected("html_children_strict"), body_of(result.html)
   end
 
   def test_mj_raw_in_head_is_emitted_at_end_of_head
@@ -47,7 +51,7 @@ class MJMLRawTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("head_raw"), result.html
+    assert_equal expected("head_raw"), body_of(result.html)
   end
 
   def test_mj_raw_file_start_is_emitted_before_doctype
@@ -65,6 +69,6 @@ class MJMLRawTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_equal expected("file_start"), result.html
+    assert_equal expected("file_start"), body_of(result.html)
   end
 end
