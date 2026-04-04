@@ -1,11 +1,16 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class WrapperTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/wrapper")
+
   def compile(mjml, validation_level: "strict")
     MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_wrapper_and_section_apply_border_radius_overflow_and_separate_border_collapse
@@ -24,20 +29,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    wrapper_div = document.at_css("body > div > div")
-    wrapper_table = document.at_css("body > div > div > table:first-child")
-    wrapper_td = document.at_css("body > div > div > table:first-child > tbody > tr > td")
-
-    refute_nil(wrapper_div)
-    refute_nil(wrapper_table)
-    refute_nil(wrapper_td)
-    assert_includes(wrapper_div["style"].to_s, "border-radius:10px")
-    assert_includes(wrapper_div["style"].to_s, "overflow:hidden")
-    assert_includes(wrapper_table["style"].to_s, "border-radius:10px")
-    assert_includes(wrapper_table["style"].to_s, "border-collapse:separate")
-    assert_includes(wrapper_td["style"].to_s, "border-radius:10px")
+    assert_includes result.html, expected("border_radius_overflow")
   end
 
   def test_wrapper_gap_applies_spacing_between_child_sections
@@ -61,16 +53,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    first_section = document.at_css("div.first-section")
-    second_section = document.at_css("div.second-section")
-
-    refute_nil(first_section)
-    refute_nil(second_section)
-    refute_includes(first_section["style"].to_s, "margin-top:24px")
-    assert_includes(second_section["style"].to_s, "margin-top:24px")
-    assert_includes(result.html, 'style="width:600px;padding-top:24px;"')
+    assert_includes result.html, expected("gap_spacing")
   end
 
   def test_wrapper_renders_background_url_styles
@@ -89,28 +72,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    wrapper_div = document.at_css("body > div > div")
-    wrapper_table = wrapper_div.at_css("table")
-
-    refute_nil(wrapper_div)
-    refute_nil(wrapper_table)
-
-    # div and table should have background-url styles
-    assert_includes(wrapper_div["style"].to_s, "url('https://example.com/bg.jpg')")
-    assert_includes(wrapper_div["style"].to_s, "background-size:cover")
-    assert_includes(wrapper_div["style"].to_s, "background-repeat:no-repeat")
-    assert_includes(wrapper_table["style"].to_s, "url('https://example.com/bg.jpg')")
-
-    # table should have background HTML attribute
-    assert_equal("https://example.com/bg.jpg", wrapper_table["background"])
-
-    # innerDiv should be present (line-height:0;font-size:0)
-    inner_div = wrapper_div.at_css("table tbody tr td > div")
-    refute_nil(inner_div, "innerDiv should be present when background-url is set")
-    assert_includes(inner_div["style"].to_s, "line-height:0")
-    assert_includes(inner_div["style"].to_s, "font-size:0")
+    assert_includes result.html, expected("background_url_styles")
   end
 
   def test_wrapper_renders_vml_for_background_url
@@ -129,13 +91,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    # VML rect and fill should be present
-    assert_includes(result.html, "v:rect")
-    assert_includes(result.html, "v:fill")
-    assert_includes(result.html, "v:textbox")
-    assert_includes(result.html, 'src="https://example.com/bg.jpg"')
-    assert_includes(result.html, 'color="#cccccc"')
+    assert_includes result.html, expected("vml_background_url")
   end
 
   def test_wrapper_background_vml_matches_upstream_outlook_width_and_fill_format
@@ -160,11 +116,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'origin="0, 0"')
-    assert_includes(result.html, 'position="0, 0"')
-    assert_includes(result.html, 'width="600" ><table align="center"')
-    refute_includes(result.html, 'width="600px" ><table align="center"')
-    assert_includes(result.html, 'aspect="atmost"')
+    assert_includes result.html, expected("vml_upstream_format")
   end
 
   def test_wrapper_full_width_with_background_url
@@ -183,27 +135,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-
-    # Outer table should have background styles and css-class
-    outer_table = document.at_css("body > div > table")
-    refute_nil(outer_table, "full-width wrapper should have outer table")
-    assert_equal("hero", outer_table["class"])
-    assert_equal("https://example.com/bg.jpg", outer_table["background"])
-    assert_includes(outer_table["style"].to_s, "url('https://example.com/bg.jpg')")
-
-    # Inner div should NOT have background styles (full-width puts them on outer table)
-    inner_div = outer_table.at_css("td > div") || outer_table.at_css("div")
-    # The inner div's style should not contain background-url
-    # (background goes on the outer table for full-width)
-    if inner_div
-      assert_includes(inner_div["style"].to_s, "max-width:600px")
-      refute_includes(inner_div["style"].to_s, "background-url")
-    end
-
-    # VML should use mso-width-percent:1000 for full-width
-    assert_includes(result.html, "mso-width-percent:1000")
+    assert_includes result.html, expected("full_width_background_url")
   end
 
   def test_full_width_wrapper_keeps_inner_max_width_for_standard_child_sections
@@ -222,16 +154,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    outer_table = document.at_css("body > div > table")
-    refute_nil(outer_table)
-
-    inner_div = outer_table.at_xpath("./tbody/tr/td/div")
-    refute_nil(inner_div)
-    assert_includes(inner_div["style"].to_s, "margin:0px auto")
-    assert_includes(inner_div["style"].to_s, "max-width:600px")
-    refute_includes(inner_div["style"].to_s, "background:#101e3c")
+    assert_includes result.html, expected("full_width_inner_max_width")
   end
 
   def test_full_width_wrapper_forces_child_full_width_sections_back_to_standard_width
@@ -250,9 +173,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    refute_includes(result.html, 'class="inner-full" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%"')
-    assert_includes(result.html, 'class="inner-full-outlook"')
-    assert_includes(result.html, 'class="inner-full" style="margin:0px auto;max-width:600px"')
+    assert_includes result.html, expected("full_width_forces_standard")
   end
 
   def test_wrapper_without_background_url_has_no_vml_or_inner_div
@@ -271,20 +192,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    # No VML when there's no background-url
-    refute_includes(result.html, "v:rect")
-    refute_includes(result.html, "v:fill")
-
-    document = Nokogiri::HTML(result.html)
-    wrapper_div = document.at_css("body > div > div")
-    refute_nil(wrapper_div)
-
-    # background-color should still be applied
-    assert_includes(wrapper_div["style"].to_s, "background:#f0f0f0")
-
-    # No innerDiv (line-height:0;font-size:0) when there's no background-url
-    refute_includes(result.html, "line-height:0;font-size:0")
+    assert_includes result.html, expected("no_background_url")
   end
 
   def test_wrapper_accepts_full_width_in_strict_mode
@@ -303,11 +211,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'class="hero-wrap"')
-    assert_includes(result.html, 'background:#f0f0f0')
-    # Full-width wrapper: background goes on the outer wrapping table
-    assert_includes(result.html, 'class="hero-wrap" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;background:#f0f0f0;background-color:#f0f0f0"')
-    assert_includes(result.html, "Wrapped")
+    assert_includes result.html, expected("full_width_strict")
   end
 
   # Each wrapper child section gets its own Outlook <tr><td>, not all in one <tr>.
@@ -324,8 +228,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    # After conditional merging, children boundary shows </td></tr><tr><td>
-    assert_includes(result.html, "</td></tr><tr><td")
+    assert_includes result.html, expected("children_outlook_tr")
   end
 
   # Wrapper child Outlook td should carry suffixed css-class.
@@ -343,7 +246,7 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'class="inner-outlook hero-outlook"')
+    assert_includes result.html, expected("child_outlook_css_class")
   end
 
   # Wrapper with gap should omit bgcolor from Outlook before table on child sections.
@@ -364,11 +267,6 @@ class WrapperTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    # The second section's Outlook before should have padding-top but no bgcolor
-    assert_includes(result.html, "padding-top:20px")
-    # Second section's Outlook before table: has gap so no bgcolor after width
-    assert_includes(result.html, 'style="width:600px;padding-top:20px;" width="600" >')
-    # First section (no gap) still has bgcolor in its Outlook before
-    assert_includes(result.html, 'bgcolor="#ff0000" >')
+    assert_includes result.html, expected("gap_omits_bgcolor")
   end
 end

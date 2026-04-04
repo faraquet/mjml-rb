@@ -1,9 +1,10 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class SocialTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/social")
+
   EXPECTED_SOCIAL_NETWORKS = {
     "facebook" => {
       "share-url" => "https://www.facebook.com/sharer/sharer.php?u=[[URL]]",
@@ -92,6 +93,10 @@ class SocialTest < Minitest::Test
     result[:errors]
   end
 
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   def test_social_accepts_table_layout_attribute
     result = compile(<<~MJML)
       <mjml>
@@ -108,7 +113,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_includes result.html, "Facebook"
+    assert_includes result.html, expected("table_layout")
   end
 
   def test_social_rejects_invalid_table_layout_value
@@ -203,11 +208,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    doc = Nokogiri::HTML(result.html)
-
-    assert_includes result.html, "Facebook"
-    assert_includes result.html, "Twitter"
-    assert_includes result.html, "display:inline-table"
+    assert_includes result.html, expected("horizontal_rendering")
   end
 
   # Ported from upstream: social-align.test.js
@@ -229,14 +230,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    doc = Nokogiri::HTML(result.html)
-    tr = doc.at_css("tr.my-social-element")
-    refute_nil tr, "Expected a <tr> with class my-social-element"
-
-    # The text <td> should have text-align:right
-    text_td = tr.css("td").find { |td| td["style"]&.include?("text-align") }
-    refute_nil text_td, "Expected a <td> with text-align style"
-    assert_match(/text-align:\s*right/, text_td["style"])
+    assert_includes result.html, expected("element_align")
   end
 
   # Ported from upstream: social-icon-height.test.js
@@ -258,13 +252,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    doc = Nokogiri::HTML(result.html)
-    tr = doc.at_css("tr.my-social-element")
-    refute_nil tr, "Expected a <tr> with class my-social-element"
-
-    # The icon <td> should have height:40px in its style
-    icon_td = tr.css("td").find { |td| td["style"]&.match?(/height:\s*40px/) }
-    refute_nil icon_td, "Expected a <td> with height:40px style"
+    assert_includes result.html, expected("icon_height")
   end
 
   def test_social_vertical_rendering
@@ -283,7 +271,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    assert_includes result.html, "GitHub"
+    assert_includes result.html, expected("vertical_rendering")
   end
 
   # Verify html_attrs consolidation: alt="" preserved, nil attrs omitted
@@ -303,15 +291,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    doc = Nokogiri::HTML(result.html)
-    img = doc.at_css("img[src*='facebook']")
-    refute_nil img, "Expected an <img> for facebook icon"
-
-    # alt="" must be present (empty string preserved, not dropped)
-    assert_equal "", img["alt"], "alt attribute should be empty string, not missing"
-
-    # title is nil by default — should be omitted entirely
-    assert_nil img["title"], "title attribute should not be rendered when nil"
+    assert_includes result.html, expected("img_empty_alt_no_title")
   end
 
   def test_social_element_img_renders_title_when_provided
@@ -330,12 +310,7 @@ class SocialTest < Minitest::Test
     MJML
 
     assert_empty result.errors
-    doc = Nokogiri::HTML(result.html)
-    img = doc.at_css("img[src*='github']")
-    refute_nil img
-
-    assert_equal "GH", img["alt"]
-    assert_equal "GitHub", img["title"]
+    assert_includes result.html, expected("img_with_title")
   end
 
   def test_social_network_defaults_match_upstream_icon_definitions

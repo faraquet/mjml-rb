@@ -1,11 +1,16 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class SectionTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/section")
+
   def compile(mjml, validation_level: "strict")
     MjmlRb::Compiler.new(validation_level: validation_level).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_section_supports_full_width_mode
@@ -22,17 +27,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    outer_table = document.at_css("table.full-section")
-    inner_div = outer_table&.at_css("div")
-
-    refute_nil(outer_table)
-    refute_nil(inner_div)
-    assert_includes(outer_table["style"].to_s, "width:100%")
-    assert_includes(outer_table["style"].to_s, "background:#112233")
-    assert_includes(inner_div["style"].to_s, "max-width:600px")
-    refute_includes(inner_div["style"].to_s, "background:#112233")
+    assert_includes result.html, expected("full_width_mode")
   end
 
   def test_section_accepts_text_padding_in_strict_mode
@@ -49,7 +44,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "Hello")
+    assert_includes result.html, expected("text_padding")
   end
 
   def test_section_accepts_string_border_radius_values
@@ -66,7 +61,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "border-radius:50%/10%")
+    assert_includes result.html, expected("string_border_radius")
   end
 
   def test_section_component_applies_mj_class_background_radius_and_padding
@@ -96,14 +91,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'class="app-bnr"')
-    assert_includes(result.html, 'style="border-radius:8px;overflow:hidden;margin:0px auto;max-width:600px;background:#e0f5f3;background-color:#e0f5f3"')
-    assert_includes(result.html, 'role="presentation" style="border-radius:8px;border-collapse:separate;width:100%;background:#e0f5f3;background-color:#e0f5f3" width="100%"')
-    assert_includes(result.html, 'align="center" bgcolor="#e0f5f3"')
-    assert_includes(result.html, 'border-radius:8px')
-    assert_includes(result.html, 'padding-left:15px')
-    assert_includes(result.html, 'padding-right:15px')
-    assert_includes(result.html, '<td align="left" style="font-size:0px;font-family:inherit;padding:0;word-break:break-word">')
+    assert_includes result.html, expected("mj_class_attributes")
   end
 
   # ── background image tests ────────────────────────────────
@@ -126,11 +114,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "url(&#39;https://example.com/bg.jpg&#39;)")
-    assert_includes(result.html, "background-size:cover")
-    assert_includes(result.html, "background-repeat:no-repeat")
-    assert_includes(result.html, 'background="https://example.com/bg.jpg"')
-    assert_includes(result.html, 'style="line-height:0;font-size:0"')
+    assert_includes result.html, expected("background_image_css")
   end
 
   def test_section_background_image_renders_vml_rect_and_fill
@@ -150,13 +134,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "<v:rect")
-    assert_includes(result.html, "<v:fill")
-    assert_includes(result.html, 'src="https://example.com/bg.jpg"')
-    assert_includes(result.html, 'type="frame"')
-    assert_includes(result.html, "</v:textbox>")
-    assert_includes(result.html, "</v:rect>")
-    assert_includes(result.html, 'aspect="atleast"')
+    assert_includes result.html, expected("background_image_vml")
   end
 
   def test_section_without_background_url_preserves_original_output
@@ -171,11 +149,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    refute_includes(result.html, "<v:rect")
-    refute_includes(result.html, "<v:fill")
-    refute_includes(result.html, 'style="line-height:0;font-size:0"')
-    assert_includes(result.html, "background:#ff0000")
-    assert_includes(result.html, "background-color:#ff0000")
+    assert_includes result.html, expected("no_background_url")
   end
 
   def test_section_background_position_xy_override
@@ -195,7 +169,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, "background-position:right bottom")
+    assert_includes result.html, expected("background_position_xy_override")
   end
 
   def test_section_background_repeat_produces_tile_type_in_vml
@@ -214,7 +188,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'type="tile"')
+    assert_includes result.html, expected("background_repeat_tile")
   end
 
   def test_section_background_vml_formats_origin_and_position_like_upstream
@@ -234,11 +208,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'origin="0, 0"')
-    assert_includes(result.html, 'position="0, 0"')
-    refute_includes(result.html, 'origin="0.0, 0.0"')
-    refute_includes(result.html, 'position="0.0, 0.0"')
-    assert_includes(result.html, 'aspect="atmost"')
+    assert_includes result.html, expected("vml_origin_position")
   end
 
   def test_section_background_auto_size_forces_tile
@@ -257,7 +227,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'type="tile"')
+    assert_includes result.html, expected("background_auto_size")
   end
 
   # Outlook before table should suffix each css-class word with -outlook.
@@ -273,7 +243,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-    assert_includes(result.html, 'class="hero-outlook banner-outlook"')
+    assert_includes result.html, expected("outlook_css_class_suffix")
   end
 
   def test_section_background_attributes_pass_strict_validation
@@ -295,6 +265,7 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
+    assert_includes result.html, expected("strict_background_attributes")
   end
 
   def test_section_rtl_direction_preserves_source_order_and_emits_upstream_styles
@@ -314,18 +285,6 @@ class SectionTest < Minitest::Test
     MJML
 
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    section_td = document.at_css("div[aria-roledescription='email'] table tbody tr td[style*='direction:rtl']")
-    column_divs = document.css("div.mj-column-per-50")
-
-    refute_nil(section_td)
-    assert_includes(section_td["style"].to_s, "direction:rtl")
-
-    assert_equal(2, column_divs.length)
-    assert_equal(["First", "Second"], column_divs.map(&:text).map(&:strip))
-    column_divs.each do |column_div|
-      assert_includes(column_div["style"].to_s, "direction:ltr")
-    end
+    assert_includes result.html, expected("rtl_direction")
   end
 end

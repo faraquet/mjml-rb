@@ -1,11 +1,20 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class MJMLStyleInlineTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/style_inline")
+
+  def compile(mjml)
+    MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   def test_mj_style_inline_applies_class_rules_to_rendered_markup
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -37,28 +46,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, 'class="mail-body"')
-    assert_includes(result.html, 'background-color: #f5f5f5')
-    assert_includes(result.html, 'padding-top: 10px')
-    refute_includes(result.html, '.app-bnr > table > tbody > tr > td { background-color: #e0f5f3; padding-left: 15px; padding-right: 15px; }')
-    assert_includes(result.html, 'class="app-bnr radius--top radius--bottom"')
-    assert_includes(result.html, 'border-top-left-radius: 8px')
-    assert_includes(result.html, 'border-bottom-right-radius: 8px')
-    assert_includes(result.html, 'background-color: #e0f5f3')
-    assert_includes(result.html, 'padding-left: 15px')
-    assert_includes(result.html, 'padding-right: 15px')
-    assert_includes(result.html, 'class="padding--none--this"')
-    assert_includes(result.html, 'padding: 0')
-    assert_includes(result.html, 'class="padding--top--s--this"')
-    assert_includes(result.html, 'padding-top: 10px')
-    assert_includes(result.html, 'class="app-bnr--download-buttons"')
-    assert_includes(result.html, 'display: none')
+    assert_includes result.html, expected("applies_class_rules")
   end
 
   def test_mj_style_inline_supports_lang_pseudo_selector
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml lang="ar">
         <mj-head>
           <mj-style inline="inline">
@@ -75,17 +68,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    styles = document.css(".caps").map { |node| node["style"].to_s }
-    assert(styles.any? { |style| style.include?("text-transform: uppercase") })
-    assert(styles.any? { |style| style.include?("letter-spacing: 2px") })
+    assert_includes result.html, expected("lang_pseudo_selector")
   end
 
   def test_mj_style_inline_uses_important_for_precedence_without_serializing_it
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -105,20 +93,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    style = document.at_css(".card--header--content a")["style"].to_s
-
-    assert_includes(style, "display: inline")
-    assert_includes(style, "width: 100%")
-    refute_includes(style, "display: block")
-    refute_includes(style, "!important")
+    assert_includes result.html, expected("important_precedence")
   end
 
   def test_mj_style_inline_does_not_preserve_at_media_rules
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -138,16 +118,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    refute_includes(result.html, "@media (max-width: 600px)")
-    refute_includes(result.html, ".mobile-hide")
-    assert_includes(result.html, "color: red")
+    assert_includes result.html, expected("no_at_media_rules")
   end
 
   def test_mj_style_inline_does_not_preserve_at_font_face_rules
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -168,19 +144,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    refute_includes(result.html, "@font-face")
-    refute_includes(result.html, "woff2")
-
-    document = Nokogiri::HTML(result.html)
-    styles = document.css(".custom").map { |node| node["style"].to_s }
-    assert(styles.any? { |style| style.include?("font-family: 'CustomFont', sans-serif") })
+    assert_includes result.html, expected("no_at_font_face_rules")
   end
 
   def test_mj_style_inline_higher_specificity_wins
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -198,20 +167,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    # .container .item (specificity 0,2,0) should beat .item (specificity 0,1,0)
-    # even though .item appears later in the CSS source
-    document = Nokogiri::HTML(result.html)
-    item_nodes = document.css(".item")
-    styles = item_nodes.map { |n| n["style"].to_s }
-    assert(styles.any? { |style| style.include?("color: red") },
-           "Expected .container .item (higher specificity) to win over .item")
+    assert_includes result.html, expected("higher_specificity_wins")
   end
 
   def test_mj_style_inline_keeps_latest_declaration_order_for_overwritten_properties
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -230,20 +191,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    style = document.at_css("td.target")["style"].to_s
-
-    assert_includes(style, "padding-bottom: 0")
-    assert_includes(style, "padding: 0 0 10px")
-    assert_operator(style.index("padding-bottom: 0"), :<, style.index("padding: 0 0 10px"))
-    refute_includes(style, "!important")
+    assert_includes result.html, expected("declaration_order")
   end
 
   def test_mj_style_inline_serializes_padding_shorthand_before_padding_bottom_override
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -263,17 +216,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    style = document.at_css("td.target")["style"].to_s
-
-    assert_operator(style.index("padding: 3px 10px"), :<, style.index("padding-bottom: 0"))
+    assert_includes result.html, expected("padding_shorthand_before_override")
   end
 
   def test_inline_css_preserves_gradient_background_image_on_non_button_content
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -293,28 +241,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    node = document.at_css(".gradient + div") || document.at_css(".gradient")
-
-    if node.nil? || !node["style"].to_s.include?("background-image")
-      node = document.css("div").find do |el|
-        el["style"].to_s.include?("background-image: linear-gradient")
-      end
-    end
-
-    refute_nil(node)
-
-    style = node["style"].to_s
-    assert_includes(style, "background-color: #00ada5")
-    assert_includes(style, "background-image: linear-gradient(to bottom, #00ada5, #009089)")
-    refute_match(/background:\s*#00ada5/i, style)
+    assert_includes result.html, expected("gradient_background_image")
   end
 
   def test_inline_css_keeps_background_attribute_sync_for_url_background_images
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -336,19 +268,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    cell = document.at_css(".with-bg td[background='https://example.com/bg.png']")
-    refute_nil(cell)
-    assert_equal("#00ada5", cell["bgcolor"])
-    assert_includes(cell["style"].to_s, "background-image: url(https://example.com/bg.png)")
-    refute_match(/background:\s*#00ada5/i, cell["style"].to_s)
+    assert_includes result.html, expected("url_background_image_sync")
   end
 
   def test_inline_css_does_not_overwrite_existing_background_shorthand
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -371,25 +296,14 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    button_cell = document.at_css("td[bgcolor='white']")
-    refute_nil(button_cell)
-    assert_includes(button_cell["style"].to_s, "background: #414141")
-    assert_includes(button_cell["style"].to_s, "background-color: white")
-
-    button_link = document.at_css("td[bgcolor='white'] a")
-    refute_nil(button_link)
-    assert_includes(button_link["style"].to_s, "background: #414141")
-    assert_includes(button_link["style"].to_s, "background-color: white")
+    assert_includes result.html, expected("no_overwrite_background_shorthand")
   end
 
   # ── HTML attribute syncing (Juice parity) ──────────────────────────────
 
   def test_inline_css_syncs_width_and_height_on_img
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -406,19 +320,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    img = document.at_css("img[src='logo.png']")
-    refute_nil(img, "Expected to find img with src=logo.png")
-
-    assert_equal("auto", img["width"], "CSS width: auto should sync to HTML width attribute")
-    assert_equal("24", img["height"], "CSS height: 24px should sync to HTML height attribute (without px)")
+    assert_includes result.html, expected("syncs_width_height_on_img")
   end
 
   def test_inline_css_does_not_sync_width_percentage_on_img
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -435,19 +342,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    img = document.at_css("img[src='photo.jpg']")
-    refute_nil(img)
-
-    assert_equal("200", img["width"], "CSS width: 100% should remain in CSS and keep the existing pixel width attribute")
-    assert_includes(img["style"].to_s, "width: 100%")
+    assert_includes result.html, expected("no_sync_width_percentage_on_img")
   end
 
   def test_inline_css_does_not_rewrite_img_width_attribute_when_width_was_not_inlined
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -464,18 +364,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    img = document.at_css("img[src='photo.jpg']")
-    refute_nil(img)
-
-    assert_equal("200", img["width"], "Unrelated inlined CSS should not overwrite mj-image width attribute")
+    assert_includes result.html, expected("no_rewrite_img_width_when_not_inlined")
   end
 
   def test_inline_css_does_not_override_existing_inline_img_width
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -494,21 +388,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    img = document.at_css("img[src='icon.png']")
-    refute_nil(img)
-
-    assert_includes(img["style"].to_s, "width: 15px")
-    assert_includes(img["style"].to_s, "display: inline-block")
-    refute_includes(img["style"].to_s, "width: 30px")
-    assert_equal("15", img["width"], "Final width attribute should follow the preserved inline width")
+    assert_includes result.html, expected("no_override_existing_inline_img_width")
   end
 
   def test_inline_css_syncs_bgcolor_on_td
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -525,16 +410,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    tds_with_bgcolor = document.css("td[bgcolor='#ff0000']")
-    refute_empty(tds_with_bgcolor, "Expected td elements to get bgcolor attribute from inlined background-color")
+    assert_includes result.html, expected("syncs_bgcolor_on_td")
   end
 
   def test_inline_css_syncs_align_on_td
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -553,16 +434,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    tds_with_align = document.css("td[align='right']")
-    refute_empty(tds_with_align, "Expected td elements to get align attribute from inlined text-align")
+    assert_includes result.html, expected("syncs_align_on_td")
   end
 
   def test_inline_css_syncs_valign_on_td
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -581,16 +458,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    tds_with_valign = document.css("td[valign='top']")
-    refute_empty(tds_with_valign, "Expected td elements to get valign attribute from inlined vertical-align")
+    assert_includes result.html, expected("syncs_valign_on_td")
   end
 
   def test_inline_css_syncs_width_on_table
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -609,16 +482,12 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    tables = document.css(".fixed-table table[width='400']")
-    refute_empty(tables, "Expected table to get width=400 from inlined width: 400px (px stripped)")
+    assert_includes result.html, expected("syncs_width_on_table")
   end
 
   def test_inline_css_does_not_sync_bgcolor_for_transparent
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-head>
           <mj-style inline="inline">
@@ -637,11 +506,7 @@ class MJMLStyleInlineTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    tds_with_bgcolor = document.css(".transparent td[bgcolor]")
-    assert_empty(tds_with_bgcolor, "Should not set bgcolor for transparent background-color")
+    assert_includes result.html, expected("no_sync_bgcolor_for_transparent")
   end
 end

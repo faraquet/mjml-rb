@@ -1,11 +1,20 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class MJMLSpacerTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/spacer")
+
+  def compile(mjml, **opts)
+    MjmlRb::Compiler.new(**opts).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   def test_spacer_component_renders_with_custom_height_and_css_class
-    mjml = <<~MJML
+    result = compile(<<~MJML, validation_level: "strict")
       <mjml>
         <mj-body>
           <mj-section>
@@ -22,22 +31,12 @@ class MJMLSpacerTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-    assert_empty(result.errors)
-    assert_includes(result.html, 'class="gap-block"')
-    assert_includes(result.html, 'background:#fafafa')
-    assert_includes(result.html, 'border-top:2px solid #111111')
-    assert_includes(result.html, 'padding:4px 8px')
-    assert_includes(result.html, "<div")
-    assert_includes(result.html, 'height:48px')
-    assert_includes(result.html, 'line-height:48px')
-    assert_includes(result.html, 'font-size:0')
-    assert_includes(result.html, "&#8202;")
+    assert_empty result.errors
+    assert_includes result.html, expected("custom_height_and_css_class")
   end
 
   def test_spacer_component_accepts_upstream_allowed_attributes_in_strict_mode
-    mjml = <<~MJML
+    result = compile(<<~MJML, validation_level: "strict")
       <mjml>
         <mj-body>
           <mj-section>
@@ -61,13 +60,11 @@ class MJMLSpacerTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-    assert_empty(result.errors)
+    assert_empty result.errors
   end
 
   def test_spacer_effective_markup_matches_upstream_layout_contract
-    mjml = <<~MJML
+    result = compile(<<~MJML, validation_level: "strict")
       <mjml>
         <mj-body>
           <mj-section>
@@ -83,21 +80,7 @@ class MJMLSpacerTest < Minitest::Test
         </mj-body>
       </mjml>
     MJML
-
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-    assert_empty(result.errors)
-
-    document = Nokogiri::HTML(result.html)
-    spacer_td = document.at_css("td.gap-block")
-    spacer_div = spacer_td&.at_css("> div")
-
-    refute_nil(spacer_td)
-    refute_nil(spacer_div)
-    assert_empty(spacer_td.css("table"), "Spacer should not introduce an extra nested table wrapper")
-    assert_includes(spacer_td["style"].to_s, "background:#fafafa")
-    assert_includes(spacer_td["style"].to_s, "padding:4px 8px")
-    assert_includes(spacer_td["style"].to_s, "word-break:break-word")
-    assert_includes(spacer_div["style"].to_s, "height:32px")
-    assert_includes(spacer_div["style"].to_s, "line-height:32px")
+    assert_empty result.errors
+    assert_includes result.html, expected("upstream_layout_contract")
   end
 end

@@ -3,8 +3,18 @@ require "minitest/autorun"
 require_relative "../lib/mjml-rb"
 
 class MJMLHeroTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/hero")
+
+  def compile(mjml)
+    MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   def test_hero_component_renders_fixed_height_mode_with_vml_background
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-body>
           <mj-hero
@@ -26,22 +36,12 @@ class MJMLHeroTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-    assert_empty(result.errors)
-    assert_includes(result.html, 'class="hero-block"')
-    assert_includes(result.html, 'background="https://example.com/hero.jpg"')
-    assert_includes(result.html, 'background-position:top center')
-    assert_includes(result.html, 'height="240"')
-    assert_includes(result.html, 'height:240px')
-    assert_includes(result.html, '<v:image')
-    assert_includes(result.html, 'src="https://example.com/hero.jpg"')
-    assert_includes(result.html, 'class="mj-hero-content"')
-    assert_includes(result.html, 'background-color:#ffffff')
-    assert_includes(result.html, 'Hero Title')
+    assert_empty result.errors
+    assert_includes result.html, expected("fixed_height_mode")
   end
 
   def test_hero_component_renders_fluid_height_mode
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-body>
           <mj-hero
@@ -57,16 +57,12 @@ class MJMLHeroTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-    assert_empty(result.errors)
-    assert_includes(result.html, 'padding-bottom:50%')
-    assert_includes(result.html, 'mso-padding-bottom-alt:0')
-    assert_includes(result.html, 'background="https://example.com/fluid.jpg"')
-    assert_includes(result.html, 'Click')
+    assert_empty result.errors
+    assert_includes result.html, expected("fluid_height_mode")
   end
 
   def test_hero_vml_background_matches_upstream_outlook_wrapper_shape
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-body>
           <mj-hero
@@ -87,20 +83,12 @@ class MJMLHeroTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-
-    assert_empty(result.errors)
-    assert_includes(result.html, 'style="width:600px;" width="600"')
-    refute_includes(result.html, '600.0px')
-    refute_includes(result.html, 'width="600.0"')
-    assert_includes(result.html, '<v:image')
-    assert_includes(result.html, 'style="border:0;height:400px;mso-position-horizontal:center;position:absolute;top:0;width:600px;z-index:-3"')
-    assert_includes(result.html, 'src="https://example.com/hero.jpg"')
-    assert_includes(result.html, 'xmlns:v="urn:schemas-microsoft-com:vml"')
+    assert_empty result.errors
+    assert_includes result.html, expected("vml_background")
   end
 
   def test_hero_without_background_url_does_not_emit_vml_image
-    mjml = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-body>
           <mj-hero mode="fixed-height" height="200px" background-color="#223344">
@@ -110,10 +98,7 @@ class MJMLHeroTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
-
-    assert_empty(result.errors)
-    refute_includes(result.html, "<v:image")
-    assert_includes(result.html, "No VML image")
+    assert_empty result.errors
+    assert_includes result.html, expected("no_background_url")
   end
 end

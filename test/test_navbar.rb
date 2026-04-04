@@ -1,15 +1,27 @@
 require "minitest/autorun"
-require "nokogiri"
+require "securerandom"
 
 require_relative "../lib/mjml-rb"
 
 class NavbarTest < Minitest::Test
-  def render(mjml)
-    MjmlRb.mjml2html(mjml).fetch(:html)
+  FIXTURES_DIR = File.join(__dir__, "fixtures/navbar")
+  FIXED_ID = "0123456789abcdef"
+
+  def render_with_fixed_id(mjml)
+    original_hex = SecureRandom.method(:hex)
+    SecureRandom.define_singleton_method(:hex) { |_length = nil| FIXED_ID }
+    html = MjmlRb.mjml2html(mjml).fetch(:html)
+    html[/<body[^>]*>(.*)<\/body>/m, 1].strip
+  ensure
+    SecureRandom.define_singleton_method(:hex, original_hex)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_navbar_hamburger_icon_padding_matches_mjml_port_case
-    html = render(<<~MJML)
+    html = render_with_fixed_id(<<~MJML)
       <mjml>
         <mj-body>
           <mj-section>
@@ -24,17 +36,11 @@ class NavbarTest < Minitest::Test
       </mjml>
     MJML
 
-    document = Nokogiri::HTML(html)
-    labels = document.css(".mj-menu-label")
-
-    assert_equal(["20px"], labels.map { |node| extract_style_value(node["style"], "padding-bottom") })
-    assert_equal(["30px"], labels.map { |node| extract_style_value(node["style"], "padding-left") })
-    assert_equal(["40px"], labels.map { |node| extract_style_value(node["style"], "padding-right") })
-    assert_equal(["50px"], labels.map { |node| extract_style_value(node["style"], "padding-top") })
+    assert_includes html, expected("hamburger_icon_padding")
   end
 
   def test_navbar_component_renders_links_with_base_url_and_outlook_markup
-    html = render(<<~MJML)
+    html = render_with_fixed_id(<<~MJML)
       <mjml>
         <mj-body>
           <mj-section>
@@ -49,17 +55,11 @@ class NavbarTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_includes(html, 'class="mj-inline-links"')
-    assert_includes(html, 'align="left"')
-    assert_includes(html, 'href="https://example.com/docs"')
-    assert_includes(html, 'href="https://example.com/pricing"')
-    assert_includes(html, 'class="mj-link nav-link"')
-    assert_includes(html, 'class="nav-link-outlook"')
-    assert_includes(html, 'text-transform:uppercase')
+    assert_includes html, expected("links_with_base_url")
   end
 
   def test_navbar_component_renders_hamburger_markup_and_uses_breakpoint_for_head_style
-    html = render(<<~MJML)
+    html = render_with_fixed_id(<<~MJML)
       <mjml>
         <mj-head>
           <mj-breakpoint width="320px" />
@@ -84,22 +84,6 @@ class NavbarTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_includes(html, '@media only screen and (max-width:319px)')
-    assert_includes(html, 'class="mj-menu-checkbox"')
-    assert_includes(html, 'class="mj-menu-trigger"')
-    assert_includes(html, 'class="mj-menu-label"')
-    assert_includes(html, 'color:#ffffff')
-    assert_includes(html, 'padding-top:50px')
-    assert_includes(html, 'padding-right:40px')
-    assert_includes(html, 'padding-bottom:20px')
-    assert_includes(html, 'padding-left:30px')
-  end
-
-  private
-
-  def extract_style_value(style, property)
-    styles = style.to_s.split(";").map(&:strip).reject(&:empty?)
-    entry = styles.find { |item| item.start_with?("#{property}:") }
-    entry&.split(":", 2)&.last&.strip
+    assert_includes html, expected("hamburger_with_breakpoint")
   end
 end

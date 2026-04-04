@@ -3,8 +3,18 @@ require "minitest/autorun"
 require_relative "../lib/mjml-rb"
 
 class MJMLBodyTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/body")
+
+  def compile(mjml)
+    MjmlRb::Compiler.new.compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
+  end
+
   def test_body_component_renders_attributes_and_context
-    body = <<~MJML
+    result = compile(<<~MJML)
       <mjml lang="ar" dir="rtl">
         <mj-head>
           <mj-title>Body Title</mj-title>
@@ -19,20 +29,12 @@ class MJMLBodyTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new.compile(body)
     assert_empty(result.errors)
-    assert_includes(result.html, '<html lang="ar" dir="rtl" xmlns="http://www.w3.org/1999/xhtml"')
-    assert_includes(result.html, '<body style="word-spacing:normal;background-color:#f5f5f5">')
-    assert_includes(result.html, 'aria-label="Body Title"')
-    assert_includes(result.html, 'aria-roledescription="email"')
-    assert_includes(result.html, 'class="body-class"')
-    assert_includes(result.html, 'role="article"')
-    assert_includes(result.html, 'style="background-color:#f5f5f5"')
-    assert_includes(result.html, 'max-width:700px')
+    assert_includes result.html, expected("attributes_and_context")
   end
 
   def test_body_component_uses_default_width
-    body = <<~MJML
+    result = compile(<<~MJML)
       <mjml>
         <mj-body>
           <mj-section>
@@ -44,11 +46,7 @@ class MJMLBodyTest < Minitest::Test
       </mjml>
     MJML
 
-    result = MjmlRb::Compiler.new.compile(body)
     assert_empty(result.errors)
-
-    assert_includes(result.html, 'max-width:600px')
-    assert_includes(result.html, 'mj-column-per-100')
-    assert_includes(result.html, 'Default body width')
+    assert_includes result.html, expected("default_width")
   end
 end

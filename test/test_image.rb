@@ -1,11 +1,16 @@
 require "minitest/autorun"
-require "nokogiri"
 
 require_relative "../lib/mjml-rb"
 
 class ImageTest < Minitest::Test
+  FIXTURES_DIR = File.join(__dir__, "fixtures/image")
+
   def compile(mjml, **opts)
     MjmlRb::Compiler.new(**opts).compile(mjml)
+  end
+
+  def expected(name)
+    File.read(File.join(FIXTURES_DIR, "#{name}.html"))
   end
 
   def test_image_renders_with_src
@@ -21,8 +26,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'src="https://example.com/image.jpg"'
-    assert_includes result.html, "<img"
+    assert_includes result.html, expected("renders_with_src")
   end
 
   def test_image_default_alt_is_empty
@@ -38,7 +42,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'alt=""'
+    assert_includes result.html, expected("default_alt_is_empty")
   end
 
   def test_image_custom_alt
@@ -54,7 +58,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'alt="My Image"'
+    assert_includes result.html, expected("custom_alt")
   end
 
   def test_image_with_href_wraps_in_link
@@ -70,9 +74,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, '<a'
-    assert_includes result.html, 'href="https://example.com"'
-    assert_includes result.html, 'target="_blank"'
+    assert_includes result.html, expected("with_href_wraps_in_link")
   end
 
   def test_image_without_href_no_link
@@ -88,11 +90,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    doc = Nokogiri::HTML(result.html)
-    # There should be no <a> tag wrapping the image
-    img = doc.at_css("img")
-    refute_nil img
-    refute_equal "a", img.parent.name
+    assert_includes result.html, expected("without_href_no_link")
   end
 
   def test_image_custom_width
@@ -108,10 +106,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    doc = Nokogiri::HTML(result.html)
-    img = doc.at_css("img")
-    refute_nil img
-    assert_equal "200", img["width"]
+    assert_includes result.html, expected("custom_width")
   end
 
   def test_image_custom_height
@@ -127,7 +122,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'height="150"'
+    assert_includes result.html, expected("custom_height")
   end
 
   def test_image_height_auto
@@ -143,7 +138,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'height="auto"'
+    assert_includes result.html, expected("height_auto")
   end
 
   def test_image_fluid_on_mobile
@@ -159,7 +154,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "mj-full-width-mobile"
+    assert_includes result.html, expected("fluid_on_mobile")
   end
 
   def test_image_border_radius
@@ -175,7 +170,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "border-radius:10px"
+    assert_includes result.html, expected("border_radius")
   end
 
   def test_image_container_background_color
@@ -191,7 +186,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "background:#eeeeee"
+    assert_includes result.html, expected("container_background_color")
   end
 
   def test_image_custom_target
@@ -207,7 +202,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'target="_self"'
+    assert_includes result.html, expected("custom_target")
   end
 
   def test_image_srcset_and_sizes
@@ -223,8 +218,7 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, 'srcset="test-2x.jpg 2x"'
-    assert_includes result.html, 'sizes="(max-width: 600px) 100vw"'
+    assert_includes result.html, expected("srcset_and_sizes")
   end
 
   def test_image_passes_strict_validation
@@ -267,6 +261,6 @@ class ImageTest < Minitest::Test
       </mjml>
     MJML
     assert_empty result.errors
-    assert_includes result.html, "mj-full-width-mobile"
+    assert_includes result.html, expected("head_style_responsive")
   end
 end
