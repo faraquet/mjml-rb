@@ -15,6 +15,12 @@ jobs:
     strategy:
       matrix:
         ruby-version: ['3.3', '3.4', '4.0']
+        gemfile:
+          - gemfiles/css_parser_1.gemfile
+          - gemfiles/css_parser_2.gemfile
+
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
 
     steps:
     - uses: actions/checkout@v4

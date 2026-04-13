@@ -19,6 +19,7 @@ A pure-Ruby MJML v4 compiler — no Node.js required.
 - Validation (soft, strict, skip)
 - Custom component support
 - Pure Ruby parser, AST, validator, and renderer
+- CSS inlining tested with `css_parser` 1.21 and 2.x
 
 **[Full Usage Guide](docs/USAGE.md)** — API reference, all compiler options, component attribute tables, CLI flags, Rails setup, custom components, and more.
 

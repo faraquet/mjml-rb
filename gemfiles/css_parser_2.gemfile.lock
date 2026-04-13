@@ -1,0 +1,48 @@
+PATH
+  remote: ..
+  specs:
+    mjml-rb (0.5.2)
+      css_parser (>= 1.17, < 3)
+      nokogiri (>= 1.13)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    addressable (2.9.0)
+      public_suffix (>= 2.0.2, < 8.0)
+    css_parser (2.0.0)
+      addressable
+    drb (2.2.3)
+    minitest (6.0.3)
+      drb (~> 2.0)
+      prism (~> 1.5)
+    nokogiri (1.19.2-arm64-darwin)
+      racc (~> 1.4)
+    prism (1.9.0)
+    public_suffix (7.0.5)
+    racc (1.8.1)
+    rake (13.3.1)
+
+PLATFORMS
+  arm64-darwin
+
+DEPENDENCIES
+  css_parser (~> 2.0)
+  minitest
+  mjml-rb!
+  rake
+
+CHECKSUMS
+  addressable (2.9.0)
+  css_parser (2.0.0)
+  drb (2.2.3)
+  minitest (6.0.3)
+  mjml-rb (0.5.2)
+  nokogiri (1.19.2-arm64-darwin)
+  prism (1.9.0)
+  public_suffix (7.0.5)
+  racc (1.8.1)
+  rake (13.3.1)
+
+BUNDLED WITH
+  4.0.10

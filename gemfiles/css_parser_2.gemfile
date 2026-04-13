@@ -1,0 +1,3 @@
+eval_gemfile "../Gemfile"
+
+gem "css_parser", "~> 2.0"

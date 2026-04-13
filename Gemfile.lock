@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     mjml-rb (0.5.2)
-      css_parser (>= 1.17)
+      css_parser (>= 1.17, < 3)
       nokogiri (>= 1.13)
 
 GEM
