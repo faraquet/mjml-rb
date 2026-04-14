@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-gem "css_parser", "~> 1.21.0"
+eval_gemfile "../Gemfile"
 
-gemspec path: "../"
+gem "css_parser", "~> 1.21.0"
