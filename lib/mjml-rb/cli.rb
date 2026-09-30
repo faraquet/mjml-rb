@@ -187,6 +187,13 @@ module MjmlRb
     end
 
     def process_input(input, mode, config)
+      if input[:file]
+        config = config.merge(
+          actual_path: input[:file],
+          file_path: config[:file_path] || File.dirname(input[:file])
+        )
+      end
+
       case mode
       when :validate
         compiler = Compiler.new(config.merge(validation_level: "strict"))

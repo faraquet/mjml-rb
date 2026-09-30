@@ -31,6 +31,8 @@ class CLITest < Minitest::Test
     </mjml>
   MJML
 
+  INCLUDE_MJML = MINIMAL_MJML.sub('<mj-text>Hello</mj-text>', '<mj-include path="./partial.mjml" />')
+
   # --- Version ---
 
   def test_version_flag
@@ -98,12 +100,101 @@ class CLITest < Minitest::Test
     end
   end
 
+  # --- Includes ---
+
+  def test_read_file_resolves_relative_includes_from_input_directory
+    with_tempfile(INCLUDE_MJML) do |path, dir|
+      File.write(File.join(dir, "partial.mjml"), "<mj-text>Included from input directory</mj-text>")
+
+      assert_equal 0, @cli.run(["-r", path, "-s"])
+      assert_includes @stdout.string, "Included from input directory"
+      assert_empty @stderr.string
+    end
+  end
+
+  def test_relative_input_prefers_its_include_over_working_directory
+    Dir.mktmpdir do |dir|
+      template_dir = File.join(dir, "templates")
+      Dir.mkdir(template_dir)
+      File.write(File.join(template_dir, "email.mjml"), INCLUDE_MJML)
+      File.write(File.join(template_dir, "partial.mjml"), "<mj-text>Template partial</mj-text>")
+      File.write(File.join(dir, "partial.mjml"), "<mj-text>Working directory partial</mj-text>")
+
+      Dir.chdir(dir) do
+        assert_equal 0, @cli.run(["templates/email.mjml", "-s"])
+      end
+      assert_includes @stdout.string, "Template partial"
+      refute_includes @stdout.string, "Working directory partial"
+      assert_empty @stderr.string
+    end
+  end
+
+  def test_multiple_inputs_resolve_includes_from_their_own_directories
+    with_tempfile(INCLUDE_MJML) do |first_path, dir|
+      File.write(File.join(dir, "partial.mjml"), "<mj-text>First template partial</mj-text>")
+      second_dir = File.join(dir, "second")
+      Dir.mkdir(second_dir)
+      second_path = File.join(second_dir, "email.mjml")
+      File.write(second_path, INCLUDE_MJML)
+      File.write(File.join(second_dir, "partial.mjml"), "<mj-text>Second template partial</mj-text>")
+
+      assert_equal 0, @cli.run(["-r", "#{first_path},#{second_path}", "-s"])
+      assert_includes @stdout.string, "First template partial"
+      assert_includes @stdout.string, "Second template partial"
+      assert_empty @stderr.string
+    end
+  end
+
+  def test_read_file_preserves_configured_include_directory
+    with_tempfile(INCLUDE_MJML) do |path, dir|
+      shared_dir = File.join(dir, "shared")
+      Dir.mkdir(shared_dir)
+      File.write(File.join(shared_dir, "partial.mjml"), "<mj-text>Configured partial</mj-text>")
+
+      assert_equal 0, @cli.run(["-r", path, "-s", "-c", "file_path=#{shared_dir}"])
+      assert_includes @stdout.string, "Configured partial"
+      assert_empty @stderr.string
+    end
+  end
+
+  def test_missing_include_reports_input_directory
+    with_tempfile(INCLUDE_MJML) do |path, dir|
+      assert_equal 0, @cli.run(["-r", path, "-s"])
+      assert_includes @stderr.string, File.join(dir, "partial.mjml")
+    end
+  end
+
+  def test_stdin_preserves_configured_include_context
+    original_stdin = $stdin
+    $stdin = StringIO.new(INCLUDE_MJML)
+
+    with_tempfile(INCLUDE_MJML) do |path, dir|
+      File.write(File.join(dir, "partial.mjml"), "<mj-text>Stdin partial</mj-text>")
+
+      assert_equal 0, @cli.run(["-i", "-s", "--config.actual_path=#{path}", "--config.file_path=#{dir}"])
+      assert_includes @stdout.string, "Stdin partial"
+      assert_empty @stderr.string
+    end
+  ensure
+    $stdin = original_stdin
+  end
+
   # --- Validate mode ---
 
   def test_validate_valid_file
     with_tempfile(MINIMAL_MJML) do |path, _dir|
       exit_code = @cli.run(["-v", path, "-s"])
       assert_equal 0, exit_code
+    end
+  end
+
+  def test_validate_file_resolves_relative_includes_from_input_directory
+    with_tempfile(INCLUDE_MJML) do |path, dir|
+      File.write(File.join(dir, "partial.mjml"), "<mj-text>Validated partial</mj-text>")
+
+      assert_equal 0, @cli.run(["-v", path, "-s"])
+      assert_includes @stdout.string, "Validated partial"
+      assert_empty @stderr.string
     end
   end
 
