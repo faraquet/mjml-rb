@@ -115,7 +115,6 @@ module MjmlRb
       content = minify_outlook_conditionals(content)
       content = apply_html_attributes_to_content(content, context)
       title = context[:title].to_s
-      preview = context[:preview]
       head_raw = Array(context[:head_raw]).join("\n")
       before_doctype = context[:before_doctype].to_s
       font_tags = build_font_tags(content, context[:inline_styles], context[:fonts])
@@ -127,7 +126,6 @@ module MjmlRb
       )
       component_styles_tag = build_style_tag(unique_strings(context[:component_head_styles]))
       user_styles_tag = build_style_tag(unique_strings(context[:user_styles]))
-      preview_block = preview.empty? ? "" : %(<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">#{escape_html(preview)}</div>)
       html_attributes = {
         "lang" => context[:lang],
         "dir" => context[:dir],
@@ -135,10 +133,6 @@ module MjmlRb
         "xmlns:v" => "urn:schemas-microsoft-com:vml",
         "xmlns:o" => "urn:schemas-microsoft-com:office:office"
       }
-      body_style = style_join(
-        "word-spacing" => "normal",
-        "background-color" => context[:background_color]
-      )
 
       html = <<~HTML
         <!doctype html>
@@ -159,10 +153,7 @@ module MjmlRb
             #{user_styles_tag}
             #{head_raw}
           </head>
-          <body style="#{body_style}">
-            #{preview_block}
-            #{content}
-          </body>
+          #{content}
         </html>
       HTML
 
@@ -313,7 +304,7 @@ module MjmlRb
       rules = context[:html_attributes] || {}
       return content if rules.empty?
 
-      root = html_attributes_fragment_root(content, context)
+      root = Nokogiri::HTML("<html>#{content}</html>")
 
       rules.each do |selector, attrs|
         next if selector.empty? || attrs.empty?
@@ -325,7 +316,7 @@ module MjmlRb
         end
       end
 
-      root.inner_html
+      root.at_css("body").to_html
     end
 
     def html_attributes_fragment_root(content, context)

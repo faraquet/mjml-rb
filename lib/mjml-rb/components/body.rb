@@ -7,6 +7,7 @@ module MjmlRb
 
       ALLOWED_ATTRIBUTES = {
         "width" => "unit(px)",
+        "id" => "string",
         "background-color" => "color"
       }.freeze
 
@@ -27,15 +28,17 @@ module MjmlRb
         div_attributes = {
           "aria-label" => context[:title].to_s.empty? ? nil : context[:title],
           "aria-roledescription" => "email",
-          "class" => body_attrs["css-class"],
           "role" => "article",
           "lang" => context[:lang],
           "dir" => context[:dir],
-          "style" => style_join("background-color" => background_color)
+          "style" => style_join("word-spacing" => "normal", "background-color" => background_color)
         }
         children = render_children(node, context, parent: "mj-body")
 
-        %(<div#{html_attrs(div_attributes)}>#{children}</div>)
+        body_attributes = {"id" => body_attrs["id"], "class" => body_attrs["css-class"], "style" => div_attributes["style"]}
+        preview = context[:preview].to_s
+        preview_block = preview.empty? ? "" : %(<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">#{escape_html(preview)}</div>)
+        %(<body#{html_attrs(body_attributes)}>\n    #{preview_block}\n    <div#{html_attrs(div_attributes)}>#{children}</div>\n  </body>)
       end
     end
   end
