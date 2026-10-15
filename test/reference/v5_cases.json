@@ -1,0 +1,1068 @@
+[
+  {
+    "name": "section-gutter-1",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"4%\">\n            <mj-column>\n              <mj-text>Left</mj-text>\n            </mj-column>\n            <mj-column>\n              <mj-text>Right</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-per-48 { width:48% !important; max-width: 48%; }",
+      ".mj-column-gutter-2-1-per-4 { padding: 0% 2% 0% 0% !important; }",
+      ".mj-column-gutter-2-2-per-4 { padding: 0% 0% 0% 2% !important; }",
+      "class=\"mj-column-per-48 mj-column-gutter-2-1-per-4 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-48 mj-column-gutter-2-2-per-4 mj-outlook-group-fix\""
+    ]
+  },
+  {
+    "name": "section-gutter-2",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"4%\">\n            <mj-column>\n              <mj-text>Left</mj-text>\n            </mj-column>\n            <mj-column>\n              <mj-text>Right</mj-text>\n            </mj-column>\n          </mj-section>\n          <mj-section gutter=\"4%\">\n            <mj-group direction=\"rtl\">\n              <mj-column>\n                <mj-text>Group Left</mj-text>\n              </mj-column>\n              <mj-column>\n                <mj-text>Group Right</mj-text>\n              </mj-column>\n            </mj-group>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      "class=\"mj-column-per-48 mj-column-gutter-2-1-per-4 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-48 mj-column-gutter-2-2-per-4 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-48 mj-column-gutter-2-1-per-4-rtl mj-outlook-group-fix\"",
+      "class=\"mj-column-per-48 mj-column-gutter-2-2-per-4-rtl mj-outlook-group-fix\"",
+      "mj-column-gutter-2-1-per-4-rtl",
+      "mj-column-gutter-2-2-per-4-rtl"
+    ]
+  },
+  {
+    "name": "section-gutter-3",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"4%\" padding=\"4%\">\n            <mj-group>\n              <mj-column>\n                <mj-text>Group Left</mj-text>\n              </mj-column>\n              <mj-column>\n                <mj-text>Group Right</mj-text>\n              </mj-column>\n            </mj-group>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      "class=\"mj-column-per-48 mj-column-gutter-2-1-per-4 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-48 mj-column-gutter-2-2-per-4 mj-outlook-group-fix\"",
+      "style=\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:48%;padding:0% 2% 0% 0%;\"",
+      "style=\"font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:48%;padding:0% 0% 0% 2%;\""
+    ]
+  },
+  {
+    "name": "section-gutter-4",
+    "source": "\n        <mjml>\n          <mj-body>\n            <mj-section full-width=\"full-width\" background-color=\"#f2f2f2\" gutter=\"4%\" padding=\"4%\" border=\"10px solid black\" direction=\"rtl\">\n              <mj-column>\n                <mj-text>S10-C1</mj-text>\n              </mj-column>\n              <mj-column>\n                <mj-text>S10-C2</mj-text>\n              </mj-column>\n            </mj-section>\n          </mj-body>\n        </mjml>\n      ",
+    "options": {},
+    "fragments": [
+      "class=\"mj-column-per-48 mj-column-gutter-2-1-per-4-rtl mj-outlook-group-fix\"",
+      "class=\"mj-column-per-48 mj-column-gutter-2-2-per-4-rtl mj-outlook-group-fix\"",
+      ".mj-column-gutter-2-1-per-4-rtl { padding: 0% 0% 0% 2% !important; }",
+      ".mj-column-gutter-2-2-per-4-rtl { padding: 0% 2% 0% 0% !important; }"
+    ]
+  },
+  {
+    "name": "section-gutter-5",
+    "source": "\n        <mjml>\n          <mj-body>\n            <mj-section background-color=\"#f2f2f2\" gutter=\"24px\" padding=\"24px\" direction=\"rtl\">\n              <mj-group direction=\"ltr\">\n                <mj-column>\n                  <mj-text>S13-G1-C1</mj-text>\n                </mj-column>\n                <mj-column>\n                  <mj-text>S13-G1-C2</mj-text>\n                </mj-column>\n                <mj-column>\n                  <mj-text>S13-G1-C3</mj-text>\n                </mj-column>\n              </mj-group>\n            </mj-section>\n          </mj-body>\n        </mjml>\n      ",
+    "options": {},
+    "fragments": [
+      "class=\"mj-column-per-30-434783 mj-column-gutter-3-1-per-4-347826 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-30-434783 mj-column-gutter-3-2-per-4-347826 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-30-434783 mj-column-gutter-3-3-per-4-347826 mj-outlook-group-fix\""
+    ]
+  },
+  {
+    "name": "section-gutter-6",
+    "source": "\n        <mjml>\n          <mj-body>\n            <mj-section background-color=\"#f2f2f2\" gutter=\"4%\" padding=\"4%\">\n              <mj-column direction=\"rtl\" border=\"4px solid #2f855a\" padding=\"20px\" inner-border=\"4px solid #276749\">\n                <mj-text>A</mj-text>\n              </mj-column>\n              <mj-column direction=\"ltr\" border=\"2px dashed #744210\" padding=\"8px\" inner-border=\"3px solid #975a16\">\n                <mj-text>B</mj-text>\n              </mj-column>\n              <mj-column direction=\"rtl\" border=\"1px solid #2c5282\" padding=\"16px\" inner-border=\"2px solid #2b6cb0\">\n                <mj-text>C</mj-text>\n              </mj-column>\n            </mj-section>\n          </mj-body>\n        </mjml>\n      ",
+    "options": {},
+    "fragments": [
+      "class=\"mj-column-per-30-666667 mj-column-gutter-3-1-per-4 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-30-666667 mj-column-gutter-3-2-per-4 mj-outlook-group-fix\"",
+      "class=\"mj-column-per-30-666667 mj-column-gutter-3-3-per-4 mj-outlook-group-fix\""
+    ]
+  },
+  {
+    "name": "section-gutter-7",
+    "source": "\n        <mjml>\n          <mj-body>\n            <mj-section background-color=\"#f2f2f2\" gutter=\"2%\" padding=\"4%\">\n              <mj-column width=\"120px\">\n                <mj-text>1</mj-text>\n              </mj-column>\n              <mj-column width=\"120px\">\n                <mj-text>2</mj-text>\n              </mj-column>\n              <mj-column width=\"120px\">\n                <mj-text>3</mj-text>\n              </mj-column>\n              <mj-column width=\"120px\">\n                <mj-text>4</mj-text>\n              </mj-column>\n            </mj-section>\n          </mj-body>\n        </mjml>\n      ",
+    "options": {},
+    "fragments": [
+      "class=\"mj-column-px-111 mj-column-gutter-4-1-px-12 mj-outlook-group-fix\"",
+      "class=\"mj-column-px-111 mj-column-gutter-4-2-px-12 mj-outlook-group-fix\"",
+      "class=\"mj-column-px-111 mj-column-gutter-4-3-px-12 mj-outlook-group-fix\"",
+      "class=\"mj-column-px-111 mj-column-gutter-4-4-px-12 mj-outlook-group-fix\"",
+      ".mj-column-gutter-4-1-px-12 { padding: 0px 6px 0px 0px !important; }",
+      "mj-column-gutter-4-2-px-12",
+      ".mj-column-gutter-4-4-px-12 { padding: 0px 0px 0px 6px !important; }"
+    ]
+  },
+  {
+    "name": "section-gutter-8",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"20px\">\n            <mj-column width=\"250px\">\n              <mj-text>Left</mj-text>\n            </mj-column>\n            <mj-column width=\"250px\">\n              <mj-text>Right</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-px-240 { width:240px !important; max-width: 240px; }",
+      ".mj-column-gutter-2-1-px-20 { padding: 0px 10px 0px 0px !important; }",
+      ".mj-column-gutter-2-2-px-20 { padding: 0px 0px 0px 10px !important; }"
+    ]
+  },
+  {
+    "name": "section-gutter-9",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"15px\">\n            <mj-column>\n              <mj-text>One</mj-text>\n            </mj-column>\n            <mj-column>\n              <mj-text>Two</mj-text>\n            </mj-column>\n            <mj-column>\n              <mj-text>Three</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-gutter-3-1-per-2-5 { padding: 0% 1.25% 0% 0% !important; }",
+      ".mj-column-gutter-3-2-per-2-5 { padding: 0% 1.25% 0% 1.25% !important; }",
+      ".mj-column-gutter-3-3-per-2-5 { padding: 0% 0% 0% 1.25% !important; }"
+    ]
+  },
+  {
+    "name": "section-gutter-10",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"10px\">\n            <mj-column width=\"60%\">\n              <mj-text>Wide</mj-text>\n            </mj-column>\n            <mj-column width=\"40%\">\n              <mj-text>Narrow</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-per-59-166667 { width:59.166667% !important; max-width: 59.166667%; }",
+      ".mj-column-per-39-166667 { width:39.166667% !important; max-width: 39.166667%; }",
+      ".mj-column-gutter-2-1-per-1-666667 { padding: 0% 0.833333% 0% 0% !important; }",
+      ".mj-column-gutter-2-2-per-1-666667 { padding: 0% 0% 0% 0.833333% !important; }"
+    ]
+  },
+  {
+    "name": "section-gutter-11",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"3%\">\n            <mj-column width=\"300px\">\n              <mj-text>Left</mj-text>\n            </mj-column>\n            <mj-column width=\"200px\">\n              <mj-text>Right</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-px-291 { width:291px !important; max-width: 291px; }",
+      ".mj-column-px-191 { width:191px !important; max-width: 191px; }",
+      ".mj-column-gutter-2-1-px-18 { padding: 0px 9px 0px 0px !important; }",
+      ".mj-column-gutter-2-2-px-18 { padding: 0px 0px 0px 9px !important; }"
+    ]
+  },
+  {
+    "name": "section-gutter-12",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"4%\" padding=\"4%\">\n            <mj-column width=\"200px\">\n              <mj-text>One</mj-text>\n            </mj-column>\n            <mj-column width=\"200px\">\n              <mj-text>Two</mj-text>\n            </mj-column>\n            <mj-column width=\"200px\">\n              <mj-text>Three</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-px-185 { width:185px !important; max-width: 185px; }",
+      ".mj-column-px-184 { width:184px !important; max-width: 184px; }",
+      ".mj-column-gutter-3-1-px-24 { padding: 0px 12px 0px 0px !important; }",
+      ".mj-column-gutter-3-2-px-24 { padding: 0px 12px 0px 12px !important; }",
+      ".mj-column-gutter-3-3-px-24 { padding: 0px 0px 0px 12px !important; }"
+    ]
+  },
+  {
+    "name": "section-gutter-13",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"3.9%\" padding=\"4%\">\n            <mj-column width=\"200px\">\n              <mj-text>One</mj-text>\n            </mj-column>\n            <mj-column width=\"200px\">\n              <mj-text>Two</mj-text>\n            </mj-column>\n            <mj-column width=\"200px\">\n              <mj-text>Three</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-gutter-3-1-px-23 { padding: 0px 12px 0px 0px !important; }",
+      ".mj-column-gutter-3-2-px-23 { padding: 0px 12px 0px 11px !important; }",
+      ".mj-column-gutter-3-3-px-23 { padding: 0px 0px 0px 11px !important; }",
+      ".mj-column-px-185 { width:185px !important; max-width: 185px; }",
+      ".mj-column-px-184 { width:184px !important; max-width: 184px; }"
+    ]
+  },
+  {
+    "name": "section-gutter-14",
+    "source": "\n      <mjml>\n        <mj-body>\n          <mj-section gutter=\"5%\">\n            <mj-column>\n              <mj-text>Col 1</mj-text>\n            </mj-column>\n            <mj-column>\n              <mj-text>Col 2</mj-text>\n            </mj-column>\n          </mj-section>\n        </mj-body>\n      </mjml>\n    ",
+    "options": {},
+    "fragments": [
+      ".mj-column-gutter-2-1-per-5 { padding: 0% 2.5% 0% 0% !important; }",
+      ".mj-column-gutter-2-2-per-5 { padding: 0% 0% 0% 2.5% !important; }"
+    ]
+  },
+  {
+    "name": "body-preview",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head><mj-title>Subject</mj-title><mj-preview>Preview</mj-preview></mj-head><mj-body id=\"email\" css-class=\"mail\" background-color=\"#eeeeee\"><mj-section ><mj-column><mj-text>Hello</mj-text></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "body",
+        "attributes": [
+          "id",
+          "class"
+        ],
+        "styles": [
+          "word-spacing",
+          "background-color"
+        ]
+      },
+      {
+        "selector": "body > div[role=\"article\"]",
+        "attributes": [
+          "aria-label",
+          "aria-roledescription",
+          "role",
+          "lang",
+          "dir",
+          "class"
+        ],
+        "styles": [
+          "word-spacing",
+          "background-color"
+        ]
+      },
+      {
+        "selector": "body > div:first-child",
+        "text": true
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "id": "email",
+          "class": "mail",
+          "style:word-spacing": "normal",
+          "style:background-color": "#eeeeee"
+        }
+      ],
+      [
+        {
+          "aria-label": "Subject",
+          "aria-roledescription": "email",
+          "role": "article",
+          "lang": "ar",
+          "dir": "rtl",
+          "class": null,
+          "style:word-spacing": "normal",
+          "style:background-color": "#eeeeee"
+        }
+      ],
+      [
+        {
+          "text": "Preview"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "body-html-attributes",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head><mj-html-attributes><mj-selector path=\"body\"><mj-html-attribute name=\"data-test\">yes</mj-html-attribute></mj-selector></mj-html-attributes></mj-head><mj-body ><mj-section ><mj-column><mj-text>Hello</mj-text></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "body",
+        "attributes": [
+          "data-test"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "data-test": "yes"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "social-horizontal-default",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-social mode=\"horizontal\" ><mj-social-element name=\"github\">One <b>bold</b></mj-social-element><mj-social-element name=\"facebook\" border=\"2px dashed blue\"/></mj-social></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "img",
+        "styles": [
+          "border"
+        ]
+      },
+      {
+        "selector": "b",
+        "text": true
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border": "0"
+        },
+        {
+          "style:border": "2px dashed blue"
+        }
+      ],
+      [
+        {
+          "text": "bold"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "social-horizontal-cascade",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-social mode=\"horizontal\" border=\"1px solid red\"><mj-social-element name=\"github\">One <b>bold</b></mj-social-element><mj-social-element name=\"facebook\" border=\"2px dashed blue\"/></mj-social></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "img",
+        "styles": [
+          "border"
+        ]
+      },
+      {
+        "selector": "b",
+        "text": true
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border": "1px solid red"
+        },
+        {
+          "style:border": "2px dashed blue"
+        }
+      ],
+      [
+        {
+          "text": "bold"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "social-vertical-default",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-social mode=\"vertical\" ><mj-social-element name=\"github\">One <b>bold</b></mj-social-element><mj-social-element name=\"facebook\" border=\"2px dashed blue\"/></mj-social></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "img",
+        "styles": [
+          "border"
+        ]
+      },
+      {
+        "selector": "b",
+        "text": true
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border": "0"
+        },
+        {
+          "style:border": "2px dashed blue"
+        }
+      ],
+      [
+        {
+          "text": "bold"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "social-vertical-cascade",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-social mode=\"vertical\" border=\"1px solid red\"><mj-social-element name=\"github\">One <b>bold</b></mj-social-element><mj-social-element name=\"facebook\" border=\"2px dashed blue\"/></mj-social></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "img",
+        "styles": [
+          "border"
+        ]
+      },
+      {
+        "selector": "b",
+        "text": true
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border": "1px solid red"
+        },
+        {
+          "style:border": "2px dashed blue"
+        }
+      ],
+      [
+        {
+          "text": "bold"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-button",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-button border-radius=\"10px 20% / 5em 15px\">Button</mj-button></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        },
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-image",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-image border-radius=\"10px 20% / 5em 15px\" src=\"https://example.com/one.png\"/></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-social",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-social border-radius=\"10px 20% / 5em 15px\"><mj-social-element name=\"github\"/></mj-social></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        },
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-social-element",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-social><mj-social-element name=\"github\" border-radius=\"10px 20% / 5em 15px\"/></mj-social></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        },
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-column",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column border-radius=\"10px 20% / 5em 15px\" inner-border-radius=\"10px 20% / 5em 15px\" padding=\"5px\"><mj-text>Text</mj-text></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        },
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-section",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section border-radius=\"10px 20% / 5em 15px\"><mj-column><mj-text>Text</mj-text></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        },
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-hero",
+    "source": "<mjml><mj-body><mj-hero border-radius=\"10px 20% / 5em 15px\"><mj-text>Text</mj-text></mj-hero></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-carousel",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-carousel border-radius=\"10px 20% / 5em 15px\" tb-border-radius=\"10px 20% / 5em 15px\"><mj-carousel-image src=\"https://example.com/one.png\"/></mj-carousel></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        },
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "radius-mj-carousel-image",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-carousel><mj-carousel-image src=\"https://example.com/one.png\" border-radius=\"10px 20% / 5em 15px\" tb-border-radius=\"10px 20% / 5em 15px\"/></mj-carousel></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "[style*=\"border-radius\"]",
+        "styles": [
+          "border-radius"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        },
+        {
+          "style:border-radius": "10px 20% / 5em 15px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "hero-padding-0",
+    "source": "<mjml><mj-body><mj-hero padding=\"0\" inner-padding=\"8px 12px\"><mj-image src=\"https://example.com/hero.png\" padding=\"0\"/></mj-hero></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "table[style*=\"width:\"]",
+        "attributes": [
+          "width"
+        ],
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      },
+      {
+        "selector": ".mj-hero-content",
+        "styles": [
+          "padding"
+        ]
+      },
+      {
+        "selector": "img",
+        "attributes": [
+          "width"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "width": "600",
+          "style:width": "600px"
+        },
+        {
+          "width": "600",
+          "style:width": "600px"
+        }
+      ],
+      [
+        {
+          "style:padding": "8px 12px"
+        }
+      ],
+      [
+        {
+          "width": "600"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "hero-padding-1",
+    "source": "<mjml><mj-body><mj-hero padding=\"0 20px\" inner-padding=\"8px 12px\"><mj-image src=\"https://example.com/hero.png\" padding=\"0\"/></mj-hero></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "table[style*=\"width:\"]",
+        "attributes": [
+          "width"
+        ],
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      },
+      {
+        "selector": ".mj-hero-content",
+        "styles": [
+          "padding"
+        ]
+      },
+      {
+        "selector": "img",
+        "attributes": [
+          "width"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "width": "600",
+          "style:width": "600px"
+        },
+        {
+          "width": "560",
+          "style:width": "560px"
+        }
+      ],
+      [
+        {
+          "style:padding": "8px 12px"
+        }
+      ],
+      [
+        {
+          "width": "560"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "hero-padding-2",
+    "source": "<mjml><mj-body><mj-hero padding=\"0 10px 0 30px\" inner-padding=\"8px 12px\"><mj-image src=\"https://example.com/hero.png\" padding=\"0\"/></mj-hero></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "table[style*=\"width:\"]",
+        "attributes": [
+          "width"
+        ],
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      },
+      {
+        "selector": ".mj-hero-content",
+        "styles": [
+          "padding"
+        ]
+      },
+      {
+        "selector": "img",
+        "attributes": [
+          "width"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "width": "600",
+          "style:width": "600px"
+        },
+        {
+          "width": "560",
+          "style:width": "560px"
+        }
+      ],
+      [
+        {
+          "style:padding": "8px 12px"
+        }
+      ],
+      [
+        {
+          "width": "560"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "hero-padding-3",
+    "source": "<mjml><mj-body><mj-hero padding=\"20px\" inner-padding=\"8px 12px\"><mj-image src=\"https://example.com/hero.png\" padding=\"0\"/></mj-hero></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "table[style*=\"width:\"]",
+        "attributes": [
+          "width"
+        ],
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      },
+      {
+        "selector": ".mj-hero-content",
+        "styles": [
+          "padding"
+        ]
+      },
+      {
+        "selector": "img",
+        "attributes": [
+          "width"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "width": "600",
+          "style:width": "600px"
+        },
+        {
+          "width": "560",
+          "style:width": "560px"
+        }
+      ],
+      [
+        {
+          "style:padding": "8px 12px"
+        }
+      ],
+      [
+        {
+          "width": "560"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "hero-padding-4",
+    "source": "<mjml><mj-body><mj-hero padding-left=\"30px\" padding-right=\"10px\" inner-padding=\"8px 12px\"><mj-image src=\"https://example.com/hero.png\" padding=\"0\"/></mj-hero></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "table[style*=\"width:\"]",
+        "attributes": [
+          "width"
+        ],
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      },
+      {
+        "selector": ".mj-hero-content",
+        "styles": [
+          "padding"
+        ]
+      },
+      {
+        "selector": "img",
+        "attributes": [
+          "width"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "width": "600",
+          "style:width": "600px"
+        },
+        {
+          "width": "560",
+          "style:width": "560px"
+        }
+      ],
+      [
+        {
+          "style:padding": "8px 12px"
+        }
+      ],
+      [
+        {
+          "width": "560"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "hero-padding-5",
+    "source": "<mjml><mj-body><mj-hero padding=\"20px\" padding-left=\"30px\" padding-right=\"10px\" inner-padding=\"8px 12px\"><mj-image src=\"https://example.com/hero.png\" padding=\"0\"/></mj-hero></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "table[style*=\"width:\"]",
+        "attributes": [
+          "width"
+        ],
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      },
+      {
+        "selector": ".mj-hero-content",
+        "styles": [
+          "padding"
+        ]
+      },
+      {
+        "selector": "img",
+        "attributes": [
+          "width"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "width": "600",
+          "style:width": "600px"
+        },
+        {
+          "width": "560",
+          "style:width": "560px"
+        }
+      ],
+      [
+        {
+          "style:padding": "8px 12px"
+        }
+      ],
+      [
+        {
+          "width": "560"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "image-explicit-dimensions",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-image src=\"https://example.com/image.png\" width=\"140px\" height=\"24px\"/></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "img",
+        "attributes": [
+          "width",
+          "height"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "width": "140",
+          "height": "24"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "empty-image-font",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head><mj-font/></mj-head><mj-body ><mj-section ><mj-column><mj-image/></mj-column></mj-section></mj-body></mjml>",
+    "options": {
+      "validationLevel": "strict"
+    },
+    "checks": [
+      {
+        "selector": "img",
+        "attributes": [
+          "src",
+          "width"
+        ]
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "src": null,
+          "width": "550"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "accordion-controls",
+    "source": "<mjml lang=\"ar\" dir=\"rtl\"><mj-head></mj-head><mj-body ><mj-section ><mj-column><mj-accordion><mj-accordion-element><mj-accordion-title css-class=\"title-class\">Title</mj-accordion-title><mj-accordion-text>Content</mj-accordion-text></mj-accordion-element></mj-accordion></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": "td.title-class",
+        "text": true
+      }
+    ],
+    "fragments": [
+      "<!--[if !mso | IE]><!-->",
+      ".mj-accordion-checkbox[type=\"checkbox\"]",
+      "noinput.mj-accordion-checkbox { display:block!important; }",
+      ".mj-accordion-checkbox:checked + * .mj-accordion-content { display:block; }",
+      ".moz-text-html input.mj-accordion-checkbox + * .mj-accordion-title",
+      "@goodbye { @gmail }"
+    ],
+    "expected": [
+      [
+        {
+          "text": "Title"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "mixed-width-30per",
+    "source": "<mjml><mj-body><mj-section><mj-column width=\"30%\"><mj-text>First</mj-text></mj-column><mj-column><mj-text>Second</mj-text></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": ".mj-outlook-group-fix",
+        "attributes": [
+          "class"
+        ]
+      },
+      {
+        "selector": "td[style*=\"vertical-align\"]",
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "class": "mj-column-per-30 mj-outlook-group-fix"
+        },
+        {
+          "class": "mj-column-per-50 mj-outlook-group-fix"
+        }
+      ],
+      [
+        {
+          "style:width": "180px"
+        },
+        {
+          "style:width": "300px"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "mixed-width-180px",
+    "source": "<mjml><mj-body><mj-section><mj-column width=\"180px\"><mj-text>First</mj-text></mj-column><mj-column><mj-text>Second</mj-text></mj-column></mj-section></mj-body></mjml>",
+    "options": {},
+    "checks": [
+      {
+        "selector": ".mj-outlook-group-fix",
+        "attributes": [
+          "class"
+        ]
+      },
+      {
+        "selector": "td[style*=\"vertical-align\"]",
+        "styles": [
+          "width"
+        ],
+        "outlook": true
+      }
+    ],
+    "fragments": [],
+    "expected": [
+      [
+        {
+          "class": "mj-column-px-180 mj-outlook-group-fix"
+        },
+        {
+          "class": "mj-column-per-50 mj-outlook-group-fix"
+        }
+      ],
+      [
+        {
+          "style:width": "180px"
+        },
+        {
+          "style:width": "300px"
+        }
+      ]
+    ]
+  }
+]

@@ -2,9 +2,10 @@ require "set"
 
 module MjmlRb
   class ComponentRegistry
-    attr_reader :custom_components, :custom_dependencies, :custom_ending_tags
+    attr_reader :custom_components, :custom_dependencies, :custom_ending_tags, :revision
 
     def initialize
+      @revision = 0
       @custom_components = []
       @custom_dependencies = {}
       @custom_ending_tags = Set.new
@@ -12,6 +13,10 @@ module MjmlRb
 
     def register(klass, dependencies: {}, ending_tags: [])
       validate_component!(klass)
+      klass.tags.each do |tag|
+        existing = component_class_for_tag(tag)
+        raise ArgumentError, "Component tag already registered: #{tag}" if existing && existing != klass
+      end
       @custom_components << klass unless @custom_components.include?(klass)
       dependencies.each do |parent, children|
         @custom_dependencies[parent] = ((@custom_dependencies[parent] || []) + Array(children)).uniq
@@ -46,9 +51,14 @@ module MjmlRb
       invalidate_caches!
     end
 
+    def components
+      tag_class_cache.dup
+    end
+
     private
 
     def invalidate_caches!
+      @revision += 1
       @tag_class_cache = nil
       @dependency_rules_cache = nil
       @ending_tags_cache = nil

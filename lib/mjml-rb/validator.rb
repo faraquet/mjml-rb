@@ -5,28 +5,31 @@ module MjmlRb
   class Validator
     GLOBAL_ALLOWED_ATTRIBUTES = %w[css-class mj-class].freeze
 
-    REQUIRED_BY_TAG = {
-      "mj-image" => %w[src],
-      "mj-font" => %w[name href],
-      "mj-include" => %w[path]
-    }.freeze
-
     def initialize(parser: Parser.new)
       @parser = parser
     end
 
     def validate(mjml_or_ast, options = {})
-      root = mjml_or_ast.is_a?(Nokogiri::XML::Node) ? mjml_or_ast : parse_ast(mjml_or_ast, options)
+      options = Options::DEFAULTS.merge(Options.normalize(options))
+      parsed = if mjml_or_ast.is_a?(Parser::ParseResult)
+                 mjml_or_ast
+               elsif mjml_or_ast.is_a?(Nokogiri::XML::Node)
+                 Parser::ParseResult.new(ast: mjml_or_ast, diagnostics: [])
+               else
+                 @parser.parse_result(mjml_or_ast, options)
+               end
+      root = parsed.ast
       unless root&.tag_name == "mjml"
         return { errors: [error("Root element must be <mjml>", tag_name: root&.tag_name)], warnings: [] }
       end
 
-      issues = []
+      issues = parsed.diagnostics.dup
+      return classify_issues(issues, options) if options[:validation_level].to_s == "skip"
       issues << error("Missing <mj-body>", tag_name: "mjml") unless root.element_children.any? { |c| c.tag_name == "mj-body" }
       walk(root, issues)
       classify_issues(issues, options)
     rescue Parser::ParseError => e
-      { errors: [error(e.message, line: e.line)], warnings: [] }
+      { errors: [error(e.message, line: e.line, file: e.file)], warnings: [] }
     end
 
     private
@@ -42,23 +45,11 @@ module MjmlRb
       end
     end
 
-    def parse_ast(mjml, options)
-      @parser.parse(
-        mjml,
-        keep_comments: options.fetch(:keep_comments, false),
-        preprocessors: options.fetch(:preprocessors, []),
-        ignore_includes: options.fetch(:ignore_includes, false),
-        file_path: options.fetch(:file_path, "."),
-        actual_path: options.fetch(:actual_path, ".")
-      )
-    end
-
     def walk(node, errors)
       return unless node.element?
 
       validate_known_tag(node, errors)
       validate_allowed_children(node, errors)
-      validate_required_attributes(node, errors)
       validate_supported_attributes(node, errors)
       validate_attribute_types(node, errors)
 
@@ -94,19 +85,9 @@ module MjmlRb
       end
     end
 
-    def validate_required_attributes(node, errors)
-      required = REQUIRED_BY_TAG[node.tag_name] || []
-      required.each do |attr|
-        next if node.has_attribute?(attr)
-
-        errors << error("Attribute `#{attr}` is required for <#{node.tag_name}>",
-                        tag_name: node.tag_name, line: node.line, file: node.file)
-      end
-    end
-
     def validate_supported_attributes(node, errors)
       allowed_attributes = allowed_attributes_for(node.tag_name)
-      return if allowed_attributes.empty?
+      return if node.tag_name == "mjml" || node.parent&.name == "mj-attributes"
 
       string_attrs(node).each_key do |attribute_name|
         next if allowed_attributes.key?(attribute_name)
@@ -218,7 +199,7 @@ module MjmlRb
       end
     end
 
-    INTERNAL_ATTRIBUTES = %w[data-mjml-file data-mjml-ending-tag data-mjml-raw].freeze
+    INTERNAL_ATTRIBUTES = %w[data-mjml-file data-mjml-line data-mjml-ending-tag data-mjml-raw].freeze
 
     def string_attrs(node)
       result = {}

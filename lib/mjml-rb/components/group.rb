@@ -1,4 +1,5 @@
 require_relative "base"
+require_relative "../column_gutter"
 
 module MjmlRb
   module Components
@@ -21,9 +22,11 @@ module MjmlRb
         a = DEFAULT_ATTRIBUTES.merge(attrs)
         css_class = a["css-class"]
 
-        pct_str = width_pct.to_f.to_s.sub(/\.?0+$/, "")
-        col_class_name = "mj-column-per-#{pct_str.gsub('.', '-')}"
-        context[:column_widths][col_class_name] = "#{pct_str}%" if context[:column_widths]
+        unit = a["width"]&.end_with?("px") ? "px" : "%"
+        value = unit == "px" ? a["width"].to_f : width_pct
+        width_string = value.to_s.sub(/\.?0+$/, "")
+        col_class_name = "mj-column-#{unit == '%' ? 'per' : 'px'}-#{width_string.tr('.', '-')}"
+        context[:column_widths][col_class_name] = "#{width_string}#{unit}" if context[:column_widths]
 
         group_class = "#{col_class_name} mj-outlook-group-fix"
         group_class = "#{group_class} #{css_class}" if css_class && !css_class.empty?
@@ -71,12 +74,18 @@ module MjmlRb
             case child.tag_name
             when "mj-column"
               width_pct = widths[column_index] || 100.0
+              gutter = if context[:gutter]
+                         ColumnGutter.new(width: resolved_attributes(child, context)["width"] || "#{width_pct}%", container_width: group_width,
+                                          gutter: context[:gutter], count: columns.size, index: column_index, direction: attrs["direction"], grouped: true)
+                       end
+              context[:_column_gutter] = gutter
               column_index += 1
               context[:_column_width_pct] = width_pct
               context[:_column_mobile_width] = true
               td_style = style_join(
                 "vertical-align" => resolved_attributes(child, context)["vertical-align"] || "top",
-                "width" => "#{(group_width_px * width_pct / 100.0).round}px"
+                "width" => "#{(group_width_px * width_pct / 100.0).round}px",
+                "padding" => gutter&.desktop_padding("px")
               )
               td_open = %(<!--[if mso | IE]><td#{html_attrs("style" => td_style)}><![endif]-->)
               td_close = %(<!--[if mso | IE]></td><![endif]-->)

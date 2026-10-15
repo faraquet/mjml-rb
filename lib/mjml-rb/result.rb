@@ -1,11 +1,12 @@
 module MjmlRb
   class Result
-    attr_reader :html, :errors, :warnings
+    attr_reader :html, :errors, :warnings, :dependencies
 
-    def initialize(html: "", errors: [], warnings: [])
+    def initialize(html: "", errors: [], warnings: [], dependencies: [])
       @html = html.to_s
       @errors = Array(errors)
       @warnings = Array(warnings)
+      @dependencies = Array(dependencies).freeze
     end
 
     def success?

@@ -27,7 +27,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       body = find_child(ast, "mj-body")
       section = find_child(body, "mj-section")
       column = find_child(section, "mj-column")
@@ -53,7 +53,7 @@ class ParserIncludesTest < Minitest::Test
     MJML
 
     assert_raises(MjmlRb::Parser::ParseError) do
-      @parser.parse(mjml)
+      @parser.parse(mjml, ignore_includes: false)
     end
   end
 
@@ -74,7 +74,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       refute_empty @parser.include_errors
       assert @parser.include_errors.any? { |e| e[:message].include?("nonexistent.mjml") }
     end
@@ -98,7 +98,7 @@ class ParserIncludesTest < Minitest::Test
       MJML
 
       assert_raises(MjmlRb::Parser::ParseError) do
-        @parser.parse(File.read(main), actual_path: main, file_path: dir)
+        @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       end
     end
   end
@@ -122,7 +122,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       body = find_child(ast, "mj-body")
       section = find_child(body, "mj-section")
       column = find_child(section, "mj-column")
@@ -153,7 +153,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       head = find_child(ast, "mj-head")
       refute_nil head
       style = find_child(head, "mj-style")
@@ -180,7 +180,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       head = find_child(ast, "mj-head")
       style = find_child(head, "mj-style")
       refute_nil style
@@ -208,7 +208,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       head = find_child(ast, "mj-head")
       refute_nil head, "mj-head should be created when CSS include is used without existing head"
     end
@@ -235,7 +235,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       body = find_child(ast, "mj-body")
       section = find_child(body, "mj-section")
       column = find_child(section, "mj-column")
@@ -270,7 +270,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       body = find_child(ast, "mj-body")
       section = find_child(body, "mj-section")
       column = find_child(section, "mj-column")
@@ -309,7 +309,7 @@ class ParserIncludesTest < Minitest::Test
         </mjml>
       MJML
 
-      ast = @parser.parse(File.read(main), actual_path: main, file_path: dir)
+      ast = @parser.parse(File.read(main), ignore_includes: false, actual_path: main, file_path: dir)
       head = find_child(ast, "mj-head")
       refute_nil head
       title = find_child(head, "mj-title")
@@ -340,7 +340,7 @@ class ParserIncludesTest < Minitest::Test
       section = find_child(body, "mj-section")
       column = find_child(section, "mj-column")
       inc = find_child(column, "mj-include")
-      refute_nil inc, "mj-include should remain in AST when ignore_includes is true"
+      assert_nil inc, "Ignored mj-include is omitted before validation"
     end
   end
 

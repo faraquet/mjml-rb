@@ -25,11 +25,10 @@ class ConfigFileEdgeCasesTest < Minitest::Test
 
   # --- options as non-hash ---
 
-  def test_load_ignores_options_when_not_hash
+  def test_load_rejects_options_when_not_hash
     Dir.mktmpdir do |dir|
       write_mjmlrc(dir, { "options" => "not_a_hash" })
-      result = MjmlRb::ConfigFile.load(dir)
-      refute result.key?(:options)
+      assert_raises(MjmlRb::ConfigFile::ConfigError) { MjmlRb::ConfigFile.load(dir) }
     end
   end
 
@@ -49,8 +48,7 @@ class ConfigFileEdgeCasesTest < Minitest::Test
     Dir.mktmpdir do |dir|
       write_mjmlrc(dir, { "options" => { "keepComments" => true } })
       result = MjmlRb::ConfigFile.load(dir)
-      # Keys with no dashes are just symbolized as-is
-      assert_equal true, result[:options][:keepComments]
+      assert_equal true, result[:options][:keep_comments]
     end
   end
 
@@ -65,11 +63,10 @@ class ConfigFileEdgeCasesTest < Minitest::Test
 
   # --- Options with various value types ---
 
-  def test_load_preserves_integer_option_values
+  def test_load_rejects_unknown_options
     Dir.mktmpdir do |dir|
       write_mjmlrc(dir, { "options" => { "some-number" => 42 } })
-      result = MjmlRb::ConfigFile.load(dir)
-      assert_equal 42, result[:options][:some_number]
+      assert_raises(MjmlRb::ConfigFile::ConfigError) { MjmlRb::ConfigFile.load(dir) }
     end
   end
 
@@ -84,7 +81,7 @@ class ConfigFileEdgeCasesTest < Minitest::Test
   # --- File at default name ---
 
   def test_load_uses_default_name
-    assert_equal ".mjmlrc", MjmlRb::ConfigFile::DEFAULT_NAME
+    assert_equal ".mjmlconfig", MjmlRb::ConfigFile::DEFAULT_NAME
   end
 
   # --- Packages that fail to load ---
@@ -92,7 +89,7 @@ class ConfigFileEdgeCasesTest < Minitest::Test
   def test_load_raises_on_missing_package
     Dir.mktmpdir do |dir|
       write_mjmlrc(dir, { "packages" => ["./does_not_exist.rb"] })
-      assert_raises(LoadError) do
+      assert_raises(MjmlRb::ConfigFile::ConfigError) do
         MjmlRb::ConfigFile.load(dir)
       end
     end

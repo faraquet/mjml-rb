@@ -1,8 +1,10 @@
 require "json"
+require_relative "options"
 
 module MjmlRb
   class ConfigFile
-    DEFAULT_NAME = ".mjmlrc"
+    DEFAULT_NAME = ".mjmlconfig"
+    NAMES = [DEFAULT_NAME, ".mjmlrc", ".mjmlconfig.js"].freeze
 
     class ConfigError < StandardError
       attr_reader :path
@@ -13,30 +15,38 @@ module MjmlRb
       end
     end
 
-    def self.load(dir = Dir.pwd)
-      path = File.join(dir, DEFAULT_NAME)
-      return {} unless File.exist?(path)
+    def self.load(location = Dir.pwd)
+      path = if File.directory?(location)
+               NAMES.map { |name| File.join(location, name) }.find { |candidate| File.file?(candidate) }
+             else
+               location
+             end
+      return {} unless path
+      if path.end_with?(".js")
+        raise ConfigError.new("JavaScript MJML configuration is unsupported; use JSON and register Ruby components", path: path)
+      end
 
       raw = JSON.parse(File.read(path))
+      raise ArgumentError, "Configuration root must be an object" unless raw.is_a?(Hash)
       config = {}
-
+      if raw.key?("options") && !raw["options"].is_a?(Hash)
+        raise ArgumentError, "Configuration options must be an object"
+      end
+      config[:options] = Options.normalize(raw["options"]) if raw["options"]
       if raw["packages"].is_a?(Array)
-        raw["packages"].each do |pkg_path|
-          resolved = File.expand_path(pkg_path, dir)
-          require resolved
+        raw["packages"].each do |package|
+          unless package.is_a?(String) && package.end_with?(".rb")
+            raise ArgumentError, "JavaScript component packages are unsupported; use a Ruby .rb component file"
+          end
+          require File.expand_path(package, File.dirname(path))
         end
         config[:packages_loaded] = raw["packages"]
       end
-
-      if raw["options"].is_a?(Hash)
-        config[:options] = raw["options"].each_with_object({}) do |(k, v), memo|
-          memo[k.to_s.tr("-", "_").to_sym] = v
-        end
-      end
-
       config
     rescue JSON::ParserError => e
       raise ConfigError.new("Failed to parse #{path}: #{e.message}", path: path)
+    rescue ArgumentError, SystemCallError, LoadError => e
+      raise ConfigError.new("Failed to load #{path}: #{e.message}", path: path)
     end
   end
 end

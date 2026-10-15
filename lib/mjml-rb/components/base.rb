@@ -51,7 +51,7 @@ module MjmlRb
       end
 
       def raw_inner_for_body(node)
-        renderer.send(:annotate_raw_html, raw_inner(node))
+        renderer.send(:protect_raw_html, renderer.send(:annotate_raw_html, raw_inner(node)))
       end
 
       # Like raw_inner but HTML-escapes text nodes. Use for components such as

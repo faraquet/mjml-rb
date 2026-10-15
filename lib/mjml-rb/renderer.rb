@@ -64,6 +64,7 @@ module MjmlRb
     HTML
 
     def render(document, options = {})
+      @formatting = options[:minify] || options[:beautify]
       head = find_child(document, "mj-head")
       body = find_child(document, "mj-body")
       raise ArgumentError, "Missing <mj-body>" unless body
@@ -84,6 +85,8 @@ module MjmlRb
 
     def build_context(head, options)
       context = {
+        sanitize_styles: options[:sanitize_styles],
+        template_syntax: options[:template_syntax] || Options::DEFAULTS[:template_syntax],
         title: "",
         preview: "",
         breakpoint: "480px",
@@ -161,7 +164,8 @@ module MjmlRb
       html = preserve_raw_tag_spacing(html)
       html = strip_internal_raw_markers(html)
       html = merge_outlook_conditionals(html)
-      before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
+      html = before_doctype.empty? ? html : "#{before_doctype}\n#{html}"
+      @formatting ? html : html.gsub(/<!--mjml-rb:raw-(?:start|end)-->/, "")
     end
 
     def build_font_tags(content, inline_styles, fonts)
@@ -216,7 +220,7 @@ module MjmlRb
       return [100] if total == 0
 
       widths = columns.map do |col|
-        w = col["width"]
+        w = resolved_attributes(col, context)["width"]
         if w && w.to_s =~ /(\d+(?:\.\d+)?)\s*%/
           $1.to_f
         elsif w && w.to_s =~ /(\d+(?:\.\d+)?)\s*px/
@@ -227,16 +231,7 @@ module MjmlRb
         end
       end
 
-      specified = widths.compact.sum
-      unset_count = widths.count(&:nil?)
-
-      if unset_count > 0
-        remaining = [100.0 - specified, 0.0].max
-        each_unset = remaining / unset_count
-        widths.map { |w| w || each_unset }
-      else
-        widths
-      end
+      widths.map { |width| width || 100.0 / total }
     end
 
     def build_media_queries_tags(breakpoint, column_widths, force_owa_desktop: false, printer_support: false)
@@ -244,13 +239,13 @@ module MjmlRb
       return "" if widths.empty?
 
       base_rules = widths.map do |class_name, width_str|
-        ".#{class_name} { width:#{width_str} !important; max-width: #{width_str}; }"
+        ".#{class_name} { #{media_query_declarations(width_str)} }"
       end
       moz_rules = widths.map do |class_name, width_str|
-        ".moz-text-html .#{class_name} { width:#{width_str} !important; max-width: #{width_str}; }"
+        ".moz-text-html .#{class_name} { #{media_query_declarations(width_str)} }"
       end
       owa_rules = widths.map do |class_name, width_str|
-        "[owa] .#{class_name} { width:#{width_str} !important; max-width: #{width_str}; }"
+        "[owa] .#{class_name} { #{media_query_declarations(width_str)} }"
       end
 
       bp = breakpoint.to_s.strip
@@ -274,29 +269,36 @@ module MjmlRb
       parts.join("\n")
     end
 
+    def media_query_declarations(value)
+      return "padding: #{value[:padding]} !important;" if value.is_a?(Hash)
+      "width:#{value} !important; max-width: #{value};"
+    end
+
     def build_style_tag(styles)
       return "" if styles.empty?
 
       "<style type=\"text/css\">#{styles.join("\n")}</style>"
     end
 
+    def outside_raw_regions(html)
+      html.split(/(<!--mjml-rb:raw-start-->.*?<!--mjml-rb:raw-end-->)/m).map do |part|
+        part.start_with?("<!--mjml-rb:raw-start-->") ? part : yield(part)
+      end.join
+    end
+
     def merge_outlook_conditionals(html)
-      # MJML post-processes the HTML to merge adjacent Outlook conditional comments.
-      # e.g. <![endif]-->\n<!--[if mso | IE]> become a single conditional block.
-      html.gsub(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, "")
+      outside_raw_regions(html) do |part|
+        part.gsub(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, "")
+      end
     end
 
     def minify_outlook_conditionals(html)
-      html.gsub(/(<!--\[if\s[^\]]+\]>)([\s\S]*?)(<!\[endif\]-->)/m) do
-        prefix = Regexp.last_match(1)
-        content = Regexp.last_match(2)
-        suffix = Regexp.last_match(3)
-
-        processed = content
-                    .gsub(/(^|>)(\s+)(<|$)/m, '\1\3')
-                    .gsub(/\s{2,}/m, " ")
-
-        "#{prefix}#{processed}#{suffix}"
+      outside_raw_regions(html) do |part|
+        part.gsub(/(<!--\[if\s[^\]]+\]>)([\s\S]*?)(<!\[endif\]-->)/m) do
+          prefix, content, suffix = Regexp.last_match.captures
+          processed = content.gsub(/(^|>)(\s+)(<|$)/m, '\\1\\3').gsub(/\s{2,}/m, " ")
+          "#{prefix}#{processed}#{suffix}"
+        end
       end
     end
 
@@ -332,6 +334,9 @@ module MjmlRb
     def apply_inline_styles(html, context)
       css_blocks = unique_strings(context[:inline_styles]).reject { |css| css.nil? || css.strip.empty? }
       return html if css_blocks.empty?
+      if context[:sanitize_styles] && css_blocks.any? { |css| context[:template_syntax].any? { |syntax| css.include?(syntax[:prefix] || syntax["prefix"]) } }
+        raise ArgumentError, "Template syntax in inline MJML CSS is unsupported; use non-inline mj-style or raw styles"
+      end
 
       document = parse_html_document(html)
       rules, = parse_inline_css_rules(css_blocks.join("\n"))
@@ -617,41 +622,13 @@ module MjmlRb
     end
 
     def component_registry
-      @component_registry ||= begin
-        registry = {}
-        # Register component classes here as they are implemented.
-        register_component(registry, Components::Body.new(self))
-        register_component(registry, Components::Head.new(self))
-        register_component(registry, Components::Attributes.new(self))
-        register_component(registry, Components::Breakpoint.new(self))
-        register_component(registry, Components::Accordion.new(self))
-        register_component(registry, Components::Button.new(self))
-        register_component(registry, Components::Carousel.new(self))
-        register_component(registry, Components::CarouselImage.new(self))
-        register_component(registry, Components::Group.new(self))
-        register_component(registry, Components::Hero.new(self))
-        register_component(registry, Components::Image.new(self))
-        register_component(registry, Components::Navbar.new(self))
-        register_component(registry, Components::Raw.new(self))
-        register_component(registry, Components::Text.new(self))
-        register_component(registry, Components::Divider.new(self))
-        register_component(registry, Components::HtmlAttributes.new(self))
-        register_component(registry, Components::Table.new(self))
-        register_component(registry, Components::Social.new(self))
-        register_component(registry, Components::Section.new(self))
-        register_component(registry, Components::Column.new(self))
-        register_component(registry, Components::Spacer.new(self))
-
-        MjmlRb.component_registry.custom_components.each do |klass|
-          register_component(registry, klass.new(self))
-        end
-
-        registry
+      registry = MjmlRb.component_registry
+      if @registry_revision != registry.revision
+        instances = {}
+        @component_registry = registry.components.transform_values { |klass| instances[klass] ||= klass.new(self) }
+        @registry_revision = registry.revision
       end
-    end
-
-    def register_component(registry, component)
-      component.tags.each { |tag| registry[tag] = component }
+      @component_registry
     end
 
     def resolved_attributes(node, context)
@@ -697,6 +674,12 @@ module MjmlRb
           child.to_html
         end
       end.join
+    end
+
+    def protect_raw_html(content)
+      return content if content.empty? || (!@formatting && !content.include?("<!--[if"))
+      # Use separate markers so source htmlmin:ignore regions can be nested.
+      "<!--mjml-rb:raw-start-->#{content}<!--mjml-rb:raw-end-->"
     end
 
     def annotate_raw_html(content)
@@ -754,7 +737,7 @@ module MjmlRb
         next unless child.tag_name == "mj-raw"
         next unless child["position"] == "file-start"
 
-        raw_inner(child)
+        protect_raw_html(raw_inner(child))
       end.join("\n")
     end
 
@@ -769,7 +752,7 @@ module MjmlRb
     # Internal-only attributes set by the parser for metadata tracking.
     # These are excluded from the public attributes hash; data-mjml-raw
     # is intentionally kept because it is used by the rendering pipeline.
-    INTERNAL_ATTRIBUTES = %w[data-mjml-file data-mjml-ending-tag].freeze
+    INTERNAL_ATTRIBUTES = %w[data-mjml-file data-mjml-line data-mjml-ending-tag].freeze
 
     def node_string_attributes(node)
       result = {}

@@ -6,6 +6,10 @@ module MjmlRb
       name
     end
 
+    def line
+      element? && self["data-mjml-line"] ? self["data-mjml-line"].to_i : super
+    end
+
     def file
       self["data-mjml-file"]
     end

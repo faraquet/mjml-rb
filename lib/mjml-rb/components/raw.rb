@@ -14,7 +14,7 @@ module MjmlRb
       end
 
       def handle_head(node, context)
-        context[:head_raw] << raw_inner(node)
+        context[:head_raw] << renderer.send(:protect_raw_html, raw_inner(node))
       end
     end
   end

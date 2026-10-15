@@ -1,0 +1,6 @@
+{
+  "name": "mjml-rb-reference",
+  "private": true,
+  "description": "Development-only differential reference for the pure-Ruby compiler",
+  "dependencies": {"mjml": "5.4.1"}
+}
