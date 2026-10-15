@@ -20,7 +20,7 @@ A pure-Ruby MJML compiler — no Node.js required. Compiles [MJML v4](https://mj
 - [CLI](#cli)
   - [Flags](#flags)
   - [Examples](#cli-examples)
-  - [Config File (.mjmlrc)](#config-file-mjmlrc)
+  - [Config File (.mjmlconfig)](#config-file-mjmlconfig)
 - [Rails Integration](#rails-integration)
 - [Components Reference](#components-reference)
   - [Document Structure](#document-structure)
@@ -146,15 +146,35 @@ Each error/warning hash contains:
 | `validation_level` | `String` | `"soft"` | `"soft"`, `"strict"`, or `"skip"` |
 | `beautify` | `Boolean` | `false` | Pretty-print output HTML |
 | `minify` | `Boolean` | `false` | Minify output HTML |
-| `keep_comments` | `Boolean` | `true` | Preserve HTML comments in output |
-| `ignore_includes` | `Boolean` | `false` | Skip `mj-include` processing |
+| `keep_comments` | `Boolean` | `true` | Preserve source comments; Outlook conditionals always survive |
+| `ignore_includes` | `Boolean` | `true` | Silently omit `mj-include`; set false to enable allowed files |
 | `printer_support` | `Boolean` | `false` | Add `@media print` CSS rules |
 | `preprocessors` | `Array` | `[]` | Callables applied to MJML before parsing |
 | `file_path` | `String` | `"."` | Base directory for resolving includes |
-| `actual_path` | `String` | `"."` | Actual file path for relative includes |
+| `actual_path` | `String` | `"."` | Source filename for diagnostics |
 | `lang` | `String` | `"und"` | HTML `lang` attribute |
 | `dir` | `String` | `"auto"` | HTML `dir` attribute |
 | `fonts` | `Hash` | *(built-in)* | `{"Font Name" => "URL"}` for Google Fonts |
+
+Snake_case is the native Ruby form; upstream camelCase and dashed keys are
+accepted aliases. Conflicting aliases raise `ArgumentError`. The compatibility
+reference is exposed as `MjmlRb::MJML_COMPATIBILITY_VERSION` and in `mjml --version`.
+See [the v5 migration guide](MIGRATING_TO_V5.md).
+
+| Additional option | Default | Meaning |
+|---|---|---|
+| `include_path` | none | Additional canonical allowed include roots, string or array |
+| `minify_options` | `{}` | `minify_css` boolean; also accepts `minifyCss` / `minifyCSS` |
+| `sanitize_styles` | `false` | Validate and preserve CSS template tokens |
+| `template_syntax` | `{{ }}` and `[[ ]]` pairs | Array of `{prefix:, suffix:}` objects |
+| `allow_mixed_syntax` | `false` | Permit mixed block/property/value CSS template syntax |
+| `mjml_config_path` | working directory | JSON config file or directory |
+| `use_mjml_config_options` | `false` | Apply config options before explicit options |
+| `juice_options`, `juice_preserve_tags` | none | Non-empty values are unsupported and raise |
+
+`minify` wins over `beautify`. Formatting is conservative and preserves raw,
+preformatted, script, VML and paired `htmlmin:ignore` content. Unsupported
+`minify_options` keys raise instead of being ignored.
 
 **Validation levels:**
 
@@ -162,7 +182,7 @@ Each error/warning hash contains:
 |-------|----------|
 | `"soft"` | Validation issues reported as warnings; compilation proceeds |
 | `"strict"` | Validation issues reported as errors; compilation halts if any found |
-| `"skip"` | No validation at all |
+| `"skip"` | Skip component validation; include security and diagnostics still apply |
 
 **Preprocessors** are callables (lambdas, procs) that transform the raw MJML string before parsing:
 
@@ -220,9 +240,19 @@ mjml -i -s -c minify=true < email.mjml
 mjml -w email.mjml -o email.html
 ```
 
-### Config File (.mjmlrc)
+`--validate` emits no HTML and never creates an output file. Watch mode compiles
+initially and polls root files plus enabled recursive include dependencies.
+`--filePath PATH` provides a base directory for stdin includes.
 
-Place a `.mjmlrc` file (JSON) in your project root:
+### Config File (.mjmlconfig)
+
+Place a `.mjmlconfig` file (JSON) in your project root. `.mjmlrc` remains a legacy
+alias. Enable config options with `use_mjml_config_options: true` or CLI
+`--config.useMjmlConfigOptions`; explicit options take precedence and
+`minify_options` merges by key. `.mjmlconfig.js` and JavaScript packages are
+unsupported. Ruby package files must end in `.rb`.
+
+Example:
 
 ```json
 {
@@ -316,6 +346,7 @@ Top-level content container. Required.
 | Attribute | Type | Default |
 |-----------|------|---------|
 | `background-color` | color | — |
+| `id` | string | — |
 | `width` | px | `600px` |
 
 ---
@@ -347,6 +378,7 @@ Horizontal layout container. Direct child of `mj-body`.
 | `border-right` | string | — |
 | `border-top` | string | — |
 | `border-radius` | string | — |
+| `gutter` | px/% | — |
 | `direction` | `ltr` / `rtl` | `ltr` |
 | `full-width` | `full-width` / *(empty)* | — |
 | `padding` | px/% (1-4 values) | `20px 0` |
@@ -361,7 +393,7 @@ Horizontal layout container. Direct child of `mj-body`.
 
 #### mj-wrapper
 
-Like `mj-section` but wraps multiple sections. Supports all section attributes plus:
+Like `mj-section` but wraps multiple sections. Supports section attributes except `gutter`, plus:
 
 | Attribute | Type | Default |
 |-----------|------|---------|
@@ -387,7 +419,7 @@ Responsive column within a section. Width auto-calculated when omitted.
 | `border-left` | string | — |
 | `border-right` | string | — |
 | `border-top` | string | — |
-| `border-radius` | px/% (1-4 values) | — |
+| `border-radius` | string | — |
 | `direction` | `ltr` / `rtl` | `ltr` |
 | `inner-background-color` | color | — |
 | `inner-border` | string | — |
@@ -395,7 +427,7 @@ Responsive column within a section. Width auto-calculated when omitted.
 | `inner-border-left` | string | — |
 | `inner-border-right` | string | — |
 | `inner-border-top` | string | — |
-| `inner-border-radius` | px/% (1-4 values) | — |
+| `inner-border-radius` | string | — |
 | `padding` | px/% (1-4 values) | — |
 | `padding-top` | px/% | — |
 | `padding-right` | px/% | — |
@@ -439,7 +471,6 @@ Hero banner with background image overlay.
 | `background-position` | string | `center center` |
 | `background-color` | color | `#ffffff` |
 | `border-radius` | string | — |
-| `container-background-color` | color | — |
 | `inner-background-color` | color | — |
 | `inner-padding` | px/% (1-4 values) | — |
 | `inner-padding-top` | px/% | — |
@@ -504,7 +535,7 @@ Responsive image with optional link.
 
 | Attribute | Type | Default |
 |-----------|------|---------|
-| `src` | string | — (**required**) |
+| `src` | string | — |
 | `alt` | string | `""` |
 | `href` | string | — |
 | `name` | string | — |
@@ -518,7 +549,7 @@ Responsive image with optional link.
 | `border-left` | string | — |
 | `border-right` | string | — |
 | `border-top` | string | — |
-| `border-radius` | px/% (1-4 values) | — |
+| `border-radius` | string | — |
 | `container-background-color` | color | — |
 | `fluid-on-mobile` | boolean | — |
 | `full-width` | `full-width` | — |
@@ -705,7 +736,8 @@ Social media icon links.
 | Attribute | Type | Default |
 |-----------|------|---------|
 | `align` | `left` / `center` / `right` | `center` |
-| `border-radius` | px/% | `3px` |
+| `border` | string | `0` on icons; inherited from parent |
+| `border-radius` | string | `3px` |
 | `color` | color | `#333333` |
 | `container-background-color` | color | — |
 | `font-family` | string | `Ubuntu, Helvetica, Arial, sans-serif` |
@@ -744,7 +776,8 @@ Social media icon links.
 | `align` | `left` / `center` / `right` | `left` |
 | `icon-position` | `left` / `right` | `left` |
 | `background-color` | color | — |
-| `border-radius` | px | `3px` |
+| `border` | string | `0` on icons; inherited from parent |
+| `border-radius` | string | `3px` |
 | `color` | color | `#000` |
 | `font-family` | string | `Ubuntu, Helvetica, Arial, sans-serif` |
 | `font-size` | px | `13px` |
@@ -842,14 +875,14 @@ Image carousel with thumbnails.
 | Attribute | Type | Default |
 |-----------|------|---------|
 | `align` | `left` / `center` / `right` | `center` |
-| `border-radius` | px/% (1-4 values) | `6px` |
+| `border-radius` | string | `6px` |
 | `container-background-color` | color | — |
 | `icon-width` | px/% | `44px` |
 | `left-icon` | string (URL) | *(imgur default)* |
 | `right-icon` | string (URL) | *(imgur default)* |
 | `thumbnails` | `visible` / `hidden` / `supported` | `visible` |
 | `tb-border` | string | `2px solid transparent` |
-| `tb-border-radius` | px/% | `6px` |
+| `tb-border-radius` | string | `6px` |
 | `tb-hover-border-color` | color | `#fead0d` |
 | `tb-selected-border-color` | color | `#ccc` |
 | `tb-width` | px/% | — |
@@ -870,9 +903,9 @@ Image carousel with thumbnails.
 | `target` | string | `_blank` |
 | `title` | string | — |
 | `thumbnails-src` | string | — |
-| `border-radius` | px/% (1-4 values) | — |
+| `border-radius` | string | — |
 | `tb-border` | string | — |
-| `tb-border-radius` | px/% (1-4 values) | — |
+| `tb-border-radius` | string | — |
 
 #### mj-accordion
 
@@ -1055,6 +1088,13 @@ mjml
 
 ## Includes (mj-include)
 
+Includes are disabled by default. Enable them with `ignore_includes: false` or
+`--config.allowIncludes`. Set `file_path` to the template directory; the CLI does
+this for each file. `include_path` adds explicit allowed directories. Nested
+includes keep the original allowlist while resolving relative to their own file.
+Canonical path checks reject escapes through traversal or symlinks, as well as
+absolute, UNC, drive-letter and null-byte paths.
+
 Include external MJML, HTML, or CSS files:
 
 ```xml
@@ -1079,7 +1119,9 @@ Include external MJML, HTML, or CSS files:
 
 - Paths are resolved relative to the including file
 - Circular includes are detected and raise an error
-- Missing files produce warnings (soft mode) or errors (strict mode)
+- Missing or denied files produce structured diagnostics: warnings (soft/skip) or errors (strict)
+- Ignored includes are removed before validation; denied includes emit `<!-- mj-include denied -->`
+- CSS includes in `mj-head` retain source order
 - Nested includes are fully supported
 
 ---

@@ -2,7 +2,7 @@
 
 # MJML Ruby Implementation
 
-A pure-Ruby MJML v4 compiler — no Node.js required.
+A pure-Ruby compiler targeting MJML **5.4.1** — no Node.js required at runtime.
 
 - Library API compatible with `mjml2html`
 - Command-line interface (`mjml`)
@@ -55,6 +55,14 @@ mjml -i -s < email.mjml                # stdin → stdout
 
 See the [Usage Guide — CLI section](docs/USAGE.md#cli) for all flags and config options.
 
+## Upgrading from v4
+
+The 0.6.x line uses v5 defaults. Includes are disabled unless explicitly enabled
+with `ignore_includes: false` or CLI `--config.allowIncludes`. Body classes move
+to `<body>`, and section gutters and social icon borders are supported.
+See [the migration guide](docs/MIGRATING_TO_V5.md) for the breaking changes and
+[the compatibility audit](docs/PARITY_AUDIT.md) for verified scope and limitations.
+
 ## Rails
 
 Add the gem to your Gemfile — that's it. The `.mjml` template handler is registered automatically.
@@ -103,7 +111,7 @@ This is a fully open source project — feedback, bug reports, test cases, and p
 
 ## Disclaimer
 
-This is an unofficial Ruby port of the MJML email framework, not affiliated with or endorsed by the MJML team. All 22 MJML v4 components are implemented and tested against npm MJML v4.18.0. Output may differ from the npm renderer in cosmetic ways (whitespace, attribute ordering) but renders identically across email clients.
+This is an unofficial Ruby port of the MJML email framework, not affiliated with or endorsed by the MJML team. Compatibility is checked against the pinned `mjml@5.4.1` compiler. This port remains experimental: the parser, CSS inliner and formatter have documented differences, and identical rendering across all email clients is not guaranteed.
 
 ## License
 
