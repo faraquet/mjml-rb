@@ -10,7 +10,7 @@ module MjmlRb
         "border" => "string",
         "border-bottom" => "string",
         "border-left" => "string",
-        "border-radius" => "unit(px,%){1,4}",
+        "border-radius" => "string",
         "border-right" => "string",
         "border-top" => "string",
         "direction" => "enum(ltr,rtl)",
@@ -18,7 +18,7 @@ module MjmlRb
         "inner-border" => "string",
         "inner-border-bottom" => "string",
         "inner-border-left" => "string",
-        "inner-border-radius" => "unit(px,%){1,4}",
+        "inner-border-radius" => "string",
         "inner-border-right" => "string",
         "inner-border-top" => "string",
         "padding" => "unit(px,%){1,4}",
@@ -40,21 +40,25 @@ module MjmlRb
       def render(tag_name:, node:, context:, attrs:, parent:)
         width_pct = context.delete(:_column_width_pct) || 100.0
         mobile_width = context.delete(:_column_mobile_width)
+        column_gutter = context.delete(:_column_gutter)
         css_class = attrs["css-class"]
         a = self.class.default_attributes.merge(attrs)
 
-        explicit_width = a["width"]
-        if explicit_width && explicit_width.strip.end_with?("px")
-          px_val = explicit_width.to_f.to_s.sub(/\.?0+$/, "")
-          col_class_name = "mj-column-px-#{px_val.gsub('.', '-')}"
-          context[:column_widths][col_class_name] = "#{px_val}px" if context[:column_widths]
+        if column_gutter
+          col_class_name = column_gutter.width_class
+          responsive_width = column_gutter.width
+          context[:column_widths][column_gutter.padding_class] = {padding: column_gutter.desktop_padding} unless column_gutter.grouped?
+        elsif a["width"]&.strip&.end_with?("px")
+          px_val = a["width"].to_f.round.to_s
+          col_class_name = "mj-column-px-#{px_val}"
+          responsive_width = "#{px_val}px"
         else
           pct_str = width_pct.to_f.to_s.sub(/\.?0+$/, "")
           col_class_name = "mj-column-per-#{pct_str.gsub('.', '-')}"
-          context[:column_widths][col_class_name] = "#{pct_str}%" if context[:column_widths]
+          responsive_width = "#{pct_str}%"
         end
-
-        col_class = "#{col_class_name} mj-outlook-group-fix"
+        context[:column_widths][col_class_name] = responsive_width if context[:column_widths]
+        col_class = [col_class_name, column_gutter&.padding_class, "mj-outlook-group-fix"].compact.join(" ")
         col_class = "#{col_class} #{css_class}" if css_class && !css_class.empty?
 
         vertical_align = a["vertical-align"]
@@ -64,7 +68,8 @@ module MjmlRb
           "direction" => a["direction"],
           "display" => "inline-block",
           "vertical-align" => vertical_align,
-          "width" => (mobile_width ? mobile_width_value(a, width_pct, context[:container_width]) : "100%")
+          "width" => (column_gutter ? column_gutter.mobile_width : mobile_width ? mobile_width_value(a, width_pct, context[:container_width]) : "100%"),
+          "padding" => column_gutter&.mobile_padding
         )
 
         column_markup =

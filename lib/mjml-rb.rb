@@ -16,8 +16,8 @@ module MjmlRb
   warn <<~WARNING unless ENV["MJML_RB_NO_WARN"] == "1"
     WARNING: mjml-rb #{VERSION} is EXPERIMENTAL software.
     It is an unofficial Ruby port of MJML, not affiliated with or endorsed by
-    the MJML team. Output may differ from the reference npm renderer. Not all
-    components are fully implemented. Use in production at your own risk.
+    the MJML team. It targets MJML #{MJML_COMPATIBILITY_VERSION}; parser, formatter
+    and CSS inliner behavior may differ. Use in production at your own risk.
     Set MJML_RB_NO_WARN=1 to suppress this message.
   WARNING
 

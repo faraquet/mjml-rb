@@ -34,7 +34,8 @@ module MjmlRb
 
       SOCIAL_ALLOWED_ATTRIBUTES = {
         "align" => "enum(left,right,center)",
-        "border-radius" => "unit(px,%)",
+        "border" => "string",
+        "border-radius" => "string",
         "container-background-color" => "color",
         "color" => "color",
         "font-family" => "string",
@@ -63,7 +64,8 @@ module MjmlRb
         "icon-position" => "enum(left,right)",
         "background-color" => "color",
         "color" => "color",
-        "border-radius" => "unit(px)",
+        "border" => "string",
+        "border-radius" => "string",
         "font-family" => "string",
         "font-size" => "unit(px)",
         "font-style" => "string",
@@ -103,7 +105,7 @@ module MjmlRb
 
       # Attributes Social parent passes down to its mj-social-element children
       INHERITED_ATTRS = %w[
-        border-radius color font-family font-size font-weight font-style
+        border border-radius color font-family font-size font-weight font-style
         icon-size icon-height icon-padding text-padding line-height text-decoration
       ].freeze
 
@@ -121,6 +123,7 @@ module MjmlRb
       }.freeze
 
       ELEMENT_DEFAULT_ATTRIBUTES = {
+        "border" => "0",
         "alt"             => "",
         "align"           => "left",
         "icon-position"   => "left",
@@ -198,38 +201,25 @@ module MjmlRb
       def render_horizontal(node, context, social_attrs)
         align     = social_attrs["align"]
         inherited = inherited_attrs(social_attrs)
-        elements  = social_element_children(node)
-        return "" if elements.empty?
-
-        outlook_open  = %(<!--[if mso | IE]><table align="#{escape_attr(align)}" border="0" cellpadding="0" cellspacing="0" role="presentation" ><tr>)
-        outlook_close = %(</tr></table><![endif]-->)
-
         children_html = with_inherited_mj_class(context, node) do
-          elements.map.with_index do |child, idx|
-            child_attrs  = resolved_attributes(child, context)
-            merged_attrs = ELEMENT_DEFAULT_ATTRIBUTES.merge(inherited).merge(child_attrs)
-            el_html      = render_social_element(child, merged_attrs)
-
-            outlook_td_open  = idx == 0 ? "<td>" : "</td><td>"
-            %(#{outlook_td_open}<![endif]--><table align="#{escape_attr(align)}" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;"><tbody>#{el_html}</tbody></table><!--[if mso | IE]>)
+          node.children.map do |child|
+            next render_node(child, context, parent: "mj-social") unless child.tag_name == "mj-social-element"
+            child_attrs = ELEMENT_DEFAULT_ATTRIBUTES.merge(inherited).merge(resolved_attributes(child, context))
+            el_html = render_social_element(child, child_attrs)
+            %(<!--[if mso | IE]><td><![endif]--><table align="#{escape_attr(align)}" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;"><tbody>#{el_html}</tbody></table><!--[if mso | IE]></td><![endif]-->)
           end.join
         end
-
-        %(#{outlook_open}#{children_html}</td>#{outlook_close})
+        %(<!--[if mso | IE]><table align="#{escape_attr(align)}" border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><![endif]-->#{children_html}<!--[if mso | IE]></tr></table><![endif]-->)
       end
 
       def render_vertical(node, context, social_attrs)
         inherited = inherited_attrs(social_attrs)
-        elements  = social_element_children(node)
-
         children_html = with_inherited_mj_class(context, node) do
-          elements.map do |child|
-            child_attrs  = resolved_attributes(child, context)
-            merged_attrs = ELEMENT_DEFAULT_ATTRIBUTES.merge(inherited).merge(child_attrs)
-            render_social_element(child, merged_attrs)
+          node.children.map do |child|
+            next render_node(child, context, parent: "mj-social") unless child.tag_name == "mj-social-element"
+            render_social_element(child, ELEMENT_DEFAULT_ATTRIBUTES.merge(inherited).merge(resolved_attributes(child, context)))
           end.join
         end
-
         %(<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin:0px;"><tbody>#{children_html}</tbody></table>)
       end
 
@@ -296,6 +286,7 @@ module MjmlRb
         )
 
         img_style = style_join(
+          "border" => a["border"],
           "border-radius" => border_radius,
           "display"       => "block"
         )
@@ -325,7 +316,7 @@ module MjmlRb
         HTML
 
         # Content cell (text)
-        content = node.content.strip
+        content = raw_inner_for_body(node).strip
         content_cell = if content.empty?
                          ""
                        else
@@ -344,7 +335,7 @@ module MjmlRb
                            "text-decoration" => a["text-decoration"]
                          )
 
-                         inner_text = " #{escape_html(content)} "
+                         inner_text = " #{content} "
                          text_elem = if has_link
                                        link_attrs_str = html_attrs({ "href" => final_href, "style" => text_style, "rel" => rel_val, "target" => target_val })
                                        %(<a#{link_attrs_str}>#{inner_text}</a>)

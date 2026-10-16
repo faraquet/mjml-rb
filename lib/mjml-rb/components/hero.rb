@@ -13,7 +13,6 @@ module MjmlRb
         "background-height" => "unit(px,%)",
         "background-position" => "string",
         "border-radius" => "string",
-        "container-background-color" => "color",
         "inner-background-color" => "color",
         "inner-padding" => "unit(px,%){1,4}",
         "inner-padding-top" => "unit(px,%)",
@@ -131,6 +130,7 @@ module MjmlRb
       end
 
       def render_content(attrs, content, container_width)
+        container_width = hero_container_width(attrs, container_width)
         outlook_attrs = {
           "align" => "center",
           "border" => "0",
@@ -152,7 +152,12 @@ module MjmlRb
           "class" => "mj-hero-content",
           "style" => style_join(
             "background-color" => attrs["inner-background-color"],
-            "margin" => "0px auto"
+            "margin" => "0px auto",
+            "padding" => attrs["inner-padding"],
+            "padding-top" => attrs["inner-padding-top"],
+            "padding-right" => attrs["inner-padding-right"],
+            "padding-bottom" => attrs["inner-padding-bottom"],
+            "padding-left" => attrs["inner-padding-left"]
           )
         }
         inner_table_attrs = {

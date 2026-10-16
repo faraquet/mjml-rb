@@ -14,6 +14,7 @@ module MjmlRb
       mj-raw
       mj-table
       mj-text
+      mj-social-element
     ]).freeze
 
     RULES = {

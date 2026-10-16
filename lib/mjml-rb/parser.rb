@@ -1,4 +1,6 @@
 require "nokogiri"
+require "uri"
+require_relative "options"
 
 require_relative "node_compat"
 
@@ -6,17 +8,10 @@ module MjmlRb
   class Parser
     HTML_VOID_TAGS = %w[area base br col embed hr img input link meta param source track wbr].freeze
 
-    # Ending-tag components whose inner HTML is preserved as raw content via CDATA
-    # wrapping, matching upstream npm's endingTag behavior. mj-table is excluded
-    # because its component needs structural AST access for attribute normalization.
-    # mj-carousel-image is excluded because it has no meaningful inner content.
-    ENDING_TAGS_FOR_CDATA = %w[
-      mj-accordion-text mj-accordion-title mj-button
-      mj-navbar-link mj-raw mj-text
-    ].freeze
+    ParseResult = Struct.new(:ast, :diagnostics, :dependencies, keyword_init: true)
 
-    # Pre-compiled regex patterns to avoid rebuilding on every call
-    ENDING_TAG_OPEN_RE = /<(#{ENDING_TAGS_FOR_CDATA.map { |t| Regexp.escape(t) }.join("|")})(\s[^<>]*?)?(?<!\/)>/mi.freeze
+    # mj-table retains structural access for its attribute normalization.
+    STRUCTURAL_ENDING_TAGS = %w[mj-table mj-carousel-image].freeze
 
     VOID_TAG_CLOSING_BR_RE = %r{</br\s*>}i.freeze
     VOID_TAG_CLOSING_OTHER_RE = /<\/(#{(HTML_VOID_TAGS - ["br"]).join("|")})\s*>/i.freeze
@@ -33,46 +28,69 @@ module MjmlRb
     ].freeze
 
     class ParseError < StandardError
-      attr_reader :line
+      attr_reader :line, :file, :dependencies
 
-      def initialize(message, line: nil)
+      def initialize(message, line: nil, file: nil, dependencies: [])
         super(message)
         @line = line
+        @file = file
+        @dependencies = dependencies
       end
     end
 
     # Errors collected during include expansion (missing files, etc.)
     # Read after calling #parse to retrieve non-fatal include issues.
-    attr_reader :include_errors
+    attr_reader :include_errors, :dependencies
+
+    def parse_result(mjml, options = {})
+      worker = self.class.new
+      ast = worker.parse(mjml, options)
+      ParseResult.new(ast: ast, diagnostics: worker.include_errors.freeze, dependencies: worker.dependencies.uniq.freeze)
+    end
 
     def parse(mjml, options = {})
       @include_errors = []
+      @dependencies = []
+      @ending_tags = @ending_tag_open_re = nil
       opts = normalize_options(options)
       xml = apply_preprocessors(mjml.to_s, opts[:preprocessors])
       xml = wrap_ending_tags_in_cdata(xml)
-      xml = normalize_html_void_tags(xml)
+      xml = outside_cdata(xml) { |part| normalize_html_void_tags(part) }
       xml = expand_includes(xml, opts) unless opts[:ignore_includes]
 
       xml = sanitize_bare_ampersands(xml)
       xml = replace_html_entities(xml)
       doc = Nokogiri::XML(xml) { |config| config.strict }
+      doc.xpath("//mj-include").each(&:remove) if opts[:ignore_includes]
       normalize_root_head_elements(doc)
       prepare_node(doc.root, keep_comments: opts[:keep_comments])
       doc.root
     rescue Nokogiri::XML::SyntaxError => e
-      raise ParseError.new("XML parse error: #{e.message}")
+      raise xml_parse_error(e, opts[:actual_path])
     end
 
     private
 
     def normalize_options(options)
-      {
-        keep_comments: options[:keep_comments],
-        preprocessors: Array(options[:preprocessors]),
-        ignore_includes: !!options[:ignore_includes],
-        file_path: options[:file_path] || ".",
-        actual_path: options[:actual_path] || "."
-      }
+      opts = Options::DEFAULTS.merge(Options.normalize(options))
+      base = File.expand_path(opts[:file_path])
+      base = File.dirname(base) if File.file?(base)
+      roots = [base] + Array(opts[:include_path]).map { |root| File.expand_path(root, base) }
+      opts.merge(file_path: base, allowed_roots: roots.filter_map { |root| File.realpath(root) rescue nil })
+    end
+
+    def ending_tags
+      @ending_tags ||= MjmlRb.component_registry.ending_tags - STRUCTURAL_ENDING_TAGS
+    end
+
+    def ending_tag_open_re
+      @ending_tag_open_re ||= /<(#{ending_tags.map { |tag| Regexp.escape(tag) }.join("|")})(\s[^<>]*?)?(?<!\/)>/mi
+    end
+
+    def outside_cdata(content)
+      content.split(/(<!\[CDATA\[.*?\]\]>)/m).map do |part|
+        part.start_with?("<![CDATA[") ? part : yield(part)
+      end.join
     end
 
     def apply_preprocessors(xml, preprocessors)
@@ -83,50 +101,55 @@ module MjmlRb
 
     def expand_includes(xml, options, included_in = [])
       xml = wrap_ending_tags_in_cdata(xml)
-      xml = normalize_html_void_tags(xml)
+      xml = outside_cdata(xml) { |part| normalize_html_void_tags(part) }
       doc = parse_xml(sanitize_bare_ampersands(xml))
       includes = doc.xpath("//mj-include")
-      return xml if includes.empty?
+      return xml if includes.empty? && included_in.empty?
 
-      css_includes = []
+      annotate_include_source(doc.root, options[:actual_path]) unless included_in.empty?
+
       head_includes = []
 
-      includes.reverse_each do |include_node|
+      includes.each do |include_node|
         path_attr = include_node["path"]
-        raise ParseError, "mj-include path is required" if path_attr.to_s.empty?
-
-        include_type = include_node["type"].to_s
-        parent = include_node.parent
-
-        resolved_path = begin
-          resolve_include_path(path_attr, options[:actual_path], options[:file_path])
-        rescue Errno::ENOENT
-          nil
+        if path_attr.to_s.empty?
+          raise ParseError.new("mj-include path is required", line: include_node.line, file: options[:actual_path], dependencies: @dependencies)
         end
 
-        include_content = resolved_path ? File.read(resolved_path) : nil
+        include_type = include_node["type"].to_s
 
-        if include_content.nil?
-          display_path = resolved_path || File.expand_path(path_attr, options[:file_path].to_s)
-          @include_errors << {
-            message: "mj-include fails to read file : #{path_attr} at #{display_path}",
-            tag_name: "mj-include",
-            file: display_path
-          }
+        begin
+          resolved_path = resolve_include_path(path_attr, options)
+          @dependencies << resolved_path
+          include_content = File.read(resolved_path)
+        rescue IncludeDenied
+          @include_errors << include_diagnostic(include_node, options, "include-denied", "mj-include denied: #{path_attr}")
+          replacement = Nokogiri::XML::Node.new("mj-raw", doc)
+          replacement.add_child(Nokogiri::XML::CDATA.new(doc, "<!-- mj-include denied -->"))
+          include_node.replace(replacement)
+          next
+        rescue SystemCallError
+          @include_errors << include_diagnostic(include_node, options, "include", "mj-include fails to read file : #{path_attr} at #{resolved_path}")
           include_node.remove
           next
         end
 
         # Circular include detection
         if included_in.include?(resolved_path)
-          raise ParseError, "Circular inclusion detected on file : #{resolved_path}"
+          raise ParseError.new("Circular inclusion detected on file : #{resolved_path}", line: include_node.line, file: options[:actual_path], dependencies: @dependencies)
         end
 
         if include_type == "css"
-          # CSS includes get collected and added to mj-head later
-          css_inline = include_node["css-inline"].to_s
-          css_includes << { content: include_content, inline: css_inline == "inline" }
-          include_node.remove
+          style = Nokogiri::XML::Node.new("mj-style", doc)
+          style["inline"] = "inline" if include_node["css-inline"] == "inline"
+          style.add_child(Nokogiri::XML::CDATA.new(doc, include_content))
+          annotate_include_source(style, resolved_path)
+          if include_node.parent.name == "mj-head"
+            include_node.replace(style)
+          else
+            ensure_head(doc).add_child(style)
+            include_node.remove
+          end
           next
         end
 
@@ -134,13 +157,13 @@ module MjmlRb
                         %(<mj-raw><![CDATA[#{escape_cdata(include_content)}]]></mj-raw>)
                       else
                         prepared = prepare_mjml_include_document(include_content)
-                        prepared = wrap_ending_tags_in_cdata(normalize_html_void_tags(prepared))
+                        prepared = wrap_ending_tags_in_cdata(prepared)
                         expanded = expand_includes(prepared, options.merge(
                           actual_path: resolved_path,
                           file_path: File.dirname(resolved_path)
                         ), included_in + [resolved_path])
                         body_children, include_head_children = extract_mjml_include_children(expanded)
-                        head_includes.unshift(*include_head_children)
+                        head_includes.push(*include_head_children)
                         body_children
                       end
 
@@ -162,12 +185,9 @@ module MjmlRb
 
       inject_head_includes(doc, head_includes) unless head_includes.empty?
 
-      # Inject CSS includes into mj-head
-      unless css_includes.empty?
-        inject_css_includes(doc, css_includes)
-      end
-
       doc.root.to_xml(save_with: Nokogiri::XML::Node::SaveOptions::AS_XML | Nokogiri::XML::Node::SaveOptions::NO_DECLARATION)
+    rescue Nokogiri::XML::SyntaxError => e
+      raise xml_parse_error(e, options[:actual_path])
     end
 
     def prepare_mjml_include_document(content)
@@ -195,18 +215,6 @@ module MjmlRb
     def inject_head_includes(doc, head_includes)
       head = ensure_head(doc)
       head_includes.each { |child| head.add_child(child) }
-    end
-
-    def inject_css_includes(doc, css_includes)
-      head = ensure_head(doc)
-
-      # Add each CSS include as an mj-style element
-      css_includes.each do |css_include|
-        style_node = Nokogiri::XML::Node.new("mj-style", doc)
-        style_node["inline"] = "inline" if css_include[:inline]
-        style_node.add_child(Nokogiri::XML::CDATA.new(doc, css_include[:content]))
-        head.add_child(style_node)
-      end
     end
 
     def ensure_head(doc)
@@ -281,7 +289,7 @@ module MjmlRb
       wrapped = +""
       cursor = 0
 
-      while (match = ENDING_TAG_OPEN_RE.match(content, cursor))
+      while (match = ending_tag_open_re.match(content, cursor))
         tag = match[1]
         attrs = match[2].to_s
         wrapped << content[cursor...match.begin(0)]
@@ -297,9 +305,7 @@ module MjmlRb
         if inner.include?("<![CDATA[")
           wrapped << "<#{tag}#{attrs}>#{inner}</#{tag}>"
         else
-          # Pre-process content: normalize void tags and sanitize bare ampersands
-          # before wrapping in CDATA, so the raw HTML is well-formed for output.
-          prepared = sanitize_bare_ampersands(normalize_html_void_tags(inner))
+          prepared = inner
           wrapped << "<#{tag}#{attrs}><![CDATA[#{escape_cdata(prepared)}]]></#{tag}>"
         end
 
@@ -356,7 +362,7 @@ module MjmlRb
     # (e.g. &amp; &#123; &#x1F;).  This lets the XML parser handle HTML-ish
     # content such as "Terms & Conditions" which is common in email templates.
     def sanitize_bare_ampersands(content)
-      content.gsub(BARE_AMPERSAND_RE, "&amp;")
+      outside_cdata(content) { |part| part.gsub(BARE_AMPERSAND_RE, "&amp;") }
     end
 
     # Replace HTML named entities (e.g. &nbsp;, &copy;) with their numeric
@@ -365,12 +371,14 @@ module MjmlRb
     # HTML must be converted to numeric form for the XML parser to accept them.
     # Uses Nokogiri's built-in HTML entity lookup table.
     def replace_html_entities(content)
-      content.gsub(/&([a-zA-Z][a-zA-Z0-9]*);/) do |match|
-        name = ::Regexp.last_match(1)
-        next match if XML_PREDEFINED_ENTITIES.include?(name)
+      outside_cdata(content) do |part|
+        part.gsub(/&([a-zA-Z][a-zA-Z0-9]*);/) do |match|
+          name = ::Regexp.last_match(1)
+          next match if XML_PREDEFINED_ENTITIES.include?(name)
 
-        codepoint = Nokogiri::HTML::NamedCharacters[name]
-        codepoint ? "&##{codepoint};" : match
+          codepoint = Nokogiri::HTML::NamedCharacters[name]
+          codepoint ? "&##{codepoint};" : match
+        end
       end
     end
 
@@ -384,23 +392,39 @@ module MjmlRb
 
       if (element.name.start_with?("mj-") || element.name == "mjml") && !element["data-mjml-file"]
         element["data-mjml-file"] = file_path
+        element["data-mjml-line"] = element.line.to_s
       end
       element.element_children.each { |child| annotate_include_source(child, file_path) }
     end
 
-    def resolve_include_path(include_path, actual_path, file_path)
-      include_path = include_path.to_s
-      return include_path if File.absolute_path(include_path) == include_path && File.file?(include_path)
+    class IncludeDenied < StandardError; end
 
-      candidates = []
-      candidates << File.expand_path(include_path, File.dirname(actual_path.to_s))
-      candidates << File.expand_path(include_path, file_path.to_s)
-      candidates << File.expand_path(include_path, Dir.pwd)
+    def include_diagnostic(node, options, type, message)
+      {type: type, message: message, formatted_message: message,
+       tag_name: "mj-include", line: node.line, file: options[:actual_path]}
+    end
 
-      existing = candidates.find { |candidate| File.file?(candidate) }
-      return existing if existing
-
-      raise Errno::ENOENT, include_path
+    def resolve_include_path(path, options)
+      decoded = path.to_s
+      10.times do
+        next_value = URI::DEFAULT_PARSER.unescape(decoded)
+        break if next_value == decoded
+        decoded = next_value
+      end
+      if decoded.include?("\0") || decoded.start_with?("/", "\\") || decoded.match?(/\A[A-Za-z]:/)
+        raise IncludeDenied
+      end
+      base = options[:file_path]
+      candidate = File.expand_path(decoded, base)
+      # Resolve every existing ancestor, including symlinks of missing targets.
+      ancestor = candidate
+      ancestor = File.dirname(ancestor) until File.exist?(ancestor) || File.symlink?(ancestor) || ancestor == File.dirname(ancestor)
+      canonical = File.realpath(ancestor)
+      allowed = options[:allowed_roots].any? { |root| canonical == root || canonical.start_with?(File.join(root, "")) }
+      raise IncludeDenied unless allowed
+      File.exist?(candidate) ? File.realpath(candidate) : candidate
+    rescue Errno::ELOOP
+      raise IncludeDenied
     end
 
     def prepare_node(element, keep_comments:)
@@ -413,8 +437,14 @@ module MjmlRb
 
       # For ending-tag elements whose content was wrapped in CDATA,
       # mark them so raw_inner knows to extract content directly.
-      if ENDING_TAGS_FOR_CDATA.include?(element.name)
+      if ending_tags.include?(element.name)
         element["data-mjml-ending-tag"] = "true"
+        unless keep_comments
+          element.children.each do |child|
+            next unless child.cdata? || child.text?
+            child.content = strip_source_comments(child.content)
+          end
+        end
         return
       end
 
@@ -429,18 +459,32 @@ module MjmlRb
             child.remove
           end
         elsif child.comment?
-          child.remove unless keep_comments
+          child.remove unless keep_comments || child.content.match?(/\A(?:\[if|<!\[endif|\s*htmlmin:ignore)/i)
         else
           child.remove
         end
       end
     end
 
-    # Lenient XML parse used during include expansion and intermediate steps.
-    # Errors are collected but do not raise; the final strict parse in #parse
-    # will surface any real issues.
+    def strip_source_comments(content)
+      content.gsub(/<(script|style|textarea)\b[^>]*>.*?<\/\1\s*>|<!--.*?-->/mi) do |part|
+        if !part.start_with?("<!--") || part.match?(/\A<!--(?:\[if|<!\[endif|\s*htmlmin:ignore)/i)
+          part
+        else
+          ""
+        end
+      end
+    end
+
     def parse_xml(xml)
-      Nokogiri::XML(replace_html_entities(xml))
+      Nokogiri::XML(replace_html_entities(xml)) { |config| config.strict }
+    end
+
+    def xml_parse_error(error, file)
+      # Nokogiri's aggregate exception has no #line; retain the first reported
+      # location while leaving its complete diagnostic message intact.
+      line = error.line || error.message[/^(\d+):\d+:/, 1]&.to_i
+      ParseError.new("XML parse error: #{error.message}", line: line, file: file, dependencies: @dependencies)
     end
 
     def ignorable_whitespace_text?(text, parent_element_name:)

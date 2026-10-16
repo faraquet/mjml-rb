@@ -1,9 +1,27 @@
 # MJML v5.4 Support Plan
 
-- Status: proposed
-- Target reference: [`mjml@5.4.0`](https://github.com/mjmlio/mjml/releases/tag/v5.4.0)
-- Current Ruby baseline: `mjml-rb` 0.5.2, documented against `mjml@4.18.0`
-- Last reviewed: 2026-08-07
+- Status: implemented for the 0.6.0 release; see bounded compatibility notes below
+- Implementation reference: [`mjml@5.4.1`](https://github.com/mjmlio/mjml/releases/tag/v5.4.1)
+- Original planning reference: `mjml@5.4.0`
+- Original planning baseline: `mjml-rb` 0.5.2, documented against `mjml@4.18.0`
+- Last reviewed: 2026-10-16
+
+## Implementation notes
+
+The implementation advances the original 5.4.0 target to patch release 5.4.1.
+The baseline and delivery sections below retain the original audit context;
+for current behavior and explicit exceptions, use [the compatibility audit](PARITY_AUDIT.md)
+and [migration guide](MIGRATING_TO_V5.md). CLI input-relative paths were already
+fixed in 0.5.3 before this migration.
+
+The development-only oracle is locked to 5.4.1. Ruby fixtures and focused live
+reference contracts cover the v5 changes; they do not claim exhaustive email
+client parity. Full htmlnano/cssnano behavior and Juice settings are deliberately
+outside the implemented subset. Unsupported options raise explicitly.
+
+Release preparation and the downstream validation summary are recorded in the
+[0.6.0 release notes](releases/v0.6.0.md). The 5.4.0 targets and baseline defects
+below are retained as historical planning material, not current release status.
 
 ## Goal
 

@@ -118,7 +118,7 @@ module MjmlRb
 
       def serialize_table_node(node)
         return node.content.to_s if node.text?
-        return "" if node.comment?
+        return "<!--#{node.content}-->" if node.comment?
 
         attrs = normalize_table_node_attributes(node)
         attr_html = attrs.map { |key, value| %( #{key}="#{escape_attr(value)}") }.join

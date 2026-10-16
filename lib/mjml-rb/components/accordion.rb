@@ -91,17 +91,18 @@ module MjmlRb
         noinput.mj-accordion-checkbox { display:block!important; }
         @media yahoo, only screen and (min-width:0) {
           .mj-accordion-element { display:block; }
-          input.mj-accordion-checkbox, .mj-accordion-less { display:none!important; }
-          input.mj-accordion-checkbox + * .mj-accordion-title { cursor:pointer; touch-action:manipulation; -webkit-user-select:none; -moz-user-select:none; user-select:none; }
-          input.mj-accordion-checkbox + * .mj-accordion-content { overflow:hidden; display:none; }
-          input.mj-accordion-checkbox + * .mj-accordion-more { display:block!important; }
-          input.mj-accordion-checkbox:checked + * .mj-accordion-content { display:block; }
-          input.mj-accordion-checkbox:checked + * .mj-accordion-more { display:none!important; }
-          input.mj-accordion-checkbox:checked + * .mj-accordion-less { display:block!important; }
+          .mj-accordion-checkbox[type="checkbox"], .mj-accordion-less { display:none!important; }
+          .mj-accordion-checkbox[type="checkbox"] + * .mj-accordion-title { cursor:pointer; touch-action:manipulation; -webkit-user-select:none; -moz-user-select:none; user-select:none; }
+          .mj-accordion-checkbox[type="checkbox"] + * .mj-accordion-content { overflow:hidden; display:none; }
+          .mj-accordion-checkbox[type="checkbox"] + * .mj-accordion-more { display:block!important; }
+          .mj-accordion-checkbox:checked + * .mj-accordion-content { display:block; }
+          .mj-accordion-checkbox:checked + * .mj-accordion-more { display:none!important; }
+          .mj-accordion-checkbox:checked + * .mj-accordion-less { display:block!important; }
         }
         .moz-text-html input.mj-accordion-checkbox + * .mj-accordion-title { cursor:auto; touch-action:auto; -webkit-user-select:auto; -moz-user-select:auto; user-select:auto; }
         .moz-text-html input.mj-accordion-checkbox + * .mj-accordion-content { overflow:hidden; display:block; }
         .moz-text-html input.mj-accordion-checkbox + * .mj-accordion-ico { display:none; }
+        @goodbye { @gmail }
       CSS
 
       DEFAULT_ATTRIBUTES = {
@@ -217,7 +218,7 @@ module MjmlRb
         content << render_accordion_text(nil, attrs) unless has_text
 
         css_class = attrs["css-class"] ? %( class="#{escape_attr(attrs["css-class"])}") : ""
-        %(<tr#{css_class}><td style="#{td_style}"><label class="mj-accordion-element" style="#{label_style}"><input class="mj-accordion-checkbox" type="checkbox" style="display:none;" /><div>#{content.join("\n")}</div></label></td></tr>)
+        %(<tr#{css_class}><td style="#{td_style}"><label class="mj-accordion-element" style="#{label_style}"><!--[if !mso | IE]><!--><input class="mj-accordion-checkbox" type="checkbox" style="display:none;" /><!--<![endif]--><div>#{content.join("\n")}</div></label></td></tr>)
       end
 
       def render_accordion_title(node, attrs)
@@ -250,8 +251,9 @@ module MjmlRb
           "border-bottom" => title_attrs["border"] || DEFAULTS["border"]
         )
         title_content = node ? raw_inner_for_body(node) : ""
-        title_cell = %(<td style="#{td_style}">#{title_content}</td>)
+        title_cell = %(<td#{html_attrs("class" => title_attrs["css-class"])} style="#{td_style}">#{title_content}</td>)
         icon_cell = %(<td class="mj-accordion-ico" style="#{td2_style}"><img src="#{escape_attr(title_attrs["icon-wrapped-url"] || DEFAULTS["icon-wrapped-url"])}" alt="#{escape_attr(title_attrs["icon-wrapped-alt"] || DEFAULTS["icon-wrapped-alt"])}" class="mj-accordion-more" style="#{icon_style}" /><img src="#{escape_attr(title_attrs["icon-unwrapped-url"] || DEFAULTS["icon-unwrapped-url"])}" alt="#{escape_attr(title_attrs["icon-unwrapped-alt"] || DEFAULTS["icon-unwrapped-alt"])}" class="mj-accordion-less" style="#{icon_style}" /></td>)
+        icon_cell = "<!--[if !mso | IE]><!-->#{icon_cell}<!--<![endif]-->"
         cells = title_attrs["icon-position"] == "left" ? "#{icon_cell}#{title_cell}" : "#{title_cell}#{icon_cell}"
 
         %(<div class="mj-accordion-title"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="#{table_style}"><tbody><tr>#{cells}</tr></tbody></table></div>)

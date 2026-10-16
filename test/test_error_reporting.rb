@@ -82,7 +82,7 @@ class ErrorReportingTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir, validation_level: "soft")
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir, validation_level: "soft")
       result = compiler.compile(File.read(main))
 
       # Should still render the rest of the template
@@ -109,7 +109,7 @@ class ErrorReportingTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir, validation_level: "strict")
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir, validation_level: "strict")
       result = compiler.compile(File.read(main))
 
       # In strict mode, include errors should be blocking
@@ -134,7 +134,7 @@ class ErrorReportingTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
 
       warning = result.warnings.find { |w| w[:message].include?("missing.mjml") }
@@ -159,7 +159,7 @@ class ErrorReportingTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
 
       assert_includes result.html, "Still here"
@@ -184,7 +184,7 @@ class ErrorReportingTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
 
       refute_includes result.html, "mj-include fails to read file",
@@ -209,7 +209,7 @@ class ErrorReportingTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
 
       assert_empty result.errors

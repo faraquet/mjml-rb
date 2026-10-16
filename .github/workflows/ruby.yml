@@ -18,6 +18,7 @@ jobs:
         gemfile:
           - gemfiles/css_parser_1.gemfile
           - gemfiles/css_parser_2.gemfile
+          - gemfiles/css_parser_3.gemfile
 
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
@@ -33,3 +34,21 @@ jobs:
 
     - name: Run tests
       run: bundle exec rake test
+
+  mjml-reference:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.3'
+        bundler-cache: true
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: npm
+        cache-dependency-path: test/reference/package-lock.json
+    - name: Install pinned MJML reference
+      run: npm ci --prefix test/reference --ignore-scripts
+    - name: Compare Ruby and upstream contracts
+      run: MJML_REFERENCE=1 bundle exec rake test

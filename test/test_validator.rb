@@ -40,7 +40,7 @@ class ValidatorTest < Minitest::Test
     assert_empty(errors)
   end
 
-  def test_rejects_image_without_src
+  def test_accepts_image_without_src
     errors = validate(<<~MJML)
       <mjml>
         <mj-body>
@@ -53,7 +53,7 @@ class ValidatorTest < Minitest::Test
       </mjml>
     MJML
 
-    assert_includes(errors.map { |error| error[:message] }, "Attribute `src` is required for <mj-image>")
+    assert_empty errors
   end
 
   # ── unknown-attribute rejection tests ──────────────────────
@@ -582,15 +582,15 @@ class ValidatorTest < Minitest::Test
         <mj-body>
           <mj-section>
             <mj-column>
-              <mj-image alt="no src" />
+              <mj-image typo="bad" />
             </mj-column>
           </mj-section>
         </mj-body>
       </mjml>
     MJML
 
-    src_error = errors.find { |e| e[:message].include?("`src` is required") }
-    assert src_error, "Expected a required-src error"
+    src_error = errors.find { |e| e[:message].include?("`typo` is not allowed") }
+    assert src_error, "Expected an unknown-attribute error"
     assert_kind_of Integer, src_error[:line], "Error should have a line number"
     assert src_error[:line] > 0, "Line number should be positive"
     assert_includes src_error[:formatted_message], "line #{src_error[:line]}"
@@ -603,14 +603,14 @@ class ValidatorTest < Minitest::Test
           <mj-section>
             <mj-column>
               <mj-text>OK</mj-text>
-              <mj-image alt="missing src" />
+              <mj-image typo="bad" />
             </mj-column>
           </mj-section>
         </mj-body>
       </mjml>
     MJML
 
-    src_error = errors.find { |e| e[:message].include?("`src` is required") }
+    src_error = errors.find { |e| e[:message].include?("`typo` is not allowed") }
     assert src_error
     # mj-image is on line 6 (1-indexed)
     assert_equal 6, src_error[:line]

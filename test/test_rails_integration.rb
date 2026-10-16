@@ -161,7 +161,7 @@ class RailsIntegrationTest < Minitest::Test
           <mj-body>
             <mj-section>
               <mj-column>
-                <mj-image alt="missing src" />
+                <mj-image typo="invalid attribute" />
               </mj-column>
             </mj-section>
           </mj-body>
@@ -172,7 +172,7 @@ class RailsIntegrationTest < Minitest::Test
         end
 
         assert_includes error.cause&.message.to_s, "MJML compilation failed"
-        assert_includes error.cause&.message.to_s, "Attribute `src` is required for <mj-image>"
+        assert_includes error.cause&.message.to_s, "Attribute `typo` is not allowed for <mj-image>"
       end
     end
 

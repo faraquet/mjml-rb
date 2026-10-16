@@ -24,14 +24,12 @@ module MjmlRb
       parser.parse!(argv)
       options[:positional] = argv
 
-      rc_config = ConfigFile.load
-      if rc_config[:options]
-        options[:config] = rc_config[:options].merge(options[:config])
-      end
-
+      explicit = Options.normalize(options[:config])
+      rc_config = ConfigFile.load(explicit[:mjml_config_path] || Dir.pwd)
+      configured = explicit[:use_mjml_config_options] ? rc_config.fetch(:options, {}) : {}
+      config = Options.merge({beautify: true}, Options.merge(configured, explicit))
       input_mode, input_values = resolve_input(options)
       output_mode = resolve_output(options)
-      config = options[:config]
 
       case input_mode
       when :watch
@@ -56,7 +54,7 @@ module MjmlRb
       @stderr.puts("\nConfiguration error:")
       @stderr.puts(e.message)
       1
-    rescue OptionParser::ParseError => e
+    rescue OptionParser::ParseError, ArgumentError => e
       @stderr.puts(e.message)
       1
     end
@@ -72,10 +70,7 @@ module MjmlRb
         stdout: false,
         output: nil,
         no_stdout_file_comment: false,
-        config: {
-          beautify: true,
-          minify: false
-        }
+        config: {}
       }
     end
 
@@ -91,13 +86,14 @@ module MjmlRb
         opts.on("-o", "--output PATH", "Output file or directory") { |v| options[:output] = v }
         opts.on("-c", "--config KEY=VALUE", "Compiler config key/value") do |entry|
           key, value = parse_key_value(entry)
-          options[:config][normalize_key(key)] = parse_typed_value(value)
+          options[:config][key] = parse_typed_value(value)
         end
+        opts.on("--filePath PATH", "Base path for stdin includes") { |v| options[:config]["filePath"] = v }
         opts.on("--noStdoutFileComment", "Skip file comment header on stdout") do
           options[:no_stdout_file_comment] = true
         end
         opts.on("-V", "--version", "Show version") do
-          @stdout.puts("mjml-ruby #{MjmlRb::VERSION}")
+          @stdout.puts("mjml-ruby #{MjmlRb::VERSION} (MJML #{MjmlRb::MJML_COMPATIBILITY_VERSION})")
           raise SystemExit, 0
         end
         opts.on("-h", "--help", "Show help") do
@@ -106,7 +102,7 @@ module MjmlRb
         end
       end.tap do
         inline_config.each do |key, value|
-          options[:config][normalize_key(key)] = value
+          options[:config][key] = value
         end
       end
     end
@@ -145,10 +141,6 @@ module MjmlRb
       rescue JSON::ParserError
         value
       end
-    end
-
-    def normalize_key(key)
-      key.to_s.tr("-", "_").to_sym
     end
 
     def resolve_input(options)
@@ -197,7 +189,7 @@ module MjmlRb
       case mode
       when :validate
         compiler = Compiler.new(config.merge(validation_level: "strict"))
-        { file: input[:file], compiled: compiler.compile(input[:mjml]) }
+        { file: input[:file], compiled: compiler.validate(input[:mjml]) }
       else
         compiler = Compiler.new(config)
         { file: input[:file], compiled: compiler.compile(input[:mjml]) }
@@ -214,6 +206,8 @@ module MjmlRb
       if options[:validate].any? && invalid
         raise CLIError, "Validation failed"
       end
+
+      return 0 if options[:validate].any?
 
       case output_mode
       when :stdout
@@ -294,20 +288,29 @@ module MjmlRb
         raise CLIError, "Need an output directory when watching multiple files"
       end
 
-      state = files.each_with_object({}) { |path, memo| memo[path] = file_mtime(path) }
+      state = {}
+      dependencies = {}
+      # Compile initially to discover the include graph; each later successful
+      # parse replaces its dependency set, including missing local files.
+      compile_file = lambda do |file|
+        processed = process_input({file: file, mjml: File.read(file)}, :read, config)
+        discovered = [file] + processed[:compiled].dependencies
+        discovered.concat(dependencies[file] || []) unless processed[:compiled].success?
+        dependencies[file] = discovered.uniq
+        state[file] = dependency_state(dependencies[file])
+        emit_results([processed], :output, output: output_path || "", no_stdout_file_comment: true, validate: [])
+        @stdout.puts("#{file} - Successfully compiled") if processed[:compiled].success?
+      end
+      files.each { |file| compile_file.call(file) }
       @stdout.puts("Watching #{files.size} file(s)...")
 
       loop do
         files.each do |file|
-          current = file_mtime(file)
-          next if current.nil? || current <= state[file]
-
+          current = dependency_state(dependencies[file])
+          next if current == state[file]
           state[file] = current
           begin
-            input = { file: file, mjml: File.read(file) }
-            processed = process_input(input, :read, config)
-            emit_results([processed], :output, output: output_path, no_stdout_file_comment: true, validate: [])
-            @stdout.puts("#{file} - Successfully compiled")
+            compile_file.call(file)
           rescue StandardError => e
             @stderr.puts("#{file} - Error while compiling file: #{e.message}")
           end
@@ -316,10 +319,12 @@ module MjmlRb
       end
     end
 
-    def file_mtime(path)
-      File.mtime(path)
-    rescue StandardError
-      nil
+    def dependency_state(paths)
+      paths.to_h do |path|
+        stat = File.stat(path) rescue nil
+        [path, stat && [stat.mtime, stat.size, stat.ino]]
+      end
     end
+
   end
 end

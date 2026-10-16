@@ -106,7 +106,7 @@ class CLITest < Minitest::Test
     with_tempfile(INCLUDE_MJML) do |path, dir|
       File.write(File.join(dir, "partial.mjml"), "<mj-text>Included from input directory</mj-text>")
 
-      assert_equal 0, @cli.run(["-r", path, "-s"])
+      assert_equal 0, @cli.run(["--config.allowIncludes", "-r", path, "-s"])
       assert_includes @stdout.string, "Included from input directory"
       assert_empty @stderr.string
     end
@@ -121,7 +121,7 @@ class CLITest < Minitest::Test
       File.write(File.join(dir, "partial.mjml"), "<mj-text>Working directory partial</mj-text>")
 
       Dir.chdir(dir) do
-        assert_equal 0, @cli.run(["templates/email.mjml", "-s"])
+        assert_equal 0, @cli.run(["--config.allowIncludes", "templates/email.mjml", "-s"])
       end
       assert_includes @stdout.string, "Template partial"
       refute_includes @stdout.string, "Working directory partial"
@@ -138,7 +138,7 @@ class CLITest < Minitest::Test
       File.write(second_path, INCLUDE_MJML)
       File.write(File.join(second_dir, "partial.mjml"), "<mj-text>Second template partial</mj-text>")
 
-      assert_equal 0, @cli.run(["-r", "#{first_path},#{second_path}", "-s"])
+      assert_equal 0, @cli.run(["--config.allowIncludes", "-r", "#{first_path},#{second_path}", "-s"])
       assert_includes @stdout.string, "First template partial"
       assert_includes @stdout.string, "Second template partial"
       assert_empty @stderr.string
@@ -151,7 +151,7 @@ class CLITest < Minitest::Test
       Dir.mkdir(shared_dir)
       File.write(File.join(shared_dir, "partial.mjml"), "<mj-text>Configured partial</mj-text>")
 
-      assert_equal 0, @cli.run(["-r", path, "-s", "-c", "file_path=#{shared_dir}"])
+      assert_equal 0, @cli.run(["--config.allowIncludes", "-r", path, "-s", "-c", "file_path=#{shared_dir}"])
       assert_includes @stdout.string, "Configured partial"
       assert_empty @stderr.string
     end
@@ -159,7 +159,7 @@ class CLITest < Minitest::Test
 
   def test_missing_include_reports_input_directory
     with_tempfile(INCLUDE_MJML) do |path, dir|
-      assert_equal 0, @cli.run(["-r", path, "-s"])
+      assert_equal 0, @cli.run(["--config.allowIncludes", "-r", path, "-s"])
       assert_includes @stderr.string, File.join(dir, "partial.mjml")
     end
   end
@@ -171,7 +171,7 @@ class CLITest < Minitest::Test
     with_tempfile(INCLUDE_MJML) do |path, dir|
       File.write(File.join(dir, "partial.mjml"), "<mj-text>Stdin partial</mj-text>")
 
-      assert_equal 0, @cli.run(["-i", "-s", "--config.actual_path=#{path}", "--config.file_path=#{dir}"])
+      assert_equal 0, @cli.run(["--config.allowIncludes", "-i", "-s", "--config.actual_path=#{path}", "--config.file_path=#{dir}"])
       assert_includes @stdout.string, "Stdin partial"
       assert_empty @stderr.string
     end
@@ -183,7 +183,7 @@ class CLITest < Minitest::Test
 
   def test_validate_valid_file
     with_tempfile(MINIMAL_MJML) do |path, _dir|
-      exit_code = @cli.run(["-v", path, "-s"])
+      exit_code = @cli.run(["-v", path, "-s", "--config.allowIncludes"])
       assert_equal 0, exit_code
     end
   end
@@ -192,8 +192,8 @@ class CLITest < Minitest::Test
     with_tempfile(INCLUDE_MJML) do |path, dir|
       File.write(File.join(dir, "partial.mjml"), "<mj-text>Validated partial</mj-text>")
 
-      assert_equal 0, @cli.run(["-v", path, "-s"])
-      assert_includes @stdout.string, "Validated partial"
+      assert_equal 0, @cli.run(["-v", path, "-s", "--config.allowIncludes"])
+      assert_empty @stdout.string
       assert_empty @stderr.string
     end
   end
@@ -207,7 +207,7 @@ class CLITest < Minitest::Test
       </mjml>
     MJML
     with_tempfile(invalid_mjml) do |path, _dir|
-      exit_code = @cli.run(["-v", path, "-s"])
+      exit_code = @cli.run(["-v", path, "-s", "--config.allowIncludes"])
       assert_equal 1, exit_code
     end
   end
@@ -219,7 +219,7 @@ class CLITest < Minitest::Test
       exit_code = @cli.run(["-r", path, "-s", "-c", "minify=true"])
       assert_equal 0, exit_code
       # Minified output should be compact
-      refute_match(/>\s{2,}</, @stdout.string)
+      assert_includes @stdout.string, "</head><body"
     end
   end
 

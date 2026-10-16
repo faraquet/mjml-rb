@@ -153,7 +153,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
       assert_includes(result.html, "From include")
@@ -180,7 +180,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
 
       assert_empty(result.errors)
@@ -206,7 +206,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
       assert_includes(result.html, "Line 1")
@@ -231,7 +231,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
       assert_includes(result.html, "<p>Line 1<br><strong>Line 2</strong></p>")
@@ -255,10 +255,10 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir, validation_level: "strict")
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir, validation_level: "strict")
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
-      assert_includes(result.html, "<br />")
+      assert_includes(result.html, "<br>")
       assert_includes(result.html, "<strong>Line 2</strong>")
     end
   end
@@ -278,7 +278,7 @@ class MJMLCompilerTest < Minitest::Test
 
     result = MjmlRb::Compiler.new(validation_level: "strict").compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, "<br />")
+    assert_includes(result.html, "<br>")
     assert_includes(result.html, "<strong>World</strong>")
   end
 
@@ -323,7 +323,7 @@ class MJMLCompilerTest < Minitest::Test
 
     result = MjmlRb::Compiler.new.compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, "Terms &amp; Conditions")
+    assert_includes(result.html, "Terms & Conditions")
   end
 
   def test_bare_ampersand_in_included_partial
@@ -343,10 +343,10 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
-      assert_includes(result.html, "Terms &amp; Conditions")
+      assert_includes(result.html, "Terms & Conditions")
     end
   end
 
@@ -373,7 +373,7 @@ class MJMLCompilerTest < Minitest::Test
     assert_includes(result.html, "&#169;")
   end
 
-  def test_malformed_closing_br_is_recovered_as_line_break
+  def test_ending_tag_preserves_legacy_closing_br
     mjml = <<~MJML
       <mjml>
         <mj-body>
@@ -388,7 +388,7 @@ class MJMLCompilerTest < Minitest::Test
 
     result = MjmlRb::Compiler.new.compile(mjml)
     assert_empty(result.errors)
-    assert_includes(result.html, "Line 1<br />Line 2")
+    assert_includes(result.html, "Line 1</br>Line 2")
   end
 
   def test_empty_non_void_html_tags_are_not_self_closed_in_mj_text
@@ -451,7 +451,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
       assert_includes(result.html, ".custom { color: red; }")
@@ -478,7 +478,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
       assert_match(/color:\s*#ff0000/, result.html)
@@ -503,7 +503,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
       assert_includes(result.html, ".custom { font-size: 16px; }")
@@ -530,7 +530,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       refute_empty(result.errors)
       assert_match(/Circular inclusion detected/, result.errors.first[:message])
@@ -553,7 +553,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert(result.warnings.any? { |w| w[:message].include?("nonexistent.mjml") })
       refute_includes(result.html, "mj-include fails to read file")
@@ -577,7 +577,7 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert(result.warnings.any? { |w| w[:message].include?("nonexistent.css") })
       refute_includes(result.html, "mj-include fails to read file")
@@ -585,7 +585,7 @@ class MJMLCompilerTest < Minitest::Test
     end
   end
 
-  def test_malformed_closing_br_in_included_partial_is_recovered
+  def test_included_ending_tag_preserves_legacy_closing_br
     Dir.mktmpdir do |dir|
       partial = File.join(dir, "partial.mjml")
       main = File.join(dir, "main.mjml")
@@ -602,10 +602,10 @@ class MJMLCompilerTest < Minitest::Test
         </mjml>
       MJML
 
-      compiler = MjmlRb::Compiler.new(actual_path: main, file_path: dir)
+      compiler = MjmlRb::Compiler.new(ignore_includes: false, actual_path: main, file_path: dir)
       result = compiler.compile(File.read(main))
       assert_empty(result.errors)
-      assert_includes(result.html, "Terms<br />Conditions")
+      assert_includes(result.html, "Terms</br>Conditions")
     end
   end
 

@@ -12,7 +12,7 @@ At a high level the system is organized into five layers:
 
 1. Public entry points: library API and CLI.
 2. Parsing: XML normalization, preprocessors, include expansion, AST creation.
-3. Validation: allowed children, required attributes, supported attributes, and
+3. Validation: document structure, allowed children, supported attributes, and
    basic attribute type checks.
 4. Rendering: head/body context assembly plus component-specific HTML output.
 5. Result packaging: final HTML string plus structured errors and warnings.
@@ -49,12 +49,12 @@ file notifications.
 
 `MjmlRb::Compiler` is the orchestrator. `Compiler#compile` follows this flow:
 
-1. Merge default options with call-specific options.
-2. Parse MJML into a Nokogiri XML node tree.
+1. Canonicalize aliases with `Options`, then merge defaults, opted-in config, constructor and call options.
+2. Create a per-call parser and a `ParseResult` containing AST, diagnostics and include dependencies.
 3. Run validation unless `validation_level` is `skip`.
 4. Stop early when strict validation fails.
 5. Render HTML from the AST.
-6. Apply post-processing such as comment stripping, beautify, or minify.
+6. Run the conservative `Formatter`; source comments were already handled by parsing.
 7. Return a `Result`.
 
 Default compiler options live in `MjmlRb::Compiler::DEFAULT_OPTIONS`. Important
@@ -62,7 +62,8 @@ ones:
 
 - `validation_level`: `soft`, `strict`, or `skip`.
 - `keep_comments`: preserve comment nodes through parsing and rendering.
-- `ignore_includes`: skip `mj-include` expansion.
+- `ignore_includes`: defaults to true; omitted includes disappear before validation.
+- `include_path`: extra canonical allowed roots for explicitly enabled includes.
 - `preprocessors`: callable objects applied to the raw source before parsing.
 - `file_path` and `actual_path`: used for include resolution.
 
@@ -70,8 +71,7 @@ Error handling is intentionally forgiving:
 
 - Parse errors are wrapped as structured errors in the result.
 - Unexpected runtime errors are also converted into structured errors.
-- `warnings` currently exists in the result shape but is not populated by the
-  compiler.
+- Soft validation and include issues populate `warnings`; strict issues populate `errors`.
 
 ## Parsing Layer
 
@@ -82,10 +82,10 @@ Error handling is intentionally forgiving:
 Before building the XML document, the parser performs several cleanup steps:
 
 - Runs user-provided preprocessors.
-- Wraps `mj-raw` contents in CDATA when needed.
+- Wraps registered ending-tag content in CDATA; structural exceptions are `mj-table` and `mj-carousel-image`.
 - Normalizes HTML void tags so XML parsing can succeed.
 - Expands `mj-include` nodes unless includes are disabled.
-- Escapes bare `&` characters that are not valid XML entities.
+- Escapes bare `&` only outside protected CDATA.
 
 These steps make the parser more tolerant of email-template input that is valid
 for MJML or HTML but not strict XML.
@@ -96,10 +96,11 @@ for MJML or HTML but not strict XML.
 
 - `type="html"` includes are wrapped into `mj-raw`.
 - MJML includes are inserted as parsed XML fragments.
-- Paths are resolved against:
-  - the directory of `actual_path`
-  - `file_path`
-  - the current working directory
+- Paths resolve against `file_path`, updated to the including directory during recursion.
+- The original realpath root plus explicit `include_path` roots remain fixed.
+- Canonical containment rejects traversal and symlink escapes before reading.
+- CSS includes in the head are replaced in place.
+- `ParseResult` carries file, line, tag, diagnostic type and dependencies.
 
 Include expansion is implemented inside the parser rather than in the renderer,
 so downstream stages always operate on a single expanded document tree.
@@ -129,7 +130,7 @@ the renderer and validator.
 - Root element must be `mjml`.
 - A document must contain `mj-body`.
 - Child placement must match `MjmlRb::Dependencies::RULES`.
-- Some tags require specific attributes.
+- Empty `mj-image` and `mj-font` are accepted, matching the v5 validator.
 - Component-declared attributes are checked for support and basic type validity.
 
 Type validation currently covers:
@@ -274,13 +275,11 @@ After body rendering, the renderer assembles:
 - `<html>` with `lang` and `dir`
 - font `<link>` tags and `@import` CSS for actually used fonts
 - a reset stylesheet plus component CSS
-- optional preview block
-- body wrapper markup
+- the complete body returned by `Components::Body`, including preview and accessible article
 
-After string assembly it runs two Nokogiri-based passes:
-
-- apply selector-based HTML attributes from `mj-html-attributes`
-- inline CSS from `mj-style inline="inline"`
+Selector-based HTML attributes are applied to the real body before skeleton
+assembly. Inline CSS runs on the complete document. `Formatter` protects raw
+regions and conditionals without reserializing the entire HTML document.
 
 This is an important architectural detail: the project is not purely
 string-based. It renders to HTML as a string, then reparses that HTML for
@@ -292,7 +291,7 @@ Some behaviors are important enough to call out because they shape the rest of
 the architecture:
 
 - `Body`
-  - Sets the top-level container width and background color in the context.
+  - Owns `<body>`, its id/class/background, preview and accessible article; sets container width.
 - `Section`
   - Renders the main MJML section structure, including Outlook conditional
     table wrappers and width calculations for columns/groups.
@@ -304,7 +303,7 @@ the architecture:
 - `Attributes`
   - Builds the default and class-based styling maps used later by the renderer.
 - `HtmlAttributes`
-  - Defers selector-based mutations until after full HTML generation.
+  - Defers selector-based mutations until body rendering is complete.
 - `Raw`
   - Preserves raw markup and supports `position="file-start"` before the
     doctype.
@@ -322,9 +321,9 @@ document suggested. Current tests cover:
 - column and image sizing details
 - `mj-all` / `mj-class` attribute precedence
 
-Tests are still example-based rather than parity-fixture-based. They validate
-important local behavior, but they do not yet prove full compatibility with the
-upstream JavaScript MJML renderer.
+Component fixtures coexist with pinned v5 differential contracts in
+`test/reference`. CI compares these contracts against `mjml@5.4.1`, installed
+only for development. See `docs/PARITY_AUDIT.md` for the exact coverage and limits.
 
 ## Extension Workflow
 
@@ -336,7 +335,7 @@ To add a new component safely, the usual steps are:
 3. Implement `render`.
 4. Implement `handle_head` and/or `head_style` if the component affects head
    processing.
-5. Register the component in `Renderer#component_registry`.
+5. Register through `MjmlRb.register_component`, including custom ending tags and dependencies.
 6. Add parent/child rules to `Dependencies::RULES`.
 7. Add tests that cover rendering and validation behavior.
 
@@ -345,25 +344,20 @@ may validate successfully but still not produce correct output. That risk now
 applies mainly to future dependency-only tags rather than the current carousel
 implementation.
 
-## Current Limitations
+## Shared metadata and layout
 
-This architecture is workable and reasonably modular, but several limitations
-are visible in the code:
+`ComponentRegistry` supplies the classes, dependency rules and ending-tag set to
+parser, validator and renderer. Its revision invalidates renderer caches when
+components are registered or reset; collisions with another class are rejected.
+A compiler creates per-call parser and renderer instances, so concurrent
+compilations do not share include diagnostics or rendering context.
 
-- feature parity with the upstream MJML JavaScript implementation is incomplete
-- the renderer relies heavily on a mutable shared context hash
-- parser diagnostics are limited and line information is mostly absent
-- validation is useful but narrower than upstream MJML validation
-- some supported behavior is implemented through post-render DOM mutation rather
-  than in a single render pass
-- watch mode uses polling and does not track newly added files after startup
+`ColumnGutter` calculates width reduction and edge-aware desktop/mobile/Outlook
+padding from the section or group context. The responsive rule registry stores
+width or padding rules; a layout value is shared by a column and its Outlook cell.
 
-## Recommended Next Improvements
+## Current limitations
 
-1. Add parity fixtures that compare Ruby output with the official MJML output
-   for the same inputs.
-2. Improve parser and include error diagnostics with line-aware reporting.
-3. Continue converting dependency-only tags into actual renderer components.
-4. Reduce renderer context coupling where feasible by introducing narrower
-   context objects or helper structs.
-5. Expand validator rule coverage to match more upstream MJML semantics.
+See [the compatibility audit](PARITY_AUDIT.md) for the tested MJML 5.4.1 scope,
+strict structural XML parsing, custom inliner/formatter differences, unsupported
+options and watch limitations. Node is used only by the development oracle.

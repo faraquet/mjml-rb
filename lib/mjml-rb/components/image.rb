@@ -20,7 +20,7 @@ module MjmlRb
         "border-left" => "string",
         "border-right" => "string",
         "border-top" => "string",
-        "border-radius" => "unit(px,%){1,4}",
+        "border-radius" => "string",
         "container-background-color" => "color",
         "fluid-on-mobile" => "boolean",
         "full-width" => "enum(full-width)",
@@ -168,8 +168,6 @@ module MjmlRb
       end
 
       def img_width_attribute(attrs, content_width)
-        return "auto" if attrs["width"] && attrs["height"] && attrs["height"] != "auto"
-        return attrs["width"].to_i.to_s if attrs["width"] && attrs["width"] =~ /^(\d+(?:\.\d+)?)\s*px$/
 
         content_width.to_i.to_s
       end

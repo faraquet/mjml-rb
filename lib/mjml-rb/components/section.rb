@@ -1,4 +1,5 @@
 require_relative "base"
+require_relative "../column_gutter"
 
 module MjmlRb
   module Components
@@ -20,6 +21,7 @@ module MjmlRb
         "border-right" => "string",
         "border-top" => "string",
         "direction" => "enum(ltr,rtl)",
+        "gutter" => "unit(px,%)",
         "full-width" => "enum(full-width,false,)",
         "padding" => "unit(px,%){1,4}",
         "padding-bottom" => "unit(px,%)",
@@ -30,7 +32,7 @@ module MjmlRb
         "text-padding" => "unit(px,%){1,4}"
       }.freeze
 
-      WRAPPER_ALLOWED_ATTRIBUTES = SECTION_ALLOWED_ATTRIBUTES.merge(
+      WRAPPER_ALLOWED_ATTRIBUTES = SECTION_ALLOWED_ATTRIBUTES.reject { |key, _| key == "gutter" }.merge(
         "gap" => "unit(px)",
       ).freeze
 
@@ -79,7 +81,7 @@ module MjmlRb
       def parse_padding_value(str)
         return 0 if str.nil? || str.to_s.strip.empty?
 
-        str =~ /(\d+(?:\.\d+)?)\s*px/ ? $1.to_i : 0
+        str.to_f
       end
 
       def parse_padding_side(attrs, side)
@@ -122,7 +124,7 @@ module MjmlRb
       # Merge adjacent Outlook conditional comments.  Applied locally within
       # each section/wrapper to avoid incorrectly merging across sibling sections.
       def merge_outlook_conditionals(html)
-        html.gsub(/<!\[endif\]-->\s*<!--\[if mso \| IE\]>/m, "")
+        renderer.send(:merge_outlook_conditionals, html)
       end
 
       # Build an attribute string for Outlook conditional comment tags.
@@ -439,7 +441,6 @@ module MjmlRb
         )
         table_style = style_join(
           {
-            "border-radius" => border_radius,
             "border-collapse" => (has_border_radius ? "separate" : nil),
             "width" => "100%"
           }.merge(full_width ? {} : background_styles)
@@ -510,6 +511,9 @@ module MjmlRb
       # the section's box width so that column children compute correct widths.
       def render_section_columns(node, context, box_width)
         previous_container_width = context[:container_width]
+        previous_gutter, previous_direction = context.values_at(:gutter, :section_direction)
+        attrs = self.class.default_attributes.merge(resolved_attributes(node, context))
+        context[:gutter], context[:section_direction] = attrs.values_at("gutter", "direction")
         context[:container_width] = "#{box_width}px"
 
         columns = node.element_children.select { |e| %w[mj-column mj-group].include?(e.tag_name) }
@@ -523,7 +527,9 @@ module MjmlRb
         close_table = %(<!--[if mso | IE]></table><![endif]-->)
 
         col_parts = with_inherited_mj_class(context, node) do
-          columns.each_with_index.map do |col, i|
+          node.children.map do |col|
+            i = columns.index(col)
+            next render_node(col, context, parent: "mj-section") unless i
             col_attrs = resolved_attributes(col, context)
             v_align   = col_attrs["vertical-align"] || "top"
             col_css   = col_attrs["css-class"]
@@ -535,10 +541,16 @@ module MjmlRb
                        (box_width.to_f * widths[i] / 100.0).round
                      end
 
-            td_open  = %(<!--[if mso | IE]><td class="#{escape_attr(outlook_class)}" style="vertical-align:#{v_align};width:#{col_px}px;" ><![endif]-->)
+            gutter = if context[:gutter] && col.tag_name == "mj-column"
+                       ColumnGutter.new(width: col_width_attr || "#{widths[i]}%", container_width: box_width,
+                                        gutter: context[:gutter], count: columns.size, index: i, direction: context[:section_direction])
+                     end
+            padding = gutter ? "padding:#{gutter.desktop_padding('px')};" : ""
+            td_open = %(<!--[if mso | IE]><td class="#{escape_attr(outlook_class)}" style="vertical-align:#{v_align};width:#{col_px}px;#{padding}" ><![endif]-->)
             td_close = %(<!--[if mso | IE]></td><![endif]-->)
 
             context[:_column_width_pct] = widths[i]
+            context[:_column_gutter] = gutter
             col_html = render_node(col, context, parent: "mj-section")
 
             "#{td_open}\n#{col_html}\n#{td_close}"
@@ -548,6 +560,7 @@ module MjmlRb
         ([open_table, open_tr] + col_parts + [close_tr, close_table]).join("\n")
       ensure
         context[:container_width] = previous_container_width
+        context[:gutter], context[:section_direction] = previous_gutter, previous_direction
       end
 
       # ── mj-wrapper ─────────────────────────────────────────────────────────
@@ -692,14 +705,16 @@ module MjmlRb
       # npm wrapper renders each child in its own row, unlike section which
       # places all columns in a single row.
       def render_wrapped_children_wrapper(node, context, container_px, gap)
-        children = node.element_children.select { |e| %w[mj-section mj-wrapper].include?(e.tag_name) }
+        children = node.element_children.reject { |e| e.tag_name == "mj-raw" }
         return render_children(node, context, parent: "mj-wrapper") if children.empty?
 
         open_table  = %(<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><![endif]-->)
         close_table = %(<!--[if mso | IE]></table><![endif]-->)
 
         section_parts = with_inherited_mj_class(context, node) do
-          children.each_with_index.map do |child, index|
+          node.children.map do |child|
+            index = children.index(child)
+            next render_node(child, context, parent: "mj-wrapper") unless index
             child_attrs = resolved_attributes(child, context)
             child_css   = child_attrs["css-class"]
             outlook_class = suffix_css_classes(child_css)
