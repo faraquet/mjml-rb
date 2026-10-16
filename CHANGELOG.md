@@ -5,6 +5,8 @@
 Target MJML 5.4.1 with a development-only pinned reference compiler. Runtime
 compilation remains pure Ruby and synchronous.
 
+- Support `css_parser` 3.x alongside 1.x and 2.x, with all three dependency
+  lines in the Ruby 3.3, 3.4 and 4.0 CI matrix.
 - Disable includes by default; add canonical root allowlists and structured
   include diagnostics. Track recursive dependencies in watch mode.
 - Move body id/class and preview ownership to `mj-body`; add responsive section

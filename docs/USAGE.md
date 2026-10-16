@@ -1,9 +1,9 @@
 # mjml-rb Usage Guide
 
-A pure-Ruby MJML compiler — no Node.js required. Compiles [MJML v4](https://mjml.io/) markup into responsive HTML email.
+A pure-Ruby MJML compiler — no Node.js required. Compiles [MJML 5.4.1](https://mjml.io/) markup into responsive HTML email.
 
 - **Ruby**: >= 3.3 (CI-tested on 3.3, 3.4, and 4.0)
-- **Dependencies**: css_parser (>= 1.17, CI-tested with 1.21 and 2.x), nokogiri (>= 1.13)
+- **Dependencies**: css_parser (>= 1.17, < 4; CI-tested with 1.21, 2.x and 3.x), nokogiri (>= 1.13)
 - **License**: MIT
 
 ---

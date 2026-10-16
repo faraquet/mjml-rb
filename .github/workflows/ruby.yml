@@ -18,6 +18,7 @@ jobs:
         gemfile:
           - gemfiles/css_parser_1.gemfile
           - gemfiles/css_parser_2.gemfile
+          - gemfiles/css_parser_3.gemfile
 
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
