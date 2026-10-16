@@ -169,10 +169,11 @@ module MjmlRb
     end
 
     def build_font_tags(content, inline_styles, fonts)
-      # Scan quoted spans once, leaving closing quotes available to adjacent spans.
-      font_styles = content.to_s.scan(/"[^"]*font-family:[^"]*(?=")/mi)
+      font_styles = nil
       used_urls = Array(fonts).filter_map do |name, url|
         next if name.nil? || name.empty? || url.nil? || url.empty?
+        # Scan quoted spans once, leaving closing quotes available to adjacent spans.
+        font_styles ||= content.to_s.scan(/"[^"]*font-family:[^"]*(?=")/mi)
         next unless font_used?(font_styles, inline_styles, name)
 
         url

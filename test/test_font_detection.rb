@@ -80,6 +80,23 @@ class FontDetectionTest < Minitest::Test
     refute_includes html, "invalid.css"
   end
 
+  def test_skips_detection_when_no_fonts_are_configured
+    [nil, {}].each do |fonts|
+      assert_font_detection_skipped(fonts)
+    end
+  end
+
+  def test_skips_detection_when_all_font_urls_are_disabled
+    [nil, ""].each do |url|
+      assert_font_detection_skipped(MjmlRb::Renderer::DEFAULT_FONTS.transform_values { url })
+    end
+    assert_font_detection_skipped("Lato" => nil, "Roboto" => "")
+  end
+
+  def test_skips_detection_when_all_font_names_are_empty
+    assert_font_detection_skipped(nil => font_url("Lato"), "" => font_url("Roboto"))
+  end
+
   def test_reused_renderer_picks_up_changed_fonts
     parser = MjmlRb::Parser.new
     source = '<mjml><mj-body><mj-section><mj-column><mj-text font-family="%s">Hello</mj-text></mj-column></mj-section></mj-body></mjml>'
@@ -93,6 +110,15 @@ class FontDetectionTest < Minitest::Test
   end
 
   private
+
+  def assert_font_detection_skipped(fonts)
+    content = +'<div style="font-family:Lato,Roboto"></div>'
+    content.define_singleton_method(:scan) do |*|
+      raise "Font declarations must not be scanned when no font URL can be emitted"
+    end
+
+    assert_empty @renderer.send(:build_font_tags, content, [], fonts)
+  end
 
   def font_url(name)
     "https://fonts.example.test/#{CGI.escape(name)}.css"
