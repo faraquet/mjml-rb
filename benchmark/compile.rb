@@ -1,4 +1,3 @@
-require 'benchmark'
 require 'mjml-rb'
 compiler = MjmlRb::Compiler.new
 [1, 30].each do |count|
@@ -7,11 +6,11 @@ compiler = MjmlRb::Compiler.new
   GC.start
   before = GC.stat(:total_allocated_objects)
   iterations = count == 1 ? 300 : 30
-  elapsed = Benchmark.realtime do
-    iterations.times do
-      result = compiler.compile(source)
-      abort result.errors.inspect unless result.errors.empty?
-    end
+  started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  iterations.times do
+    result = compiler.compile(source)
+    abort result.errors.inspect unless result.errors.empty?
   end
+  elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
   puts "sections=#{count} ms/compile=#{(elapsed * 1000 / iterations).round(2)} allocations/compile=#{(GC.stat(:total_allocated_objects) - before) / iterations}"
 end
