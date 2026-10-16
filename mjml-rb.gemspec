@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
 
   spec.homepage = "https://github.com/faraquet/mjml-rb"
   spec.files = Dir.chdir(__dir__) do
-    Dir.glob("{bin,lib}/**/*") + ["Gemfile", "LICENSE", "THIRD_PARTY_LICENSES.md", "Rakefile", "mjml-rb.gemspec", "README.md"]
+    Dir.glob("{bin,lib}/**/*") + Dir.glob("docs/**/*.md") + ["Gemfile", "LICENSE", "THIRD_PARTY_LICENSES.md", "Rakefile", "mjml-rb.gemspec", "README.md", "CHANGELOG.md"]
   end
   spec.bindir = "bin"
   spec.executables = ["mjml"]

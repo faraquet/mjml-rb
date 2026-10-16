@@ -1,6 +1,7 @@
 # mjml-rb Usage Guide
 
-A pure-Ruby MJML compiler — no Node.js required. Compiles [MJML 5.4.1](https://mjml.io/) markup into responsive HTML email.
+`mjml-rb` 0.6.0 is a pure-Ruby compiler targeting [MJML 5.4.1](https://mjml.io/).
+Node.js/npm is only used for development reference checks, never at runtime.
 
 - **Ruby**: >= 3.3 (CI-tested on 3.3, 3.4, and 4.0)
 - **Dependencies**: css_parser (>= 1.17, < 4; CI-tested with 1.21, 2.x and 3.x), nokogiri (>= 1.13)
@@ -288,18 +289,32 @@ No additional configuration needed for raw XML MJML templates.
 
 ### Mailer Template
 
-```erb
+```xml
 <!-- app/views/user_mailer/welcome.html.mjml -->
 <mjml>
   <mj-body>
     <mj-section>
       <mj-column>
-        <mj-text>Welcome, <%= @user.name %>!</mj-text>
-        <mj-button href="<%= dashboard_url %>">Go to Dashboard</mj-button>
+        <mj-text>Welcome to our service!</mj-text>
+        <mj-button href="https://example.com/dashboard">Go to Dashboard</mj-button>
       </mj-column>
     </mj-section>
   </mj-body>
 </mjml>
+```
+
+Raw XML `.mjml` templates are compiled as supplied; embedded ERB is not evaluated.
+For dynamic content, load an ActionView handler such as `slim-rails`, configure
+`config.mjml_rb.rails_template_language = :slim`, and write the `.html.mjml`
+template using that language:
+
+```slim
+mjml
+  mj-body
+    mj-section
+      mj-column
+        mj-text = "Welcome, #{@user.name}!"
+        mj-button href=dashboard_url Go to Dashboard
 ```
 
 ### Configuration
@@ -987,8 +1002,8 @@ Register a Google Font for use in the email.
 
 | Attribute | Type | Default |
 |-----------|------|---------|
-| `name` | string | — (**required**) |
-| `href` | string | — (**required**) |
+| `name` | string | — |
+| `href` | string | — |
 
 **Built-in fonts** (no `mj-font` needed): Open Sans, Droid Sans, Lato, Roboto, Ubuntu.
 
@@ -1134,9 +1149,12 @@ The validator checks:
 2. **Required children** — `<mj-body>` must exist
 3. **Known tags** — only registered MJML components allowed
 4. **Hierarchy** — children must be valid for their parent
-5. **Required attributes** — e.g. `src` on `mj-image`, `name`+`href` on `mj-font`
-6. **Supported attributes** — unknown attributes are flagged
-7. **Attribute types** — values validated against type definitions
+5. **Supported attributes** — unknown attributes are flagged
+6. **Attribute types** — values validated against type definitions
+
+Empty `mj-image` and `mj-font` elements are valid in v5; Ruby-only required
+attribute checks have been removed. Enabled `mj-include` elements still need a
+`path` for the parser to resolve the file.
 
 **Attribute type definitions:**
 

@@ -4,6 +4,9 @@
 There is no v4/v5 runtime switch. The library remains synchronous and requires
 no Node.js packages at runtime.
 
+Requires Ruby >= 3.3, `css_parser` >= 1.17 and < 4, and Nokogiri >= 1.13.
+The CI matrix covers `css_parser` 1.21, 2.x and 3.x on Ruby 3.3, 3.4 and 4.0.
+
 ## Includes require opt-in
 
 `mj-include` is now silently omitted by default, including in strict validation.
@@ -52,6 +55,19 @@ recursive enabled dependencies, including deletion, recreation and graph changes
   table and child width account for outer horizontal padding; inner padding
   appears in both Outlook and normal markup.
 - Empty `mj-image` and `mj-font` no longer trigger Ruby-only required checks.
+
+### Backgrounds in browser previews
+
+CSS applied through `mj-body`'s `css-class` now targets the actual HTML `<body>`.
+Its background can paint the browser canvas below the content of a short email;
+the inner article also receives the background colour set on `mj-body`.
+Review both the body and any wrapper selectors when comparing v4 and v5 output.
+
+In the maintainer's downstream Chrome comparisons, all 11 background-only
+differences disappeared exactly when the browser harness set a white HTML-root
+background. This was a diagnostic control applied only in the browser harness.
+No footer markup change was needed. See the [validation record](PARITY_AUDIT.md#downstream-browser-validation)
+for the full scope and results.
 
 ## Formatting and source preservation
 

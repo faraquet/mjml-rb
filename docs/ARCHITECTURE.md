@@ -12,7 +12,7 @@ At a high level the system is organized into five layers:
 
 1. Public entry points: library API and CLI.
 2. Parsing: XML normalization, preprocessors, include expansion, AST creation.
-3. Validation: allowed children, required attributes, supported attributes, and
+3. Validation: document structure, allowed children, supported attributes, and
    basic attribute type checks.
 4. Rendering: head/body context assembly plus component-specific HTML output.
 5. Result packaging: final HTML string plus structured errors and warnings.
@@ -130,7 +130,7 @@ the renderer and validator.
 - Root element must be `mjml`.
 - A document must contain `mj-body`.
 - Child placement must match `MjmlRb::Dependencies::RULES`.
-- Some tags require specific attributes.
+- Empty `mj-image` and `mj-font` are accepted, matching the v5 validator.
 - Component-declared attributes are checked for support and basic type validity.
 
 Type validation currently covers:

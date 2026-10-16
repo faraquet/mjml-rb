@@ -1,7 +1,7 @@
 # MJML v5 compatibility audit
 
 Reference: [`mjml@5.4.1`](https://github.com/mjmlio/mjml/releases/tag/v5.4.1),
-commit `1c434fcbfd042ddfcb9fa4e0496f7eedf1d90bc7`. Updated 2026-10-15.
+commit `1c434fcbfd042ddfcb9fa4e0496f7eedf1d90bc7`. Updated 2026-10-16.
 
 The 0.6.0 implementation targets v5 semantics. This document replaces the old
 v4.18 audit's broad “Match” claims with bounded, reproducible coverage. Passing
@@ -32,11 +32,46 @@ MJML_REFERENCE=1 bundle exec rake test
 ```
 
 `test/reference/package-lock.json` pins the development oracle and its dependency
-graph. The gem includes only Ruby runtime files; it does not load Node or npm.
+graph. The gem includes Ruby runtime files, licenses and documentation; it does
+not include the npm reference package or load Node/npm. Run these development
+commands from a repository checkout; the gem does not ship the test suite.
 Ordinary `bundle exec rake test` checks the committed reference expectations and
 skips the live oracle. To deliberately refresh semantic projections from the
 pinned reference, run `bundle exec ruby test/reference/update.rb`, then review
 its diff. This command never generates expectations from the Ruby compiler.
+
+The CI matrix covers `css_parser` 1.21, 2.x and 3.x on Ruby 3.3, 3.4 and 4.0,
+plus a separate pinned MJML reference job. The supported dependency range is
+`css_parser >= 1.17, < 4`; the CI floor for the 1.x line is 1.21.
+
+## Downstream browser validation
+
+Maintainer-reported Halalbooking validation, supplied on 2026-10-16, tested
+`mjml-rb` commit `90f646e35968fdca3afda58c1f2891a7f7a290d6` (gem 0.6.0)
+with `css_parser` 3.3.0. Coverage comprised all eight booking-mailer actions
+through eleven representative scenarios, all nine configured locales, and
+desktop/mobile widths: 198 exact pixel comparisons, without tolerance or masks.
+
+| Comparison | Result |
+|---|---|
+| Validated commit versus `313ad6a` (gem 0.6.0 / `css_parser` 2.2.0) | All 198 screenshots pixel-identical |
+| Master controls versus the previous control run | All 198 screenshots pixel-identical |
+| Validated commit versus downstream master's `mjml-rb` 0.5.2 | 185 pixel-identical; 11 background-only differences below short desktop emails; 2 comparisons restoring a missing space in the Turkish KYC email |
+
+There were no rendering errors, missing images or unstable captures. All 198
+generated HTML documents had balanced tags, and all 32 focused downstream
+MJML/mailer specs passed.
+
+The 11 background-only differences are explained by v5 body styling/class
+ownership. A white HTML-root background applied only in the browser harness
+eliminated all eleven differences exactly. No footer markup change was needed.
+The two Turkish spacing changes were already present in the earlier v5 run;
+switching to `css_parser` 3.3.0 introduced no additional visual changes.
+
+This evidence covers representative Chrome renders, not certification across
+email clients. The customer screenshots and source templates remain private;
+public examples use synthetic content. These results are a maintainer-supplied
+validation record, separate from the repository's reproducible reference suite.
 
 ## Local performance check
 
