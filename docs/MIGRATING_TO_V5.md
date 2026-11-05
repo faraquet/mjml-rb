@@ -1,10 +1,10 @@
 # Migrating to MJML v5
 
-`mjml-rb` 0.6.0 targets **MJML 5.4.1**. The 0.5.x line retains v4 behavior.
+`mjml-rb` 0.6.1 targets **MJML 5.4.1**. The 0.5.x line retains v4 behavior.
 There is no v4/v5 runtime switch. The library remains synchronous and requires
 no Node.js packages at runtime.
 
-Requires Ruby >= 3.3, `css_parser` >= 1.17 and < 4, and Nokogiri >= 1.13.
+Requires Ruby >= 3.3, `css_parser` >= 1.17 and < 4, and Nokogiri >= 1.19.5.
 The CI matrix covers `css_parser` 1.21, 2.x and 3.x on Ruby 3.3, 3.4 and 4.0.
 
 ## Includes require opt-in

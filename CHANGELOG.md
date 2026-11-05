@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1 — 2026-11-05
+
+- Raise the minimum `nokogiri` version from 1.13 to 1.19.5, which fixes
+  use-after-free, mutation XSS, and JRuby SSRF vulnerabilities.
+- Keep the MJML compatibility target at 5.4.1.
+
+See the [release notes](docs/releases/v0.6.1.md) and
+[Nokogiri security release](https://github.com/sparklemotion/nokogiri/releases/tag/v1.19.5).
+
 ## 0.6.0 — 2026-10-16
 
 Target MJML 5.4.1 with a development-only pinned reference compiler. Runtime
