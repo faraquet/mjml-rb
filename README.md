@@ -2,7 +2,7 @@
 
 # MJML Ruby Implementation
 
-`mjml-rb` **0.6.0** is a pure-Ruby compiler targeting **MJML 5.4.1**.
+`mjml-rb` **0.6.1** is a pure-Ruby compiler targeting **MJML 5.4.1**.
 The gem version and the upstream MJML version are separate. Node.js/npm is used
 only for the development reference checks; compilation requires neither.
 
@@ -16,16 +16,16 @@ only for the development reference checks; compilation requires neither.
 
 **[Full Usage Guide](docs/USAGE.md)** — API reference, all compiler options, component attribute tables, CLI flags, Rails setup, custom components, and more.
 
-See the [0.6.0 release notes](docs/releases/v0.6.0.md) and [changelog](CHANGELOG.md).
+See the [0.6.1 release notes](docs/releases/v0.6.1.md) and [changelog](CHANGELOG.md).
 
 ## Installation
 
-Requires Ruby **>= 3.3**, `css_parser` **>= 1.17, < 4**, and Nokogiri **>= 1.13**.
+Requires Ruby **>= 3.3**, `css_parser` **>= 1.17, < 4**, and Nokogiri **>= 1.19.5**.
 CI covers Ruby 3.3, 3.4 and 4.0 with `css_parser` 1.21, 2.x and 3.x.
 
 ```ruby
 # Gemfile
-gem "mjml-rb", "~> 0.6.0"
+gem "mjml-rb", "~> 0.6.1"
 ```
 
 ## Quick Start

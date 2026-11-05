@@ -1,10 +1,10 @@
 # mjml-rb Usage Guide
 
-`mjml-rb` 0.6.0 is a pure-Ruby compiler targeting [MJML 5.4.1](https://mjml.io/).
+`mjml-rb` 0.6.1 is a pure-Ruby compiler targeting [MJML 5.4.1](https://mjml.io/).
 Node.js/npm is only used for development reference checks, never at runtime.
 
 - **Ruby**: >= 3.3 (CI-tested on 3.3, 3.4, and 4.0)
-- **Dependencies**: css_parser (>= 1.17, < 4; CI-tested with 1.21, 2.x and 3.x), nokogiri (>= 1.13)
+- **Dependencies**: css_parser (>= 1.17, < 4; CI-tested with 1.21, 2.x and 3.x), nokogiri (>= 1.19.5)
 - **License**: MIT
 
 ---
